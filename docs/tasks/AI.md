@@ -45,6 +45,8 @@
       transit(+nearest_station, line, distance_m, daily_riders, fallback_flag) /
       location_score / initial_cost(+정렬 인덱스) / finance_product(+exclusive_group,
       term_months, doc_chunk_ref)` (스펙 §3-1)
+- [ ] **데이터 기준일 메타 테이블** (source, as_of, note) — 화면·API의 `data_as_of` 표기 원천
+      (스펙 §0-4 "데이터 기준일 상시 표기"의 데이터 공급처)
 - [ ] 목 데이터 (상권 10곳·상품 5종 수준) → `db/init/01_schema.sql`·`02_mock_data.sql`
 - [ ] `docker compose up` 재기동으로 적재 확인 → BE 조회 테스트 합류
 - **DoD**: CP1 E2E — 스키마 변경 시 BE 사전 공지 (CONTRIBUTING §6)
@@ -88,6 +90,8 @@
       grounding(source_quote↔원문 문자열 일치) / sensitivity(가중치 ±20%·θ 변동 상위 3곳 유지율) /
       model(AI-08) / report(metrics.json+차트 PNG 취합)
 - [ ] 기존 정산 테이블·검수 산출물 **읽기 전용** — 서비스 파이프라인·스키마 불변 확인
+- [ ] **프론티어 정적 차트 PNG** (데모 프로필 기준 예산-후보 계단 차트) — 기술설명서
+      필수 삽입물 (스펙 §0-8: FE 미니 차트 미구현과 무관하게 문서에는 반드시 들어감)
 - **DoD**: `make eval` 1회 통주(通走) — 산출물이 그대로 부록 1
 
 ## AI-08 (D9~10) — LightGBM+SHAP 설계 교차 검증 (스펙 §12-2·12-3)
