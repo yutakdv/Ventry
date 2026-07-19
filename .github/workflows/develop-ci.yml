@@ -13,6 +13,11 @@ on:
 permissions:
   contents: write
 
+# PR 재푸시 시 이전 실행 취소. develop push(→ main 병합 포함)는 취소하지 않고 직렬화.
+concurrency:
+  group: develop-ci-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   compose-smoke:
     name: compose-smoke

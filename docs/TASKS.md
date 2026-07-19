@@ -3,6 +3,8 @@
 기준: `docs/specs/최종_스펙문서.md` v6.2 · `docs/specs/exploration_agent_spec_v2_1.md` v2.1
 역할: **AI**(데이터·배치·평가) / **BE**(Spring 서빙·에이전트) / **FE**(React·지도) / **CM**(공통)
 
+- **팀원별 세부 체크리스트(파일 단위·명령·PR 슬라이스)**: [tasks/FRONTEND.md](tasks/FRONTEND.md) ·
+  [tasks/BACKEND.md](tasks/BACKEND.md) · [tasks/AI.md](tasks/AI.md) — 이 문서는 총괄(의존·마일스톤)용.
 - PR 단위 = 태스크 ID 1~2개. PR 제목에 ID 표기 (`[BE-04] ...`).
 - 우선순위: 스펙 §0-2의 P0 전부 → P1(D9~10 여유 시, ①RAG → ②차트 → ③개인화 순) → P2 금지(로드맵만).
 - **D10 기능 동결** 이후 신규 기능 PR 금지.

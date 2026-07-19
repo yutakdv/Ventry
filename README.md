@@ -55,11 +55,11 @@
 [배치: Python]                    [저장]              [서빙: Spring Boot]            [프론트]
 서울 상권분석 API ────┐
 인허가 시가정보 CSV ──┤
-부동산원 임대동향 API ┼─ 전처리(pandas/       ┌─ 인터뷰어(파싱: 폼+자연어)      [1]
+부동산원 임대동향 API ┼─ 전처리(pandas/         ┌─ 인터뷰어(파싱: 폼+자연어)      [1]
 서울 교통 데이터 ─────┘  geopandas)  →        │  오케스트레이터(tool-calling)
  (역사마스터·승하차)      PostgreSQL ─────────┼→  └ 결정적 도구 계층:            ─SSE→ React
                          (상권DB+정산테이블)  │     자격필터/비용계산/점수·부담률/    +
-                                             │     프론티어/역방향                카카오맵
+                                          │     프론티어/역방향                카카오맵
 정책자금 문서→LLM 추출   → 구조화+벡터DB ─────┘  결정공간 탐색(이중 프론티어)   [2]
   +사람 검수                                     리스크 검증 에이전트(1왕복)     [3]
                                                   + RAG 근거 인용(벡터DB)
@@ -76,7 +76,7 @@
 | 영역 | 스택 | 브랜치 |
 |---|---|---|
 | Frontend | React 18 · Vite · TypeScript · 카카오맵 JS SDK · SSE | `frontend` |
-| Backend | Spring Boot 3 (Java 21) · PostgreSQL 16 · Caffeine · SseEmitter | `backend` |
+| Backend | Spring Boot 4.1 (Java 25) · PostgreSQL 16 · Caffeine · SseEmitter | `backend` |
 | AI/Data | Python 3.11 · pandas · geopandas · LightGBM+SHAP(평가 전용) | `ai` |
 | 인프라 | Docker · docker compose · GitHub Actions | — |
 
@@ -98,7 +98,7 @@ docker compose up --build
 # Frontend (dev 서버 :5173, /api는 :8080으로 프록시)
 cd frontend && npm install && npm run dev
 
-# Backend
+# Backend (JDK 25 필요 — 없으면 docker build ./backend 로 검증)
 cd backend && gradle bootRun         # 또는 docker build -t ventry-api . && docker run -p 8080:8080 ventry-api
 
 # AI 배치 (수집→전처리→적재는 로컬 실행, compose 미포함)
@@ -119,7 +119,8 @@ Ventry/
 ├── db/init/           # 배치 산출 사전 적재 덤프 (compose 최초 기동 시 실행)
 ├── docs/
 │   ├── specs/         # 최종 스펙 v6.2 · 탐색 에이전트 스펙 v2.1 (단일 진실 원천)
-│   ├── TASKS.md       # 역할별 상세 태스크 분해 (D1~D14)
+│   ├── TASKS.md       # 태스크 분해 총괄 (D1~D14, 마일스톤·병렬화 구조)
+│   ├── tasks/         # 팀원별 상세 체크리스트: FRONTEND.md · BACKEND.md · AI.md
 │   ├── API_CONTRACT.md# API 계약 (D3 동결)
 │   ├── assumptions.md # 모든 가정·폴백 일원화 대장
 │   └── 심사_QA.md      # 예상 Q&A 19문항

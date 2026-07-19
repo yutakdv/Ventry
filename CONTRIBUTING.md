@@ -65,10 +65,14 @@ type: feat / fix / refactor / test / docs / chore / data
 
 | 워크플로 | 트리거 | 내용 |
 |---|---|---|
-| `frontend-ci.yml` | `frontend` push · develop 대상 PR(frontend/** 변경) | npm lint + tsc/vite build + docker build |
-| `backend-ci.yml` | `backend` push · develop 대상 PR(backend/** 변경) | gradle test/build + docker build |
-| `ai-ci.yml` | `ai` push · develop 대상 PR(ai/** 변경) | ruff lint + docker build |
+| `frontend-ci.yml` | `frontend` push(frontend/** 변경) · develop 대상 모든 PR | npm ci + lint + tsc/vite build + docker build |
+| `backend-ci.yml` | `backend` push(backend/** 변경) · develop 대상 모든 PR | gradle test/build (Java 25) + docker build |
+| `ai-ci.yml` | `ai` push(ai/** 변경) · develop 대상 모든 PR | ruff lint + docker build |
 | `develop-ci.yml` | develop push·PR | `docker compose build` + 기동 스모크(api health·web 200) → push 시 main 자동 병합 |
+
+> PR에서는 세 CI가 **경로와 무관하게 항상 실행**된다. 브랜치 보호의 필수 상태 체크로 등록된
+> 워크플로가 path 필터에 걸려 실행되지 않으면 체크가 pending으로 남아 병합이 영구히 막히기
+> 때문이다. push 트리거에만 path 필터를 둔다.
 
 각 영역 브랜치는 **자기 Dockerfile로 단독 docker 테스트가 가능**해야 한다
 (`docker build ./frontend` 등). 루트 통합 테스트는 `docker compose up --build`.

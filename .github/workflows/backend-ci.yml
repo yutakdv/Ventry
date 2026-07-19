@@ -1,12 +1,17 @@
 name: backend-ci
 
+# PR 트리거에 paths 필터 없음 — 필수 상태 체크가 pending으로 병합을 막지 않게 항상 실행
+# (frontend-ci.yml 상단 주석 참고)
 on:
   push:
     branches: [backend]
     paths: ["backend/**", ".github/workflows/backend-ci.yml"]
   pull_request:
     branches: [develop]
-    paths: ["backend/**", ".github/workflows/backend-ci.yml"]
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test-build:
@@ -18,7 +23,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 25
 
       - uses: gradle/actions/setup-gradle@v4
 

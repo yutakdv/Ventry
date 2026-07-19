@@ -1,12 +1,17 @@
 name: ai-ci
 
+# PR 트리거에 paths 필터 없음 — 필수 상태 체크가 pending으로 병합을 막지 않게 항상 실행
+# (frontend-ci.yml 상단 주석 참고)
 on:
   push:
     branches: [ai]
     paths: ["ai/**", ".github/workflows/ai-ci.yml"]
   pull_request:
     branches: [develop]
-    paths: ["ai/**", ".github/workflows/ai-ci.yml"]
+
+concurrency:
+  group: ai-ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   lint-build:

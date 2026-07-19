@@ -33,7 +33,7 @@ KB 제8회 Future Finance AI Challenge · 주제 2 「AI 데이터 기반 최적
 | 경로 | 담당 | 스택 |
 |---|---|---|
 | `frontend/` | FE | React 18 + Vite + TS, 카카오맵 JS SDK, SSE |
-| `backend/` | BE | Spring Boot 3 (Java 21) + PostgreSQL + Caffeine, SseEmitter |
+| `backend/` | BE | Spring Boot 4.1 (Java 25) + PostgreSQL + Caffeine, SseEmitter |
 | `ai/` | AI | Python 3.11 — 수집/전처리(pandas·geopandas)/적재 배치 + 평가 하네스(`make eval`) |
 | `db/init/` | AI | 사전 적재 덤프 (compose 최초 기동 시 자동 실행) |
 | `docs/` | 공통 | 스펙·태스크·API 계약·assumptions.md·심사_QA.md |
