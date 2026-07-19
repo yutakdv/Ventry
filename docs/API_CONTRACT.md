@@ -70,8 +70,8 @@
 ```jsonc
 // plan
 { "axes": ["A1", "A4"], "rationale": "대화 맥락 기반: 권리금 축 우선 검토" }
-// insight (T1 예)
-{ "type": "T1", "headline": "…",
+// insight (T1 예) — insight_id는 refine 이벤트의 교체 대상 키 (BE-01 구현 중 추가)
+{ "insight_id": "i-1", "type": "T1", "headline": "…",
   "delta": { "n_entry_before": 3, "n_entry_after": 11, "n_sustain_after": 7, "score_delta": … },
   "gap_amount": 1320, "marginal_payment": 28,
   "funding": { "name": "…", "amount_max": …, "rate": 2.5, "term_assumed": 60,
