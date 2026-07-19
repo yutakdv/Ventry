@@ -1,12 +1,17 @@
 # API 계약 (스펙 §6 · exploration spec §4)
 
-**상태: 초안 (D3 동결 예정)** — 동결 후 변경은 CONTRIBUTING §6 절차(3인 합의 + 본 문서 수정 PR)로만.
+**상태: 확정 (2026-07-20 리더 확정 — D3 CP1에서 FE·AI 검토 후 최종 동결.**
+**이후 변경은 CONTRIBUTING §6 절차(3인 합의 + 본 문서 수정 PR)로만.)**
+
+초안 공백 5건은 2026-07-20 확정되어 본문에 반영됨 — 상세 근거는 [DECISIONS.md](DECISIONS.md):
+①판정 용어 "유의"(enum `CAUTION`) ②금액 만원 단위 ③scenarios SSE 이벤트 스키마
+④recommend `risk_review` ⑤diagnose `parse_source`.
 
 공통 규약
 - 좌표: **WGS84** (lat, lng)
 - 금액: **만원 단위 정수**
 - 금융상품 응답에는 `source`(org·url·collected) 필수, 화면 표기용 `data_as_of`(기준일) 필수
-- 판정 enum: `FIT`(적합) / `CONDITIONAL`(조건부 적합) / `SLOW`(정속) / `OUT_OF_SCOPE`(범위 외)
+- 판정 enum: `FIT`(적합) / `CONDITIONAL`(조건부 적합) / `CAUTION`(유의) / `OUT_OF_SCOPE`(범위 외)
   — 화면 문구는 용어 컴플라이언스 표(CLAUDE.md) 준수
 - 세션·버전: 슬라이더 변경마다 프론트가 `v`(version) 증가시켜 전달. 서버는 세션 최신 version이
   아니면 SSE 이벤트 송출 전 폐기 (exploration spec §5)
@@ -21,15 +26,20 @@
 { "form": { "age": 32, "capital": 5000, "industry": "cafe", "region_hint": "망원" },
   "free_text": "권리금이 제일 걱정..." }
 // res
-{ "session_id": "…", "parsed_profile": { …, "concerns": ["premium"] } }
+{ "session_id": "…", "parsed_profile": { …, "concerns": ["premium"],
+                                          "parse_source": "llm" } }   // "llm" | "form_only"(LLM 장애 폴백)
 ```
 
 ### 2) `GET /api/scenarios/{sid}` (SSE)
 조달 시나리오 카드 2장 (보수/적극).
+이벤트 순서: `scenario`(카드 1장씩, 2회) → `done` — 하트비트 공통 규약 적용.
 
 ```jsonc
-{ "scenarios": [ { "label": "보수", "budget": 6500, "composition": [ … ],
-                   "products": [ { "name": "…", "source": {…}, "source_quote": null } ] } ] }
+// scenario (1장씩)
+{ "label": "보수", "budget": 6500, "composition": [ … ],
+  "products": [ { "name": "…", "source": {…}, "source_quote": null } ] }
+// done
+{ "scenario_count": 2 }
 ```
 
 ### 3) `POST /api/budget/{sid}`
@@ -49,7 +59,9 @@
     "reason_text": "…",
     "rent_source": { "org": "REB", "district": "…", "fallback": false },
     "transit": { "station": "망원", "line": "6", "distance_m": 320,
-                 "daily_riders": 21000, "fallback": false } } ] }
+                 "daily_riders": 21000, "fallback": false } } ],
+  "risk_review": { "objection_text": "…", "applied": true,
+                   "skipped": false } }   // FE "왜?(검증 의견 n건)" 패널 원천 — 장애 시 skipped=true("검증 생략" 플래그)
 ```
 
 ### 5) `GET /api/explore/{sid}?v={version}` (SSE)
@@ -98,3 +110,5 @@
 | 일자 | 변경 | 합의 |
 |---|---|---|
 | D0 | 초안 작성 (스펙 §6 전사) | — |
+| D0 (7/20) | 초안 공백 5건 식별 (용어·단위·scenarios SSE·risk_review·parse_source) | 초안 단계 |
+| D0 (7/20) | 5건 전부 확정 반영: 판정 enum `CAUTION`(유의), 만원 단위(스펙 §6 정정), scenarios SSE 스키마, recommend `risk_review`, `parse_source` — 근거 DECISIONS.md | 리더 확정 (D3 CP1 최종 동결) |
