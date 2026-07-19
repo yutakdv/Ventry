@@ -27,7 +27,7 @@ services:
       DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-ventry}
       DB_USER: ${POSTGRES_USER:-ventry}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-ventry-local}
-      LLM_API_KEY: ${LLM_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     ports:
       - "8080:8080"
     depends_on:

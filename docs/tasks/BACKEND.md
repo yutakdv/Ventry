@@ -10,10 +10,17 @@
       Gradle JVM **JDK 25** (Download JDK 가능), 재동기화 — 테스트 import 오류는 재동기화로 해소
 - [ ] `cd backend && ./gradlew test` 그린 확인 (wrapper가 Gradle 9.5.1 자동 다운로드)
 - [ ] `docker compose up db` 로 로컬 DB 기동 확인
+- [ ] LLM 키 발급: **Anthropic Claude API 확정(7/20, DECISIONS.md)** — console.anthropic.com에서
+      키 발급 → .env `ANTHROPIC_API_KEY` (AI-06 배치와 공용, 서빙 모델 claude-haiku-4-5)
 
 ## BE-01 (D3) — API 계약 동결 + 목 구현 ★CP1
 
 - [ ] `docs/API_CONTRACT.md` 검토·보완 → 3인 합의로 **동결** (필드·enum·SSE 이벤트 순서)
+- [x] ~~동결 전 결정 5건 해소~~ → **7/20 확정 완료** (판정 enum `CAUTION`(유의)·만원 단위·
+      scenarios SSE·recommend `risk_review`·`parse_source` — DECISIONS.md, 계약 반영됨).
+      D3에는 FE·AI 검토 확인만
+- [ ] 세션 저장소: 인메모리(ConcurrentHashMap + TTL), **B₀ 구성(자기자본+상품별 사용액)
+      기록** (expl §2-2 잔여 한도 원칙의 재료 — BE-04에서 사용)
 - [ ] 패키지 구조: `com.ventry.api.{diagnose,scenario,recommend,explore,checkarea,common}`
 - [ ] DTO 전체 정의 (record 사용, 만원 단위 int, WGS84 double)
 - [ ] 6개 엔드포인트 목 응답 구현 (데모 프로필 기준 그럴듯한 값 — FE 개발용)
@@ -31,6 +38,7 @@
       (시나리오별 N+1 쿼리 금지, expl §5)
 - [ ] Caffeine 캐시: 키 (업종, 자치구), 기동 시 예열, 정렬 비용 배열은 사전 정렬 보관
 - [ ] 목→실데이터 전환 스위치 (프로파일 or 설정값) — AI 덤프 지연 시 무중단
+- [ ] 데이터 기준일 메타 테이블(AI-03) 조회 → 전 응답 공통 `data_as_of` 주입
 - **DoD**: CP2에서 실데이터 응답 확인, 조회 지연 10~30ms 로그
 
 ## BE-03 (D5~6) — 결정적 도구 계층 5종 (P0의 심장)
@@ -44,6 +52,8 @@
 - [ ] `Frontier` — §2 해석적 이중 프론티어 (BE-04·05에서 확장)
 - [ ] `ReverseCheck` — 임의 상권 역방향 판정 (판정 4단계 enum)
 - [ ] 필터 경계 규칙 테스트: `제외 ≤ 예산 < 포함 중위값` → ⚪ 조건부 적합 (스펙 §4-1)
+- [ ] **`/api/recommend`·`/api/check-area` 목→실 전환**: 이중 필터→점수→판정 4단계 +
+      `reason_text` 템플릿(f-string 상당) 조립 — 도구 계층 결선의 첫 소비자
 - **DoD**: 도구별 단위 테스트 + 경계 케이스 통과, LLM 의존성 0
 
 ## BE-04 (D7) — 해석적 프론티어(진입) + 조달 검증
@@ -57,6 +67,8 @@
       → `docs/assumptions.md` 등재 + 화면 병기)}
 - [ ] **조달 시나리오 생성 (화면 2 실데이터)**: 자격 필터 통과 상품 조합으로 보수/적극
       시나리오 2종 구성 + 추천 태그 (스펙 §5-2 ② 시뮬레이션 — 목→실 전환)
+- [ ] **LLM 클라이언트 골격 선행** (D8 부하 분산): SDK 셋업·프롬프트 골격·타임아웃 5s·
+      세마포어(동시 K건, expl §5)·**키 부재 시 무LLM 모드**(템플릿 폴백 경로와 동일 코드패스)
 - **DoD**: 경계·갭·마진 수치 검증 테스트 (수작업 계산 대조 3케이스)
 
 ## BE-05 (D8) — 탐색·검증 에이전트 ★CP3 (최대 부하 일차)
