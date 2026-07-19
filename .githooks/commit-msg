@@ -1,0 +1,16 @@
+#!/bin/sh
+# 커밋 메시지에 Claude/AI co-author·attribution 라인이 들어가는 것을 차단한다.
+# 활성화: git config core.hooksPath .githooks  (CONTRIBUTING.md 참고)
+MSG_FILE="$1"
+
+if grep -qiE 'co-authored-by:.*(claude|anthropic)' "$MSG_FILE"; then
+  echo "ERROR: 'Co-Authored-By: Claude' 라인은 커밋 메시지에 포함할 수 없습니다. (팀 규칙)" >&2
+  exit 1
+fi
+
+if grep -qiE 'generated with .*(claude|claude code)' "$MSG_FILE"; then
+  echo "ERROR: 'Generated with Claude Code' attribution은 커밋 메시지에 포함할 수 없습니다. (팀 규칙)" >&2
+  exit 1
+fi
+
+exit 0

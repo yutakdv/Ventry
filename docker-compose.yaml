@@ -1,0 +1,45 @@
+# Ventry 통합 실행 — docker compose up --build
+# 구성: db(PostgreSQL, 사전 적재 덤프) / api(Spring Boot) / web(React+nginx)
+# batch(Python, ai/)는 스펙 §8에 따라 compose 실행 경로에서 제외 — 산출 덤프를 db/init/에 제출.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ventry}
+      POSTGRES_USER: ${POSTGRES_USER:-ventry}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ventry-local}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      # 최초 기동 시 db/init/*.sql 을 사전순으로 실행 (배치 산출 덤프 위치)
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ventry} -d ${POSTGRES_DB:-ventry}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: ./backend
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-ventry}
+      DB_USER: ${POSTGRES_USER:-ventry}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ventry-local}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+
+volumes:
+  db-data:

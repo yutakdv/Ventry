@@ -1,0 +1,62 @@
+# develop 통합 검증 + main 자동 병합
+# - develop 대상 PR: compose 전체 빌드 + 기동 스모크 (병합 게이트)
+# - develop push:   동일 검증 후 main으로 자동 병합
+
+name: develop-ci
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop]
+
+permissions:
+  contents: write
+
+jobs:
+  compose-smoke:
+    name: compose-smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compose build
+        run: docker compose build
+
+      - name: Compose up
+        run: docker compose up -d
+
+      - name: Smoke — api health
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8080/api/health; then exit 0; fi
+            sleep 3
+          done
+          echo "::error::api health check failed"
+          docker compose logs api
+          exit 1
+
+      - name: Smoke — web 200
+        run: curl -fsS -o /dev/null http://localhost:3000
+
+      - name: Compose down
+        if: always()
+        run: docker compose down -v
+
+  promote-to-main:
+    name: auto-merge develop → main
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    needs: compose-smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Merge develop into main
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B main origin/main
+          git merge --no-ff origin/develop -m "[CM] chore: auto-merge develop into main"
+          git push origin main

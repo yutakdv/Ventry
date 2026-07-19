@@ -1,0 +1,44 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Env / secrets
+.env
+.env.local
+*.pem
+
+# Node (frontend)
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+npm-debug.log*
+
+# Gradle / Java (backend)
+backend/.gradle/
+backend/build/
+backend/out/
+*.class
+
+# Python (ai)
+ai/__pycache__/
+**/__pycache__/
+*.py[cod]
+ai/.venv/
+ai/venv/
+ai/.ruff_cache/
+ai/dist/
+ai/*.egg-info/
+
+# Data — 원본(raw)은 로컬 보존, 저장소에는 미포함 (스펙 §2-2: raw/ 보존 원칙은 로컬·팀 드라이브)
+ai/data/raw/*
+!ai/data/raw/.gitkeep
+ai/data/interim/*
+!ai/data/interim/.gitkeep
+
+# Eval 산출물 (부록 확정본만 docs/에 복사)
+ai/eval/out/
+
+# IDE
+.idea/
+.vscode/
+*.iml

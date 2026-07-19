@@ -1,0 +1,10 @@
+.venv
+venv
+__pycache__
+*.pyc
+.ruff_cache
+data/raw
+data/interim
+eval/out
+Dockerfile
+.dockerignore

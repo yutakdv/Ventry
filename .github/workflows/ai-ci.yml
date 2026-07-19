@@ -1,0 +1,29 @@
+name: ai-ci
+
+on:
+  push:
+    branches: [ai]
+    paths: ["ai/**", ".github/workflows/ai-ci.yml"]
+  pull_request:
+    branches: [develop]
+    paths: ["ai/**", ".github/workflows/ai-ci.yml"]
+
+jobs:
+  lint-build:
+    name: ai-ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Lint (ruff)
+        working-directory: ai
+        run: |
+          pip install ruff
+          ruff check .
+
+      - name: Docker build
+        run: docker build -t ventry-batch ./ai

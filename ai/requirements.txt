@@ -1,0 +1,16 @@
+# --- 수집·전처리·적재 (batch/) ---
+pandas>=2.2
+geopandas>=0.14
+shapely>=2.0
+pyproj>=3.6
+pyogrio>=0.8
+requests>=2.32
+SQLAlchemy>=2.0
+psycopg2-binary>=2.9
+python-dotenv>=1.0
+
+# --- 평가 하네스 (eval/, 스펙 §12 — 서빙 경로 아님, 오프라인 전용) ---
+scikit-learn>=1.5
+lightgbm>=4.4
+shap>=0.46
+matplotlib>=3.9
