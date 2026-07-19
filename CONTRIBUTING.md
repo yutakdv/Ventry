@@ -45,19 +45,17 @@ ai          AI 작업 브랜치 (Python 배치·평가)
 - 충돌 예방: 영역 간 공유 지점은 `docs/API_CONTRACT.md`와 `docker-compose.yaml`뿐이다.
   이 두 파일을 수정하는 PR은 3인 리뷰 필수.
 
-### 브랜치 보호 설정 (리포 관리자 1회, GitHub)
+### 브랜치 보호 — 적용 완료 (2026-07-19)
 
-```bash
-gh api repos/{owner}/{repo}/branches/develop/protection -X PUT \
-  -f "required_status_checks[strict]=true" \
-  -f "required_status_checks[contexts][]=frontend-ci" \
-  -f "required_status_checks[contexts][]=backend-ci" \
-  -f "required_status_checks[contexts][]=ai-ci" \
-  -F "enforce_admins=false" \
-  -F "required_pull_request_reviews[required_approving_review_count]=1" \
-  -F "restrictions=null"
-# main: push 제한 (자동 병합 워크플로만 허용)
-```
+| 브랜치 | 적용 규칙 |
+|---|---|
+| `develop` | 필수 상태 체크 4종(frontend-ci·backend-ci·ai-ci·compose-smoke, strict) + 승인 리뷰 1인 + 리뷰 코멘트 해결 필수 + force push·삭제 차단 |
+| `main` | force push·삭제 차단 |
+
+- `main`에 push 제한을 걸지 않은 이유: ① 개인 소유 리포는 push 허용자 지정(restrictions)을
+  지원하지 않고, ② 자동 병합 워크플로(develop-ci의 promote 잡)가 GITHUB_TOKEN으로 main에
+  push해야 하기 때문. **사람의 main 직접 push는 컨벤션으로 금지**하며 리뷰에서 걸러낸다.
+- 규칙 변경이 필요하면: `gh api repos/yutakdv/Ventry/branches/<branch>/protection` (관리자만).
 
 ## 3. PR 규칙
 
