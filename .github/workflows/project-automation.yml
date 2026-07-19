@@ -1,0 +1,24 @@
+# 신규 이슈·PR을 태스크 보드(Projects v2)에 자동 추가한다.
+# 활성 조건 (리포 Settings에서 1회 설정 — scripts/setup_board.sh 실행 후):
+#   - Variables: PROJECT_URL = https://github.com/users/<owner>/projects/<number>
+#   - Secrets:   PROJECT_PAT = project 스코프가 있는 Fine-grained/Classic PAT
+#     (사용자 소유 Project에는 기본 GITHUB_TOKEN으로 추가할 수 없어 PAT가 필요)
+# 미설정 시 이 워크플로는 조용히 스킵된다.
+
+name: project-automation
+
+on:
+  issues:
+    types: [opened, reopened]
+  pull_request:
+    types: [opened, reopened]
+
+jobs:
+  add-to-project:
+    if: ${{ vars.PROJECT_URL != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/add-to-project@v1.0.2
+        with:
+          project-url: ${{ vars.PROJECT_URL }}
+          github-token: ${{ secrets.PROJECT_PAT }}
