@@ -7,6 +7,7 @@
 
 - [ ] `git config core.hooksPath .githooks` (co-author 차단 훅)
 - [ ] `cp .env.example .env` → `VITE_KAKAO_APP_KEY` 입력 (FE-01에서 발급)
+      — Vite dev·docker compose 모두 **루트 .env** 하나를 읽는다 (frontend/.env 만들지 말 것)
 - [ ] `cd frontend && npm install && npm run dev` → http://localhost:5173 확인
 - [ ] `npm run lint && npm run build` 그린 확인 (CI와 동일 명령)
 

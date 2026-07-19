@@ -5,6 +5,9 @@ import react from '@vitejs/plugin-react'
 // 프로덕션(nginx)에서는 nginx.conf가 api 컨테이너로 프록시한다.
 export default defineConfig({
   plugins: [react()],
+  // 루트 .env 하나로 통일 (VITE_ 접두사 변수만 클라이언트에 노출됨)
+  // Docker 빌드에서는 envDir이 없으므로 ARG→ENV로 주입된다 (Dockerfile 참고)
+  envDir: '../',
   server: {
     port: 5173,
     proxy: {

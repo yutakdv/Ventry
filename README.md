@@ -99,7 +99,7 @@ docker compose up --build
 cd frontend && npm install && npm run dev
 
 # Backend (JDK 25 필요 — 없으면 docker build ./backend 로 검증)
-cd backend && gradle bootRun         # 또는 docker build -t ventry-api . && docker run -p 8080:8080 ventry-api
+cd backend && ./gradlew bootRun      # 또는 docker build -t ventry-api . && docker run -p 8080:8080 ventry-api
 
 # AI 배치 (수집→전처리→적재는 로컬 실행, compose 미포함)
 cd ai && python -m venv .venv && source .venv/bin/activate

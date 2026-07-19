@@ -10,6 +10,25 @@ git config core.hooksPath .githooks   # Claude co-author 차단 훅 활성화 (�
 cp .env.example .env                  # 키 값 채우기
 ```
 
+## 1-1. IDE 설정
+
+어떤 IDE든 자유. 커밋 훅·CI가 품질을 보증하므로 IDE는 개인 선택이다.
+
+**IntelliJ (BE 권장)**
+1. IntelliJ **2025.2 이상** 필요 (Java 25 언어 레벨 지원).
+2. `File → Open` 으로 **`backend/` 디렉토리를 프로젝트로 열기** (루트를 열었다면
+   `backend/build.gradle` 우클릭 → *Link Gradle Project*).
+3. `Settings → Build Tools → Gradle`:
+   - *Distribution*: **Wrapper** (저장소에 gradlew 9.5.1 고정 — IDE·CI·Docker 동일 버전)
+   - *Gradle JVM*: **JDK 25** (없으면 같은 창에서 *Download JDK* → Temurin 25)
+4. `Project Structure → Project SDK`: JDK 25 / Language level 25.
+5. 코끼리 아이콘(⟳) **Gradle 재동기화** — 테스트 코드의 `@WebMvcTest` 등 import 오류는
+   대부분 재동기화 전 stale 상태다. 재동기화 후에도 남으면 `File → Invalidate Caches`.
+6. 판정 기준은 IDE가 아니라 `./gradlew build` / `docker build ./backend` — IDE 빨간줄이
+   남아도 이 두 개가 그린이면 코드는 정상이다.
+
+**VS Code (FE·AI)**: 확장 ESLint(FE)·Ruff(AI) 설치 권장. 저장 시 포맷은 강제하지 않는다.
+
 ## 2. 브랜치 전략
 
 ```

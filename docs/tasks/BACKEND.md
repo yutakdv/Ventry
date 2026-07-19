@@ -6,8 +6,9 @@
 ## 0. 환경 준비 (Day 0)
 
 - [ ] `git config core.hooksPath .githooks`
-- [ ] JDK 25 로컬 설치 (또는 전 작업을 `docker build ./backend`로 검증)
-- [ ] `cd backend && gradle test` 그린 확인
+- [ ] IntelliJ 설정 (CONTRIBUTING §1-1): 2025.2+, `backend/` 열기, Gradle *Wrapper* +
+      Gradle JVM **JDK 25** (Download JDK 가능), 재동기화 — 테스트 import 오류는 재동기화로 해소
+- [ ] `cd backend && ./gradlew test` 그린 확인 (wrapper가 Gradle 9.5.1 자동 다운로드)
 - [ ] `docker compose up db` 로 로컬 DB 기동 확인
 
 ## BE-01 (D3) — API 계약 동결 + 목 구현 ★CP1

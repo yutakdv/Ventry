@@ -5,6 +5,7 @@ Thumbs.db
 # Env / secrets
 .env
 .env.local
+frontend/.env*
 *.pem
 
 # Node (frontend)

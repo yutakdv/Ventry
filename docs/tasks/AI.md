@@ -7,7 +7,9 @@
 
 - [ ] `git config core.hooksPath .githooks`
 - [ ] `cd ai && python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`
-- [ ] `.env`에 🔑 `DATA_GO_KR_API_KEY`·`SEOUL_OPEN_DATA_API_KEY` 입력 (발급처는 .env.example 주석)
+- [ ] `.env`에 🔑 키 입력: `SEOUL_API_KEY_COMMERCIAL`·`SEOUL_API_KEY_STATION`·
+      `SEOUL_API_KEY_RIDERS`·`DATA_GO_KR_API_KEY_REB_RENT` (+폴백 시 `TDATA_API_KEY`)
+      — 발급처·절차는 .env.example의 API별 주석 참조
 - [ ] `ruff check .` 그린 확인 (CI와 동일)
 
 ## AI-01 (D1) — 데이터 실사 ★최우선, 지연 시 전체 일정 영향

@@ -35,7 +35,11 @@ services:
         condition: service_healthy
 
   web:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        # 빌드 타임 주입 — 루트 .env의 값을 읽는다. 키 변경 시 --build 재빌드 필요
+        VITE_KAKAO_APP_KEY: ${VITE_KAKAO_APP_KEY:-}
     ports:
       - "3000:80"
     depends_on:

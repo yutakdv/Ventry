@@ -1,12 +1,13 @@
-# build 단계 (gradle wrapper 없이 공식 이미지 사용 — 테스트 포함 빌드)
-# Spring Boot 4.x는 Gradle 8.14+ / 9.x 필요
-FROM gradle:9-jdk25 AS build
+# build 단계 — Gradle wrapper 사용 (로컬 IDE·CI·Docker가 동일한 Gradle 9.5.1로 빌드)
+FROM eclipse-temurin:25-jdk AS build
 WORKDIR /app
+COPY gradlew ./
+COPY gradle ./gradle
 COPY build.gradle settings.gradle ./
-# 의존성 레이어 캐시 (실패해도 무시 — 소스 복사 후 본빌드에서 해결)
-RUN gradle dependencies --no-daemon -q || true
+# 배포판+의존성 레이어 캐시 (빌드 파일 변경 시에만 무효화)
+RUN ./gradlew dependencies --no-daemon -q || true
 COPY src ./src
-RUN gradle build --no-daemon
+RUN ./gradlew build --no-daemon
 
 # run 단계
 FROM eclipse-temurin:25-jre

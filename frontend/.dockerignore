@@ -1,5 +1,7 @@
 node_modules
 dist
+.env
+.env.*
 .vite
 Dockerfile
 .dockerignore

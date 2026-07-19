@@ -1,1 +1,6 @@
+plugins {
+    // 로컬에 JDK 25가 없어도 toolchain이 자동 다운로드하게 한다 (IDE·CLI 공통)
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
 rootProject.name = 'ventry'

@@ -73,7 +73,7 @@ type: feat / fix / refactor / test / docs / chore / data
 docker compose up --build        # 통합 실행 → web http://localhost:3000, api :8080
 cd frontend && npm install && npm run dev     # FE 개발 서버 (:5173, /api → :8080 프록시)
 cd frontend && npm run lint && npm run build  # FE CI와 동일 검증
-cd backend && gradle test        # BE 테스트 (또는 docker build ./backend)
+cd backend && ./gradlew test     # BE 테스트 (또는 docker build ./backend)
 cd ai && ruff check .            # AI lint (CI와 동일)
 cd ai && make eval               # AI 품질 평가 하네스 (D9~10 구현, §12-1)
 ```
