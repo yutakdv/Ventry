@@ -39,16 +39,19 @@
   여부를 FE가 표시·QA가 확인할 수 있게.
 - **반영**: API_CONTRACT.md 엔드포인트 1.
 
-## 6. LLM 제공자 = Anthropic Claude API
+## 6. LLM 제공자 = OpenAI API  (2026-07-21 변경 — 기존 Anthropic Claude 확정 대체)
 
-- **확정**: 서빙(진단 파싱·탐색 plan·언어화 refine·리스크 반박) = **`claude-haiku-4-5`**
+- **확정**: 서빙(진단 파싱·탐색 plan·언어화 refine·리스크 반박) = **`gpt-4o-mini`**
   (저지연 — 타임아웃 5s·데모 반응성 제약에 정합). AI-06 배치 추출(정책자금 구조화) =
-  **`claude-opus-4-8`** (정확도 우선 — 전건 사람 검수 전 초안 품질이 검수 공수를 좌우).
-- **키**: 루트 .env `ANTHROPIC_API_KEY` 하나로 BE·AI 공용 (SDK가 자동 인식하는 표준 변수명).
-  발급: https://console.anthropic.com/settings/keys — **BE·AI는 D1까지 발급 완료할 것.**
+  **`gpt-4o`** (정확도 우선 — 전건 사람 검수 전 초안 품질이 검수 공수를 좌우).
+- **키**: 루트 .env `OPENAI_API_KEY` 하나로 BE·AI 공용 (SDK가 자동 인식하는 표준 변수명).
+  발급: https://platform.openai.com/api-keys — **BE·AI는 D1까지 발급 완료할 것.**
 - **불변 원칙 유지**: 키 부재·장애 시 템플릿 폴백이 최종본(데모 무중단). LLM 수치 생성 금지.
-- **반영**: .env.example §5 · docker-compose.yaml (환경변수명 변경: `LLM_API_KEY` →
-  `ANTHROPIC_API_KEY`).
+- **변경 이력**: 2026-07-20 Anthropic Claude(haiku/opus)로 확정 → 2026-07-21 OpenAI로 변경.
+  저지연 서빙 / 정확도 배치의 역할 매핑은 그대로 승계(haiku→gpt-4o-mini, opus→gpt-4o).
+  모델 ID는 D3 CP1에서 최종 확인(비용·성능 확인 후 4.1 계열 등으로 조정 가능).
+- **반영**: .env.example §5 · docker-compose.yaml (환경변수명 `ANTHROPIC_API_KEY` →
+  `OPENAI_API_KEY`) · TASKS.md · tasks/BACKEND.md · tasks/AI.md.
 
 ## 7. 정책자금 원문 청크 저장 = Postgres 테이블 (pgvector 미도입)
 
@@ -68,5 +71,5 @@
 |---|---|
 | FE | "정속" → "유의" (화면 문구·타입). `src/api/types.ts`에 `CAUTION` enum·`risk_review`·`parse_source` 반영 |
 | BE | Verdict enum `CAUTION`. 목 응답에 risk_review·parse_source·scenarios SSE 스키마 포함 (BE-01에 반영됨) |
-| AI | `ANTHROPIC_API_KEY` 발급(D1). 배치 추출 모델 claude-opus-4-8. `finance_doc_chunk` 테이블 DDL |
+| AI | `OPENAI_API_KEY` 발급(D1). 배치 추출 모델 gpt-4o. `finance_doc_chunk` 테이블 DDL |
 | 전원 | D3 CP1에서 본 확정 7건 검토 → 계약 최종 동결 |
