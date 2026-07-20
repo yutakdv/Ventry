@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: ventry
+  jackson:
+    # API 계약의 필드명은 snake_case — DTO record는 camelCase로 두고 직렬화에서 변환
+    property-naming-strategy: SNAKE_CASE
+    default-property-inclusion: non_null
   # BE-02 (D4~5) JDBC 도입 시 활성화 — compose가 DB_URL/DB_USER/DB_PASSWORD 환경변수를 주입한다.
   # datasource:
   #   url: ${DB_URL:jdbc:postgresql://localhost:5432/ventry}
