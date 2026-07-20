@@ -76,8 +76,8 @@
 
 ## AI-06 (D6) — 정책자금 구조화
 
-- [ ] LLM = **Anthropic Claude API 확정(7/20, DECISIONS.md)** — 배치 추출 모델 claude-opus-4-8,
-      키는 .env `ANTHROPIC_API_KEY` (BE 서빙과 공용)
+- [ ] LLM = **OpenAI API 확정(7/21 변경, DECISIONS.md §6)** — 배치 추출 모델 gpt-4o,
+      키는 .env `OPENAI_API_KEY` (BE 서빙과 공용)
 - [ ] 청크 저장 = **Postgres 청크 테이블 확정(7/20, DECISIONS.md)**: source_quote는
       `doc_chunk_ref` 직접 조회라 벡터 검색 불요 — pgvector 미도입. `finance_doc_chunk`
       테이블(chunk_id, doc_meta, text 원문)로 적재, 근거 assumptions.md 등재

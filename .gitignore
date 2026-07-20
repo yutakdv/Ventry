@@ -33,6 +33,7 @@ ai/*.egg-info/
 # Data — 원본(raw)은 로컬 보존, 저장소에는 미포함 (스펙 §2-2: raw/ 보존 원칙은 로컬·팀 드라이브)
 ai/data/raw/*
 !ai/data/raw/.gitkeep
+!ai/data/raw/README.md
 ai/data/interim/*
 !ai/data/interim/.gitkeep
 
