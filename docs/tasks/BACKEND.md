@@ -19,15 +19,15 @@
 - [x] ~~동결 전 결정 5건 해소~~ → **7/20 확정 완료** (판정 enum `CAUTION`(유의)·만원 단위·
       scenarios SSE·recommend `risk_review`·`parse_source` — DECISIONS.md, 계약 반영됨).
       D3에는 FE·AI 검토 확인만
-- [ ] 세션 저장소: 인메모리(ConcurrentHashMap + TTL), **B₀ 구성(자기자본+상품별 사용액)
-      기록** (expl §2-2 잔여 한도 원칙의 재료 — BE-04에서 사용)
-- [ ] 패키지 구조: `com.ventry.api.{diagnose,scenario,recommend,explore,checkarea,common}`
-- [ ] DTO 전체 정의 (record 사용, 만원 단위 int, WGS84 double)
-- [ ] 6개 엔드포인트 목 응답 구현 (데모 프로필 기준 그럴듯한 값 — FE 개발용)
-      ※ /api/diagnose는 이 시점엔 목 파싱 — LLM 실파싱은 BE-05에서
-- [ ] SSE 목: `/api/scenarios`·`/api/explore` — SseEmitter + 전용 비동기 executor
-      (톰캣 워커 스레드에서 LLM 대기 금지, expl §5) + 15s 하트비트
-- [ ] 오류 포맷 `{error:{code,message}}` 공통 핸들러
+- [x] 세션 저장소: 인메모리(ConcurrentHashMap + TTL 60분), **B₀ 구성(자기자본+상품별 사용액)
+      기록** (expl §2-2 잔여 한도 원칙의 재료 — BE-04에서 사용) (7/20, SessionStore)
+- [x] 패키지 구조: `com.ventry.api.{diagnose,scenario,recommend,explore,checkarea,common}` (7/20)
+- [x] DTO 전체 정의 (record 사용, 만원 단위 int, WGS84 double) (7/20)
+- [x] 6개 엔드포인트 목 응답 구현 (데모 프로필 기준 — expl §8 수치 정합) (7/20)
+      ※ /api/diagnose는 이 시점엔 목 파싱(키워드 concerns) — LLM 실파싱은 BE-05에서
+- [x] SSE 목: `/api/scenarios`·`/api/explore` — SseEmitter + 전용 비동기 executor
+      (가상 스레드, 톰캣 워커 점유 금지, expl §5) + 15s 하트비트 (7/20, SseSupport)
+- [x] 오류 포맷 `{error:{code,message}}` 공통 핸들러 (7/20)
 - **DoD**: FE가 목만으로 전 화면 개발 가능 / compose 스모크 그린
 
 ## BE-02 (D4~5) — DB 연동 + 캐시
