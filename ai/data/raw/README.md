@@ -82,11 +82,64 @@
 > 좌표 변환(5174/5179/5181→WGS84) 실검증은 배치 환경(geopandas/pyproj)에서. 여기서는 좌표 범위가
 > 선언 CRS와 일치함을 확인해 CRS 태깅이 올바름을 검증함.
 
-## 5. 미수집 / 후속 (API 자동 수집)
+## 5. 서울 상권영역 SHP (2026-07-21 추가 — 폴리곤 원천)
+
+- 경로: `서울상권영역_SHP/서울상권영역.*` (shp·shx·dbf·prj·cpg)
+- 출처: 열린데이터광장 **OA-15560** 「서울시 상권분석서비스(영역-상권)」 파일 데이터(ZIP, 2023-10-20판)
+- **1,650 폴리곤**(Polygon 1,561 + MultiPolygon 89) / **EPSG:5181** / 인코딩 **UTF-8**(`.cpg`)
+- 속성 11컬럼(dbf 10자 절단): `TRDAR_SE_C`(구분코드) · `TRDAR_SE_1`(구분명) · **`TRDAR_CD`(상권코드=조인 키)** ·
+  `TRDAR_CD_N`(상권명) · `XCNTS_VALU`·`YDNTS_VALU`(중심점) · `SIGNGU_CD`·`SIGNGU_CD_`(자치구) ·
+  `ADSTRD_CD`·`ADSTRD_CD_`(행정동) · `RELM_AR`(면적 ㎡)
+- ⚠️ **OpenAPI `TbgisTrdarRelm`에는 폴리곤이 없다** (중심점+면적만) → 점-폴리곤 조인은 이 SHP가 유일 원천
+  (assumptions #17). SHP는 2023-10판, 통계는 2026-1Q → 상권코드 차집합은 AI-04a에서 재확인.
+
+## 6. 서울 상권분석 OpenAPI 실측 (2026-07-21 — AI-01 컬럼 정의 노트)
+
+전건 실호출 결과(`INFO-000`). 공통 조인 키 **`TRDAR_CD`**(상권코드), 분기 필드 **`STDR_YYQU_CD`**.
+제공 분기 **20211~20261(21분기)**, 최신 **20261**. 수집 범위 = **최신 4분기(20252·20253·20254·20261)**.
+
+| 용도 | 서비스명 | 전건 | 컬럼 | 핵심 컬럼 | 분기 필터 |
+|---|---|---|---|---|---|
+| 추정매출 | `VwsmTrdarSelngQq` | 460,329 | 55 | `THSMON_SELNG_AMT`(월 매출) · `THSMON_SELNG_CO` · `SVC_INDUTY_CD`(업종) | ✅ 동작 |
+| 길단위인구(유동) | `VwsmTrdarFlpopQq` | 34,633 | 27 | `TOT_FLPOP_CO`(총 유동) + 성·연령·시간대·요일 | ✅ 동작 |
+| 상주인구 | `VwsmTrdarRepopQq` | 34,275 | 29 | `TOT_REPOP_CO` · `TOT_HSHLD_CO` | ❌ 무시 |
+| 직장인구 | `VwsmTrdarWrcPopltnQq` | 34,386 | 26 | `TOT_WRC_POPLTN_CO` | ❌ 무시 |
+| 집객시설 | `VwsmTrdarFcltyQq` | 33,138 | 25 | `VIATR_FCLTY_CO`(총 집객) · `SUBWAY_STATN_CO` · `BUS_STTN_CO` | ❌ 무시 |
+| 점포 | `VwsmTrdarStorQq` | 1,604,844 | 14 | `STOR_CO` · `SIMILR_INDUTY_STOR_CO` · `OPBIZ_RT` · `CLSBIZ_RT` | ✅ 동작 |
+| 상권변화지표 | `VwsmTrdarIxQq` | 34,650 | 11 | `TRDAR_CHNGE_IX`·`TRDAR_CHNGE_IX_NM`(성장성 w4) | ✅ 동작 |
+| 상권영역 | `TbgisTrdarRelm` | 1,650 | 11 | `XCNTS_VALUE`·`YDNTS_VALUE`(중심점, EPSG:5181) · `RELM_AR` | 해당 없음 |
+
+- 업종 코드 예: 커피-음료 `CS100010` (카페) — 음식점 코드 매핑은 AI-02a에서 확정.
+- ⚠️ 분기 필터 ❌ 3종은 전건 수집 후 클라이언트 필터 (assumptions #11).
+- ⚠️ 골격 코드의 `VwsmTrdarWrcpopQq`·`VwsmTrdarArea`는 **미존재**였다 → 위 표가 확정본 (assumptions #10).
+
+## 7. R-ONE(부동산원) 통계표 실측 (2026-07-21)
+
+엔드포인트: 목록 `SttsApiTbl.do`(738건) · 항목 `SttsApiTblItm.do` · **실데이터 `SttsApiTblData.do`**.
+지역 계층은 3단계 `시도 > 권역 > 상권` (`ITM_FULLNM` 예: `서울>도심>광화문`).
+
+| 지표 | 상가 유형 | STATBL_ID | 주기 | 서울 상권 수 |
+|---|---|---|---|---|
+| 임대료 | 소규모 | `T248223134698125` | 분기 | 59 |
+| 임대료 | 중대형 | `T244363134858603` | 분기 | 68 |
+| 임대료 | 집합 | `T244913134948657` | 분기 | 40 |
+| 전환율 | 소규모 / 중대형 / 집합 | `T246253134905233` / `T241883134877452` / `T243133134985812` | 분기 | — |
+| 공실률 | 소규모 / 중대형 | `T241833134686576` / `T249633134845544` | 분기 | — |
+| 권리금 | 시도별·업종별 | `A_2024_00445` | **매년** | — |
+
+- 임대료 할당 우선순위 **소규모 → 중대형 → 집합**. 세 유형 합집합이 구획도 서울 72개를 **전건 커버**
+  (미커버 0 — 리스크 #18 해소, assumptions #12).
+- ⚠️ 구획도 SHP의 `지역코드`는 서울 72건 전부 NULL → **조인 키는 상권명 문자열**.
+
+## 8. 교통 실측 (2026-07-21)
+
+| 항목 | 서비스 | 전건 | 컬럼 | 비고 |
+|---|---|---|---|---|
+| 역 좌표 | `subwayStationMaster` (OA-21232) | 784 | `BLDN_ID`·`BLDN_NM`·`ROUTE`·**`LAT`·`LOT`** | **WGS84 확정** → t-data 교체 불필요 |
+| 승하차 | `CardSubwayStatsNew` (OA-12914) | 일별 618 | `USE_YMD`·`SBWY_ROUT_LN_NM`·`SBWY_STNS_NM`·`GTON_TNOPE`·`GTOFF_TNOPE` | 경로 파라미터 **`USE_YMD` 필수**, 3일 지연 갱신 |
+
+## 9. 미수집 / 후속
 
 | 항목 | 받는 곳 · 스크립트 |
 |---|---|
-| 서울 상권분석 7종(매출·인구·집객·점포·변화·영역) | 서울 열린데이터광장(`SEOUL_API_KEY_COMMERCIAL`) · `seoul_commercial.py` |
-| 지하철 역사좌표·승하차 | 서울 열린데이터광장(STATION/RIDERS) · `transit.py` |
-| 부동산원 임대료·전환율·권리금 | R-ONE `SttsApiTbl.do`(`DATA_GO_KR_API_KEY_REB_RENT`) · `reb_rent.py` |
 | 창업비용(시설비 상수) | 공정위 가맹정보 업종별 창업비용 API(data.go.kr 15110293, 신청 완료) · 배치 |
