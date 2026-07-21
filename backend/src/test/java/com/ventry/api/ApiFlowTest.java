@@ -41,6 +41,18 @@ class ApiFlowTest {
         return JsonPath.read(result.getResponse().getContentAsString(), "$.session_id");
     }
 
+    /** 데모 예산 확정: 자기자본 5,000 + 정책자금 3,000 = 8,000 (expl §8). */
+    private void confirmBudget(String sid) throws Exception {
+        String body = """
+                { "confirmed_budget": 8000,
+                  "composition": [ { "type": "equity", "amount": 5000 },
+                                   { "type": "policy_loan", "amount": 3000 } ] }
+                """;
+        mockMvc.perform(post("/api/budget/" + sid)
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk());
+    }
+
     @Test
     void diagnose_withoutFreeText_marksFormOnly() throws Exception {
         String body = """
@@ -70,6 +82,7 @@ class ApiFlowTest {
     @Test
     void recommend_returnsThreeAreasWithVerdictAndRiskReview() throws Exception {
         String sid = createSession();
+        confirmBudget(sid);   // 실 흐름: 예산 확정(B₀=8000) 후 추천 — 판정이 예산에 의존
         mockMvc.perform(get("/api/recommend/" + sid))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data_as_of").value("2026-Q1"))
@@ -84,15 +97,18 @@ class ApiFlowTest {
     }
 
     @Test
-    void checkArea_returnsConditionalWithSourceQuote() throws Exception {
+    void checkArea_returnsConditionalWithMatchingProducts() throws Exception {
         String sid = createSession();
+        confirmBudget(sid);   // B₀=8000 확정 시 A-9999 갭 = 1320
         mockMvc.perform(post("/api/check-area/" + sid)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{ \"area_code\": \"A-9999\" }"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.verdict").value("CONDITIONAL"))
                 .andExpect(jsonPath("$.gap_amount").value(1320))
-                .andExpect(jsonPath("$.matching_products[0].source_quote.text").isNotEmpty())
+                .andExpect(jsonPath("$.matching_products[0].name").isNotEmpty())
+                // source_quote(RAG)는 P1(BE-06)까지 미구현 → non_null 정책상 필드 생략
+                .andExpect(jsonPath("$.matching_products[0].source_quote").doesNotExist())
                 .andExpect(jsonPath("$.risk_review.applied").value(true));
     }
 
