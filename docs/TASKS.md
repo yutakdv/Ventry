@@ -12,6 +12,8 @@
 - **진행 현황 대시보드**: GitHub Projects 로드맵(간트) — 구축·운영은 [BOARD.md](BOARD.md),
   원커맨드 세팅은 `./scripts/setup_board.sh`.
 - PR 단위 = 태스크 ID 1~2개. PR 제목에 ID 표기 (`[BE-04] ...`).
+- **브랜치는 2단계**: 토픽(`be04-frontier`) →(로컬 병합)→ 영역(`backend`) →(PR)→ `develop`.
+  토픽에서 develop으로 직접 PR 금지 — 상세는 [CONTRIBUTING §2](../CONTRIBUTING.md).
 - **서브이슈 규칙**: 한 태스크(부모 이슈)가 여러 독립 슬라이스로 갈리거나, 개발 중 별도로 추적할
   작업(엣지 케이스·후속 작업·스펙 모호점 해소)이 생기면 부모 하위에 서브이슈를 만든다.
   - 제목: `[<부모ID><a|b|c…>] 요약` (예: `[BE-03a] EligibilityFilter + 단위 테스트`).
