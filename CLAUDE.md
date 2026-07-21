@@ -6,7 +6,7 @@ KB 제8회 Future Finance AI Challenge · 주제 2 「AI 데이터 기반 최적
 
 ## 스펙 문서 (단일 진실 원천)
 
-- `docs/specs/최종_스펙문서.md` (v6.2) — 서비스 전체 설계. 모든 판단의 기준.
+- `docs/specs/최종_스펙문서.md` (v6.3) — 서비스 전체 설계. 모든 판단의 기준.
 - `docs/specs/exploration_agent_spec_v2_1.md` — 결정공간 탐색 에이전트 상세.
 - `docs/API_CONTRACT.md` — API 계약. **D3 동결 후에는 3인 합의 + 이 문서 수정 PR 없이 변경 금지.**
 - `docs/TASKS.md` — 역할별 태스크 분해. 작업 시작 전 자신의 태스크 ID·의존성 확인.

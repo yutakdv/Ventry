@@ -5,8 +5,14 @@
   인코딩 CP949, 39컬럼. 좌표정보(X/Y)=EPSG:5174 → WGS84 변환은 preprocess(AI-04).
 
 경쟁밀도는 폐업 제외, 영업중만 사용: 영업상태명 == '영업/정상'.
-카페 = 휴게 中 커피숍·다방 / 음식점 = 일반음식점 전체 + 휴게 일부 (매핑 assumptions.md AI-02).
 산출은 interim/ 로 저장(원본 raw 불변).
+
+**업종 매핑은 한국표준산업분류(KSIC) I56 음식점 및 주점업 기준이다** (assumptions.md #20):
+  cafe  = I5622 비알코올 음료점업  — 커피숍·다방·까페·전통찻집·떡카페·아이스크림
+  food  = I561 음식점업 + I5621 주점업 — 한식·중식·일식·분식·호프/통닭·주점·제과점 등
+  other = 비요식 또는 시설 내 매점  — 편의점·백화점·철도역구내·극장·관광호텔·공항 등
+소진공 업종분류 개편(837→247)은 **소진공 상가업소 데이터의 코드 체계**이며, 이 파이프라인은
+행안부 인허가 CSV의 `업태구분명`(한글 명칭)을 쓰므로 해당 코드 개편의 영향을 받지 않는다.
 """
 from __future__ import annotations
 
@@ -23,14 +29,24 @@ SOURCES: dict[str, tuple[str, str]] = {
     "rest": ("인허가_휴게음식점_서울.csv", "휴게음식점"),
 }
 OPEN_STATUS = "영업/정상"
-CAFE_TYPES = {"커피숍", "다방"}  # 휴게 中 카페(과자점 포함 여부는 AI-02 확정 후)
-NON_FOOD_TYPES = {"편의점", "백화점", "슈퍼마켓", "기타휴게음식점"}  # 비요식 제외 후보
+
+# KSIC I5622 비알코올 음료점업. '까페'는 일반음식점 쪽 표기(1,230건)이므로 빠뜨리면 안 된다.
+CAFE_TYPES = {"커피숍", "까페", "다방", "전통찻집", "떡카페", "아이스크림"}
+
+# 비요식이거나 시설 내 매점이라 독립 점포 경쟁으로 볼 수 없는 업태.
+# 키즈카페는 이름과 달리 실내놀이터업이라 카페 경쟁에서 뺀다.
+NON_FOOD_TYPES = {
+    "편의점", "백화점", "슈퍼마켓", "철도역구내", "극장", "관광호텔",
+    "유원지", "공항", "고속도로", "키즈카페",
+}
 
 
 def classify_category(business_type: str) -> str:
-    if business_type in CAFE_TYPES:
+    """업태구분명 → cafe / food / other (KSIC I56 기준, assumptions.md #20)."""
+    name = "" if business_type is None else str(business_type).strip()  # 결측은 float nan
+    if name in CAFE_TYPES:
         return "cafe"
-    if business_type in NON_FOOD_TYPES:
+    if name in NON_FOOD_TYPES:
         return "other"
     return "food"
 
