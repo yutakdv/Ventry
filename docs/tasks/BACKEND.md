@@ -30,6 +30,18 @@
 - [x] 오류 포맷 `{error:{code,message}}` 공통 핸들러 (7/20)
 - **DoD**: FE가 목만으로 전 화면 개발 가능 / compose 스모크 그린
 
+### BE-01a (D2) — 계약 CP1 검토 반영 (FE 제안 6건, 이슈 #41)
+
+- [ ] `POST /diagnose` 폼 3필드 (`monthly_investable`·`is_existing_business`·
+      `collateral_available`) + `Eligibility.pre_startup_only` 자격 규칙 결선
+- [ ] `POST /budget` 응답 프리뷰 (`area_count`·`rent_range`·`floating_range`)
+- [ ] `GET /recommend` `score`·`total_count`·`summary` + area별 `monthly_rent`·`est_sales`·
+      `daily_floating`, `burden_ratio`를 임대료÷매출 파생으로 교체
+- [ ] `GET /scenarios` 예산 범위(`budget_min`/`budget_max`)·`composition` 범위화 +
+      `Product`에 `amount_max`·`rate`·`data_as_of` (공통 규약이 요구하던 누락 필드)
+- [ ] `GET /explore` `plan.axis_labels`·`done.current_budget`
+- **DoD**: 계약 문서 반영 + `./gradlew test` 그린 + FE 회신 문서 제출 (DECISIONS.md §8~§11)
+
 ## BE-02 (D4~5) — DB 연동 + 캐시
 
 - [ ] `spring-boot-starter-jdbc` 활성화 (build.gradle 주석 해제) + `application.yml` datasource 주석 해제
@@ -65,6 +77,9 @@
       `exclusive_group` 동일 그룹 1개 제약, 커버 불가 경계는 보고 제외
 - [ ] 커버 성공 시 조달 명세 {상품, 금액, 금리 r, 기간 T(상품 조건 우선, 부재 시 보증 가정 5년
       → `docs/assumptions.md` 등재 + 화면 병기)}
+- [ ] **진단 폼 신규 2필드 결선** (DECISIONS.md §8 — BE-01a에서 수집만 하고 미사용 상태):
+      `monthly_investable` = 월 상환액 m의 상한(m ≤ 월 투자 가능액) / `collateral_available` =
+      담보·보증 요구 상품의 커버 가능 여부. 규칙 확정 시 `docs/assumptions.md` 등재
 - [ ] **조달 시나리오 생성 (화면 2 실데이터)**: 자격 필터 통과 상품 조합으로 보수/적극
       시나리오 2종 구성 + 추천 태그 (스펙 §5-2 ② 시뮬레이션 — 목→실 전환)
 - [ ] **LLM 클라이언트 골격 선행** (D8 부하 분산): SDK 셋업·프롬프트 골격·타임아웃 5s·

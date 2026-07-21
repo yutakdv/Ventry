@@ -1,18 +1,22 @@
 package com.ventry.api.serving;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 
 import com.ventry.api.checkarea.CheckAreaDtos.CheckAreaResponse;
 import com.ventry.api.common.Verdict;
 import com.ventry.api.engine.Profile;
+import com.ventry.api.recommend.RecommendDtos.Area;
 import com.ventry.api.recommend.RecommendDtos.RecommendResponse;
+import com.ventry.api.scenario.ScenarioDtos.BudgetPreview;
+import java.util.Comparator;
 import org.junit.jupiter.api.Test;
 
 /** BE-03f — 도구 계층 결선(엔진 오케스트레이션) 검증. 데모 프로필·예산 8,000 기준. */
 class LocationServiceTest {
 
     private final LocationService svc = new LocationService(new DemoCandidates(), new DemoProducts());
-    private final Profile demo = new Profile(32, 5000, "cafe", "망원");
+    private final Profile demo = new Profile(32, 5000, false, "cafe", "망원");
 
     @Test
     void recommend_ordersByScore_withFitFitCautionAtDemoBudget() {
@@ -42,6 +46,58 @@ class LocationServiceTest {
             assertThat(area.reasonText()).isNotEmpty();
             assertThat(area.reasonText()).doesNotContain("추천", "권장");
         }
+    }
+
+    /** BE-01a: 점수는 가중 합[0,1]의 0~100 투영이며 정렬 순서와 일치해야 한다. */
+    @Test
+    void recommend_exposesScoreConsistentWithSortOrder() {
+        RecommendResponse res = svc.recommend(demo, 8000);
+        assertThat(res.areas().get(0).score()).isEqualTo(75);   // 망원 .752 → 75
+        assertThat(res.areas()).isSortedAccordingTo(
+                Comparator.comparingInt(Area::score).reversed());
+        assertThat(res.areas()).allSatisfy(a -> assertThat(a.score()).isBetween(0, 100));
+    }
+
+    /** BE-01a: 부담률은 픽스처 상수가 아니라 임대료÷매출 파생값이다 (스펙 §4-2). */
+    @Test
+    void recommend_burdenRatioIsDerivedFromRentAndSales() {
+        RecommendResponse res = svc.recommend(demo, 8000);
+        for (Area area : res.areas()) {
+            assertThat(area.burdenRatio())
+                    .isEqualTo((double) area.monthlyRent() / area.estSales());
+        }
+        assertThat(res.areas().get(0).burdenRatio()).isCloseTo(0.11, within(0.001));
+    }
+
+    @Test
+    void recommend_summaryAveragesWholePool() {
+        RecommendResponse res = svc.recommend(demo, 8000);
+        assertThat(res.totalCount()).isEqualTo(3);
+        assertThat(res.summary().avgRent()).isEqualTo(309);     // (198+273+456)/3
+        assertThat(res.summary().avgSales()).isEqualTo(2100);   // (1800+2100+2400)/3
+    }
+
+    /** 프리뷰 개수는 진입 프론티어 N_entry(B)와 같아야 한다 (expl §2-1). */
+    @Test
+    void preview_countMatchesEntryFrontier_andRangesCoverEnteredAreas() {
+        BudgetPreview preview = svc.preview(8000);
+        assertThat(preview.areaCount()).isEqualTo(3);
+        assertThat(preview.rentRange()).containsExactly(198, 456);
+        assertThat(preview.floatingRange()).containsExactly(22800, 38200);
+    }
+
+    @Test
+    void preview_narrowsAsBudgetDrops() {
+        assertThat(svc.preview(7600).areaCount()).isEqualTo(1);   // 홍대(7,500)만 진입
+        assertThat(svc.preview(7600).rentRange()).containsExactly(456, 456);
+    }
+
+    @Test
+    void preview_belowEveryCandidate_hasNoRanges() {
+        BudgetPreview preview = svc.preview(5000);
+        assertThat(preview.areaCount()).isZero();
+        assertThat(preview.rentRange()).isNull();
+        assertThat(preview.floatingRange()).isNull();
     }
 
     @Test

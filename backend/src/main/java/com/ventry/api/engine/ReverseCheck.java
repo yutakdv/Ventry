@@ -14,6 +14,14 @@ public final class ReverseCheck {
 
     private ReverseCheck() {}
 
+    /**
+     * 부담률 = 환산임대료 ÷ 월 추정매출 (스펙 §4-2 필터 2의 좌변).
+     * 분모·분자는 배치 산출물(AI-05)이며 서빙은 비율을 저장하지 않고 매번 파생한다.
+     */
+    public static double burdenRatio(int monthlyRent, int estSales) {
+        return (double) monthlyRent / estSales;
+    }
+
     public static ReverseResult evaluate(int budget, CostEstimate cost, double burdenRatio, double theta) {
         double exMedian = cost.exPremium().median();
         double inclMedian = cost.inclPremium().median();
