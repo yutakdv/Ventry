@@ -5,6 +5,8 @@
 
 - **팀원별 세부 체크리스트(파일 단위·명령·PR 슬라이스)**: [tasks/FRONTEND.md](tasks/FRONTEND.md) ·
   [tasks/BACKEND.md](tasks/BACKEND.md) · [tasks/AI.md](tasks/AI.md) — 이 문서는 총괄(의존·마일스톤)용.
+- **BE 인수인계 (담당 교대 시 필독)**: [HANDOFF_BACKEND.md](HANDOFF_BACKEND.md) — 엔드포인트별
+  목/실 상태·도구 계층 결선 현황·다음 순서·함정 목록·동작 확인 명령.
 - **D0 확정 사항 (전 파트 필독)**: [DECISIONS.md](DECISIONS.md) — 판정 용어·금액 단위·계약 스키마
   보강·LLM 제공자·청크 저장 방식 7건 확정 기록.
 - **진행 현황 대시보드**: GitHub Projects 로드맵(간트) — 구축·운영은 [BOARD.md](BOARD.md),
