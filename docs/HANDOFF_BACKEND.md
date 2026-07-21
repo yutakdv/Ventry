@@ -229,10 +229,22 @@ curl -sN "localhost:8080/api/explore/$SID?v=1"     # → plan(axis_labels) / ins
 
 ## 6. 작업 규칙 (요약 — 전문은 CONTRIBUTING)
 
-- 브랜치: `backend` 또는 토픽 브랜치(`be04-frontier` 등) → **PR로만** `develop` 병합
-  - ⚠️ `backend/xxx` 형태는 **불가**. `backend`가 이미 브랜치라 git이 거부한다
+- **브랜치는 2단계다**: 토픽 →(로컬 병합)→ `backend` →(PR)→ `develop`.
+  토픽에서 `develop`으로 직접 PR을 올리지 않는다.
+
+  ```bash
+  git checkout backend && git pull && git merge origin/develop   # 남의 작업 흡수
+  git checkout -b be04-frontier                                  # 토픽 분기
+  # …작업…
+  git checkout backend && git merge be04-frontier && git push origin backend
+  gh pr create --base develop --head backend                     # 여기만 PR
+  ```
+
+  - ⚠️ 토픽 이름을 `backend/xxx`로 지을 수 **없다**. `backend`가 이미 브랜치라 git이 거부한다
+    (`cannot lock ref`). `<태스크ID>-<슬러그>` 형식을 쓸 것
 - 커밋: `[BE] type: 요약 (태스크ID)` · **Claude attribution 라인 절대 금지**
-- PR 제목에 태스크 ID, 본문에 `Closes #<이슈번호>` (병합 시 자동 종료)
+- PR 제목에 태스크 ID, 본문에 `Closes #<이슈번호>` — **영역 → develop PR 본문**에 적어야
+  자동 종료 잡이 발동한다 (토픽 → 영역 병합 커밋에 적으면 무시된다)
 - 태스크가 여러 슬라이스로 갈리면 **서브이슈**: `[BE-04a] 요약`, 본문 첫 줄에 `부모: #15`
 - 새 가정·폴백은 발생 즉시 [assumptions.md](assumptions.md)에 등재
 

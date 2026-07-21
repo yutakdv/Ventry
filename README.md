@@ -133,8 +133,13 @@ Ventry/
 ## 브랜치 전략 · CI 요약
 
 ```
-frontend / backend / ai  →(PR: lint·test·docker build)→  develop  →(compose 스모크)→  main 자동 병합
+토픽 브랜치  →(로컬 병합)→  frontend / backend / ai  →(PR: lint·test·docker build + 리뷰 1인)→
+                                                       develop  →(compose 스모크)→  main 자동 병합
 ```
+
+- 토픽 브랜치 이름은 `<태스크ID>-<슬러그>` (예: `be04-frontier`). `backend/…` 형태는 동명
+  브랜치가 있어 git이 거부하므로 사용할 수 없다.
+- **develop 대상 PR의 head는 항상 영역 브랜치**다 — 토픽에서 직접 올리지 않는다.
 
 상세 규칙·브랜치 보호 설정·커밋 컨벤션은 [CONTRIBUTING.md](CONTRIBUTING.md).
 

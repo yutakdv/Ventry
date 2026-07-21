@@ -51,11 +51,16 @@ KB 제8회 Future Finance AI Challenge · 주제 2 「AI 데이터 기반 최적
 ### 브랜치 전략
 
 ```
-main ← develop ← frontend / backend / ai
+main ← develop ← frontend / backend / ai ← 토픽 브랜치
 ```
 
-- 작업은 자기 영역 브랜치(`frontend`/`backend`/`ai`)에서. 필요 시 `frontend/feat-지도` 등 하위 토픽 브랜치 허용.
+- **2단계 흐름 (하드 룰)**: 토픽 브랜치 →(로컬 병합)→ 영역 브랜치 →(PR)→ `develop`.
+  **토픽 브랜치에서 `develop`으로 직접 PR을 올리지 않는다.**
+  develop 대상 PR의 head는 항상 `frontend`·`backend`·`ai` 셋 중 하나다.
+- 토픽 브랜치 이름: `<태스크ID 소문자>-<슬러그>` (예: `be04-frontier`, `ai03-schema`).
+  ⚠️ `backend/…` 형태는 동명 브랜치가 있어 git이 거부하므로 사용 불가.
 - `develop`으로는 **PR로만** 병합 (CI: lint + 테스트 + docker build 통과 필수).
+- `Closes #<이슈>`는 **영역 → develop PR 본문에** 적는다 (자동 종료 잡이 develop push에서 발동).
 - `develop` push 시 통합 compose 테스트 후 `main`으로 자동 병합 (`.github/workflows/develop-ci.yml`).
 - `main` 직접 push 금지.
 

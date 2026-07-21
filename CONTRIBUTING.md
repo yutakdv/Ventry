@@ -39,9 +39,56 @@ backend     BE 작업 브랜치 (Spring Boot)
 ai          AI 작업 브랜치 (Python 배치·평가)
 ```
 
-- 흐름: `frontend|backend|ai` → (PR + CI) → `develop` → (통합 compose 테스트) → `main` 자동 병합.
-- 영역 브랜치 하위에 토픽 브랜치 허용: `frontend/feat-map`, `backend/fix-sse` 등.
-  토픽 → 영역 브랜치는 자유 병합, 영역 → develop은 반드시 PR.
+### 작업 흐름 — **반드시 2단계를 거친다**
+
+```
+토픽 브랜치  ──(로컬 병합, PR 불필요)──▶  영역 브랜치      ──(PR + CI + 리뷰 1인)──▶  develop
+be04-frontier                            frontend|backend|ai                          │
+                                                                                       ▼
+                                                                       (compose 스모크) main 자동 병합
+```
+
+- **토픽 브랜치에서 develop으로 직접 PR을 올리지 않는다.** develop으로 가는 PR의 head는
+  항상 `frontend`·`backend`·`ai` 셋 중 하나다.
+- 토픽 → 영역: PR 없이 병합해도 된다. 영역 → develop: **반드시 PR**.
+- 영역 브랜치는 각자가 오너다. 자기 영역 브랜치에는 자유롭게 push한다.
+
+**왜 2단계인가**: 영역 브랜치가 "develop에 내보낼 준비가 된 것"의 단일 창구가 된다.
+토픽에서 직접 PR을 올리면 한 사람이 동시에 여러 PR을 열게 되고, 리뷰어는 그 영역의 작업이
+어디까지 진행됐는지를 PR 목록으로 재구성해야 한다.
+
+### 토픽 브랜치 이름
+
+```
+<태스크ID 소문자>-<슬러그>      예: be04-frontier · fe03-mapview · ai03-schema · cm07-readme
+```
+
+> ⚠️ **`backend/…`·`frontend/…`·`ai/…` 형태는 만들 수 없다.** 같은 이름의 브랜치가 이미
+> 있어서 git이 거부한다 (`cannot lock ref: 'refs/heads/backend' exists`). 위 규칙을 쓸 것.
+
+### 시작할 때 — 영역 브랜치를 먼저 최신화
+
+```bash
+git checkout backend && git pull                 # 자기 영역 브랜치
+git merge origin/develop                         # develop의 남의 작업 흡수
+git checkout -b be04-frontier                    # 토픽 브랜치 분기
+```
+
+작업이 끝나면:
+
+```bash
+git checkout backend && git merge be04-frontier  # 토픽 → 영역 (PR 불필요)
+git push origin backend                          # 여기서 자기 영역 CI가 돈다
+gh pr create --base develop --head backend       # 영역 → develop (PR·리뷰 필수)
+git branch -d be04-frontier                      # 병합된 토픽 정리
+```
+
+- **CM(공통) 작업도 예외가 아니다.** 문서·CI·compose 등 영역이 없는 작업은 그 태스크의
+  **담당자 영역 브랜치**를 경유한다 (TASKS.md의 CM 표는 태스크마다 담당을 지정한다).
+  영역 브랜치를 우회하는 예외를 하나 만들면 규칙이 사실상 사라진다.
+- **`Closes #<이슈번호>`는 영역 → develop PR 본문에 적는다.** 이슈 자동 종료 잡은 develop
+  push 시점에 PR 본문을 파싱하므로, 토픽 → 영역 병합 커밋에 적으면 발동하지 않는다.
+- 한 PR에 여러 태스크가 묶이면 `Closes #12` `Closes #13`처럼 줄을 나눠 모두 적는다.
 - 충돌 예방: 영역 간 공유 지점은 `docs/API_CONTRACT.md`와 `docker-compose.yaml`뿐이다.
   이 두 파일을 수정하는 PR은 3인 리뷰 필수.
 
@@ -59,7 +106,9 @@ ai          AI 작업 브랜치 (Python 배치·평가)
 
 ## 3. PR 규칙
 
-- 대상: `develop`. 템플릿(`.github/PULL_REQUEST_TEMPLATE.md`) 체크리스트 필수.
+- **base = `develop`, head = 영역 브랜치(`frontend`·`backend`·`ai`).**
+  토픽 브랜치를 head로 하는 PR은 리뷰에서 반려한다 (§2 작업 흐름).
+- 템플릿(`.github/PULL_REQUEST_TEMPLATE.md`) 체크리스트 필수.
 - CI가 검증하는 것: **lint → 테스트 → 해당 영역 docker build**. 실패 시 병합 불가.
 - 리뷰 1인 이상 (자기 영역 외 1인). 24시간 내 리뷰 원칙 — 14일 일정에서 PR 적체가 최대 리스크.
 - PR 단위 = `docs/TASKS.md`의 태스크 ID 1~2개. 태스크 ID를 PR 제목에 표기.

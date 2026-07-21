@@ -13,6 +13,7 @@ docker compose up --build               # → http://localhost:3000 뜨면 세�
 ```
 
 - 자기 역할 브랜치에서 작업: `git switch frontend` (또는 `backend` / `ai`)
+  → 작업 단위마다 토픽 브랜치를 파고, 끝나면 역할 브랜치로 병합한다 (§3 작업 흐름)
 - IDE: 자유. BE는 IntelliJ 2025.2+ 권장 — 설정은 [CONTRIBUTING §1-1](../CONTRIBUTING.md)
 
 ## 1. 읽기 순서 (15분)
@@ -34,7 +35,21 @@ docker compose up --build               # → http://localhost:3000 뜨면 세�
 
 ## 3. 협업 루틴
 
-- **작업 흐름**: 자기 브랜치 커밋 → `develop` 대상 PR (제목 `[FE-02] ...`, 본문 `Closes #이슈번호`)
+- **작업 흐름 — 2단계다** (CONTRIBUTING §2):
+
+  ```bash
+  git checkout frontend && git pull && git merge origin/develop   # ① 남의 작업 흡수
+  git checkout -b fe03-mapview                                    # ② 토픽 브랜치
+  # …작업·커밋…
+  git checkout frontend && git merge fe03-mapview                 # ③ 토픽 → 역할 (PR 불필요)
+  git push origin frontend
+  gh pr create --base develop --head frontend                     # ④ 역할 → develop (PR)
+  ```
+
+  **토픽 브랜치에서 `develop`으로 직접 PR을 올리지 않는다.** develop 대상 PR의 head는 항상
+  `frontend`·`backend`·`ai`다. 토픽 이름은 `<태스크ID>-<슬러그>` — `frontend/xxx` 형태는
+  동명 브랜치가 있어 git이 거부한다.
+- PR 제목 `[FE-02] ...`, 본문 `Closes #이슈번호` (④의 PR에 적어야 자동 종료가 발동)
   → CI 4종(frontend-ci·backend-ci·ai-ci·compose-smoke) 그린 + 리뷰 1인 → 병합
   → main 자동 병합·보드 자동 Done. **브랜치 보호 적용됨** — CI 실패 시 병합 물리적으로 불가.
 - **데일리 10분**: 보드 Roadmap에서 오늘 D-day 확인, 밀린 항목은 TASKS.md 폴백 규칙 결정.
