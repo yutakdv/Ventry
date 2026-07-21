@@ -12,6 +12,8 @@
 
 ## 체크리스트
 
+- [ ] **head 브랜치가 영역 브랜치(`frontend`/`backend`/`ai`)임** — 토픽 브랜치에서 직접
+      올린 PR이 아님 (CONTRIBUTING §2)
 - [ ] `docs/API_CONTRACT.md` 변경 없음 — 변경했다면 3인 리뷰 요청함
 - [ ] 용어 컴플라이언스 준수 (승인 계열 금지 / 판정 4단계 / 고지 문구 — CLAUDE.md 참고)
 - [ ] 새 가정·폴백은 `docs/assumptions.md`에 등재함
