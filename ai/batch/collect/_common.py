@@ -101,18 +101,34 @@ def get_json(
     raise SystemExit(f"요청 {retries}회 실패: {url} — {last_exc}")
 
 
-def seoul_fetch_all(session: requests.Session, key: str, service: str) -> list[dict]:
+def seoul_count(session: requests.Session, key: str, service: str, *path_params: str) -> int:
+    """전건 수 조회 (1행만 요청). 데이터 없음(INFO-200)은 0."""
+    tail = "".join(f"{p}/" for p in path_params)
+    payload = get_json(session, f"{SEOUL_BASE}/{key}/json/{service}/1/1/{tail}")
+    body = payload.get(service)
+    if body is None:
+        return 0
+    return int(body.get("list_total_count", 0))
+
+
+def seoul_fetch_all(
+    session: requests.Session, key: str, service: str, *path_params: str
+) -> list[dict]:
     """서울 OpenAPI 전건 수집 (페이지네이션).
 
-    URL  : {BASE}/{KEY}/json/{SERVICE}/{START}/{END}/
+    URL  : {BASE}/{KEY}/json/{SERVICE}/{START}/{END}/{PATH_PARAMS...}/
     응답 : {SERVICE: {list_total_count, RESULT:{CODE,MESSAGE}, row:[...]}}
     CODE가 INFO-000이 아니면 중단 (INFO-100=인증오류 등).
+
+    ⚠️ 경로 파라미터(분기 등)는 서비스마다 적용 여부가 다르다 — 무시하는 서비스는
+       전건을 반환하므로 호출부에서 클라이언트 필터가 필요하다 (docs/assumptions.md #11).
     """
+    tail = "".join(f"{p}/" for p in path_params)
     rows: list[dict] = []
     start = 1
     while True:
         end = start + SEOUL_PAGE - 1
-        url = f"{SEOUL_BASE}/{key}/json/{service}/{start}/{end}/"
+        url = f"{SEOUL_BASE}/{key}/json/{service}/{start}/{end}/{tail}"
         payload = get_json(session, url)
         body = payload.get(service)
         if body is None:
@@ -120,6 +136,8 @@ def seoul_fetch_all(session: requests.Session, key: str, service: str) -> list[d
             raise SystemExit(f"{service} 응답 이상 (인증/서비스명 확인): {result}")
         result = body.get("RESULT", {})
         code = result.get("CODE")
+        if code == "INFO-200":  # 해당 조건에 데이터 없음 — 중단이 아니라 빈 결과
+            break
         if code not in ("INFO-000", None):
             raise SystemExit(f"{service} 수집 중단: {code} {result.get('MESSAGE')}")
         batch = body.get("row", []) or []
