@@ -46,6 +46,10 @@ _PAREN = re.compile(r"\(.*?\)")
 _LINE_PREFIX = re.compile(r"^\s*\d+호선\s*")
 _LINE_SUFFIX = re.compile(r"\s*\d+호선\s*$")
 
+# 개명된 역 — 역사마스터는 옛 이름, 승하차는 새 이름을 쓰는 경우가 있다.
+# 개명만 담는다. 표기가 비슷해도 다른 역(2호선 뚝섬 ≠ 7호선 뚝섬유원지)은 절대 넣지 않는다.
+STATION_ALIASES = {"신천": "잠실새내"}
+
 
 def normalize_station(name: str) -> str:
     """역명 정규화(환승역 합산 키).
@@ -59,7 +63,8 @@ def normalize_station(name: str) -> str:
     text = _LINE_SUFFIX.sub("", text).strip()
     if len(text) > 1 and text.endswith("역"):
         text = text[:-1]
-    return text.strip()
+    text = text.strip()
+    return STATION_ALIASES.get(text, text)
 
 
 def _to_number(value: object) -> float:

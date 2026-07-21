@@ -13,32 +13,24 @@ from __future__ import annotations
 
 import csv
 import json
-import logging
 import os
 import time
 from pathlib import Path
 
 import requests
 
-# ── 경로 (ai/batch/collect/_common.py → ai/) ────────────────────────────────
-AI_ROOT = Path(__file__).resolve().parents[2]
-REPO_ROOT = AI_ROOT.parent
-RAW_DIR = AI_ROOT / "data" / "raw"
-INTERIM_DIR = AI_ROOT / "data" / "interim"
+from batch.paths import AI_ROOT, INTERIM_DIR, RAW_DIR, REPO_ROOT, logger, setup_logging
 
-logger = logging.getLogger("collect")
+__all__ = [
+    "AI_ROOT", "INTERIM_DIR", "RAW_DIR", "REPO_ROOT", "logger", "setup_logging",
+    "load_env", "require_key", "http_session", "get_json",
+    "seoul_count", "seoul_fetch_all", "save_json", "save_rows_csv",
+    "SEOUL_BASE", "SEOUL_PAGE",
+]
 
 # ── 서울 열린데이터광장 OpenAPI ─────────────────────────────────────────────
 SEOUL_BASE = "http://openapi.seoul.go.kr:8088"
 SEOUL_PAGE = 1000  # 요청당 최대 행 수
-
-
-def setup_logging(level: int = logging.INFO) -> None:
-    logging.basicConfig(
-        level=level,
-        format="%(asctime)s [%(name)s] %(levelname)s %(message)s",
-        datefmt="%H:%M:%S",
-    )
 
 
 def _parse_env(path: Path) -> dict[str, str]:
