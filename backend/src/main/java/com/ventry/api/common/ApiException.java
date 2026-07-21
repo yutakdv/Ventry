@@ -19,6 +19,11 @@ public class ApiException extends RuntimeException {
                 "세션을 찾을 수 없습니다: " + sessionId);
     }
 
+    public static ApiException areaNotFound(String areaCode) {
+        return new ApiException(HttpStatus.NOT_FOUND, "AREA_NOT_FOUND",
+                "상권을 찾을 수 없습니다: " + areaCode);
+    }
+
     public HttpStatus status() {
         return status;
     }
