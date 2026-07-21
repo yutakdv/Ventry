@@ -10,8 +10,8 @@
       Gradle JVM **JDK 25** (Download JDK 가능), 재동기화 — 테스트 import 오류는 재동기화로 해소
 - [ ] `cd backend && ./gradlew test` 그린 확인 (wrapper가 Gradle 9.5.1 자동 다운로드)
 - [ ] `docker compose up db` 로 로컬 DB 기동 확인
-- [ ] LLM 키 발급: **Anthropic Claude API 확정(7/20, DECISIONS.md)** — console.anthropic.com에서
-      키 발급 → .env `ANTHROPIC_API_KEY` (AI-06 배치와 공용, 서빙 모델 claude-haiku-4-5)
+- [ ] LLM 키 발급: **OpenAI API 확정(7/21 변경, DECISIONS.md §6)** — platform.openai.com/api-keys에서
+      키 발급 → .env `OPENAI_API_KEY` (AI-06 배치와 공용, 서빙 모델 gpt-4o-mini)
 
 ## BE-01 (D3) — API 계약 동결 + 목 구현 ★CP1
 

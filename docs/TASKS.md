@@ -98,8 +98,8 @@ D13~14 CM-05 (전원 문서 모드)
 - **AI-03 → BE-02/FE-03**: D3 덤프가 늦으면 BE·FE는 목 유지로 무중단, CP2가 밀림.
 - **AI-06 → BE-04(조달 검증)·BE-06(RAG)**: exclusive_group·벡터DB 없으면 BE-04는 목 상품으로 선행.
 - **BE-05 → FE-04·05**: SSE 이벤트 스키마는 계약에 D3 동결이므로 FE는 목 SSE로 선행 가능.
-- **LLM 제공자 = Anthropic Claude API로 확정 (7/20, DECISIONS.md)**: AI-06 배치 추출과 BE-05
-  서빙이 동일 키(.env `ANTHROPIC_API_KEY`) 사용. 서빙 claude-haiku-4-5 / 배치 claude-opus-4-8.
+- **LLM 제공자 = OpenAI API로 확정 (7/21 변경, DECISIONS.md §6)**: AI-06 배치 추출과 BE-05
+  서빙이 동일 키(.env `OPENAI_API_KEY`) 사용. 서빙 gpt-4o-mini / 배치 gpt-4o.
 
 ## 일정 리스크 대응 (스펙 리스크 레지스터 발췌)
 
