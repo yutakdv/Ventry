@@ -26,7 +26,8 @@ public class DiagnoseController {
 
     @PostMapping("/api/diagnose")
     public DiagnoseResponse diagnose(@RequestBody DiagnoseRequest request) {
-        Form form = request.form() != null ? request.form() : new Form(null, null, null, null);
+        Form form = request.form() != null ? request.form()
+                : new Form(null, null, null, null, null, null, null);
         String freeText = request.freeText() != null ? request.freeText() : "";
 
         List<String> concerns = new ArrayList<>();
@@ -41,8 +42,9 @@ public class DiagnoseController {
         }
 
         String parseSource = freeText.isBlank() ? "form_only" : "llm";
-        ParsedProfile profile = new ParsedProfile(form.age(), form.capital(), form.industry(),
-                form.regionHint(), concerns, parseSource);
+        ParsedProfile profile = new ParsedProfile(form.age(), form.capital(),
+                form.isExistingBusiness(), form.collateralAvailable(), form.monthlyInvestable(),
+                form.industry(), form.regionHint(), concerns, parseSource);
         SessionStore.SessionState state = sessions.create(profile);
         return new DiagnoseResponse(state.id(), profile);
     }

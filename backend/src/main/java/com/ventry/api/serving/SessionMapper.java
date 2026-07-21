@@ -11,7 +11,9 @@ public final class SessionMapper {
 
     public static Profile profile(SessionState state) {
         ParsedProfile p = state.profile();
-        return new Profile(nz(p.age()), nz(p.capital()), p.industry(), p.regionHint());
+        return new Profile(nz(p.age()), nz(p.capital()),
+                Boolean.TRUE.equals(p.isExistingBusiness()),   // 미기재는 예비창업자로 취급
+                p.industry(), p.regionHint());
     }
 
     /** 확정 예산(B₀)이 있으면 그 값, 없으면 자기자본만(무권리 진입 구간). */

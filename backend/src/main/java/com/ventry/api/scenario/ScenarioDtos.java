@@ -8,16 +8,42 @@ public final class ScenarioDtos {
 
     private ScenarioDtos() {}
 
-    /** SSE `scenario` 이벤트 — 카드 1장씩 송출 (DECISIONS.md #3). */
-    public record ScenarioCard(String label, int budget,
-                               List<CompositionItem> composition, List<Product> products) {}
+    /**
+     * SSE `scenario` 이벤트 — 카드 1장씩 송출 (DECISIONS.md #3).
+     * 예산은 범위로 제시한다: 상품 한도는 공고상 상한일 뿐 승인 금액이 아니므로,
+     * 하한(심사와 무관한 확정 재원)과 상한(한도 전액 활용 가정)을 함께 노출한다.
+     *
+     * @param budget    화면 2 슬라이더 초기 선택값 (= budgetMax)
+     * @param budgetMin 심사와 무관한 확정 재원 합 (자기자본 등)
+     * @param budgetMax budgetMin + Σ 상품 한도(amountMax)
+     */
+    public record ScenarioCard(String label, int budget, int budgetMin, int budgetMax,
+                               List<CompositionRange> composition, List<Product> products) {}
 
     public record ScenarioDone(int scenarioCount) {}
 
     /** type: equity(자기자본) | guarantee(보증) | policy_loan(정책자금) 등. amount 만원. */
     public record CompositionItem(String type, int amount) {}
 
+    /**
+     * 시나리오 카드의 구성 항목 — 슬라이더 위치에 따라 변하므로 범위로 준다 (게이지 렌더용).
+     * 확정 시점의 구성({@link CompositionItem})은 단일 금액이다.
+     */
+    public record CompositionRange(String type, int amountMin, int amountMax) {}
+
     public record BudgetRequest(int confirmedBudget, List<CompositionItem> composition) {}
 
-    public record BudgetResponse(int confirmedBudget, List<CompositionItem> composition) {}
+    public record BudgetResponse(int confirmedBudget, List<CompositionItem> composition,
+                                 BudgetPreview preview) {}
+
+    /**
+     * 확정 예산 기준 프리뷰 (화면 2 슬라이더 즉시 갱신용, DECISIONS.md §9).
+     * 진입 후보가 0곳이면 두 range는 null이며 직렬화에서 생략된다.
+     *
+     * @param areaCount     진입 후보 수 N_entry(B) — expl §2-1 계단 함수
+     * @param rentRange     진입 후보의 환산임대료 [최소, 최대] (만원/월)
+     * @param floatingRange 진입 후보의 일평균 유동인구 [최소, 최대] (명)
+     */
+    public record BudgetPreview(int areaCount, List<Integer> rentRange,
+                                List<Integer> floatingRange) {}
 }
