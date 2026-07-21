@@ -7,6 +7,7 @@ import com.ventry.api.scenario.ScenarioDtos.BudgetRequest;
 import com.ventry.api.scenario.ScenarioDtos.BudgetResponse;
 import com.ventry.api.scenario.ScenarioDtos.ScenarioCard;
 import com.ventry.api.scenario.ScenarioDtos.ScenarioDone;
+import com.ventry.api.serving.LocationService;
 import java.util.List;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,10 +23,13 @@ public class ScenarioController {
 
     private final SessionStore sessions;
     private final SseSupport sse;
+    private final LocationService locationService;
 
-    public ScenarioController(SessionStore sessions, SseSupport sse) {
+    public ScenarioController(SessionStore sessions, SseSupport sse,
+                              LocationService locationService) {
         this.sessions = sessions;
         this.sse = sse;
+        this.locationService = locationService;
     }
 
     @GetMapping(value = "/api/scenarios/{sid}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -42,12 +46,18 @@ public class ScenarioController {
         });
     }
 
-    /** B₀ 구성을 세션에 기록 (expl §2-2 잔여 한도 원칙 — BE-04 조달 검증의 재료). */
+    /**
+     * B₀ 구성을 세션에 기록 (expl §2-2 잔여 한도 원칙 — BE-04 조달 검증의 재료) +
+     * 확정 예산 기준 프리뷰 반환 (DECISIONS.md §9).
+     * B₀는 덮어쓰기다 — 화면 2 슬라이더는 debounce 후 이 엔드포인트를 반복 호출하고
+     * 마지막 값이 확정값이 된다.
+     */
     @PostMapping("/api/budget/{sid}")
     public BudgetResponse confirmBudget(@PathVariable String sid,
                                         @RequestBody BudgetRequest request) {
         SessionStore.SessionState state = sessions.get(sid);
         state.confirmBudget(request.confirmedBudget(), request.composition());
-        return new BudgetResponse(request.confirmedBudget(), request.composition());
+        return new BudgetResponse(request.confirmedBudget(), request.composition(),
+                locationService.preview(request.confirmedBudget()));
     }
 }

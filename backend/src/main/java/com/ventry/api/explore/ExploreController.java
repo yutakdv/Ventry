@@ -3,6 +3,7 @@ package com.ventry.api.explore;
 import com.ventry.api.common.MockData;
 import com.ventry.api.common.SessionStore;
 import com.ventry.api.common.SseSupport;
+import com.ventry.api.serving.SessionMapper;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -46,7 +47,8 @@ public class ExploreController {
                         .data(MockData.refineT1(), MediaType.APPLICATION_JSON));
             }
             emitter.send(SseEmitter.event().name("done")
-                    .data(MockData.exploreDone(), MediaType.APPLICATION_JSON));
+                    .data(MockData.exploreDone(SessionMapper.budget(state)),
+                            MediaType.APPLICATION_JSON));
         });
     }
 

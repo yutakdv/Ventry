@@ -27,7 +27,9 @@ class ApiFlowTest {
 
     private String createSession() throws Exception {
         String body = """
-                { "form": { "age": 32, "capital": 5000, "industry": "cafe", "region_hint": "망원" },
+                { "form": { "age": 32, "capital": 5000, "is_existing_business": false,
+                            "collateral_available": true, "monthly_investable": 250,
+                            "industry": "cafe", "region_hint": "서울 마포구" },
                   "free_text": "권리금이 제일 걱정입니다" }
                 """;
         MvcResult result = mockMvc.perform(post("/api/diagnose")
@@ -35,6 +37,10 @@ class ApiFlowTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.session_id").isNotEmpty())
                 .andExpect(jsonPath("$.parsed_profile.capital").value(5000))
+                // BE-01a: 폼 신규 3필드는 parsed_profile로 그대로 반향된다
+                .andExpect(jsonPath("$.parsed_profile.is_existing_business").value(false))
+                .andExpect(jsonPath("$.parsed_profile.collateral_available").value(true))
+                .andExpect(jsonPath("$.parsed_profile.monthly_investable").value(250))
                 .andExpect(jsonPath("$.parsed_profile.concerns[0]").value("premium"))
                 .andExpect(jsonPath("$.parsed_profile.parse_source").value("llm"))
                 .andReturn();
@@ -76,7 +82,23 @@ class ApiFlowTest {
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.confirmed_budget").value(8000))
-                .andExpect(jsonPath("$.composition[1].type").value("policy_loan"));
+                .andExpect(jsonPath("$.composition[1].type").value("policy_loan"))
+                // BE-01a: 화면 2 슬라이더가 즉시 그리는 프리뷰 (DECISIONS.md §9)
+                .andExpect(jsonPath("$.preview.area_count").value(3))
+                .andExpect(jsonPath("$.preview.rent_range.length()").value(2))
+                .andExpect(jsonPath("$.preview.floating_range[1]").value(38200));
+    }
+
+    /** 진입 후보가 없으면 개수만 0이고 범위 필드는 생략된다 (non_null 정책). */
+    @Test
+    void budget_belowEveryCandidate_previewHasCountOnly() throws Exception {
+        String sid = createSession();
+        mockMvc.perform(post("/api/budget/" + sid)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{ \"confirmed_budget\": 5000, \"composition\": [] }"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.preview.area_count").value(0))
+                .andExpect(jsonPath("$.preview.rent_range").doesNotExist());
     }
 
     @Test
@@ -92,6 +114,14 @@ class ApiFlowTest {
                 .andExpect(jsonPath("$.areas[0].cost.ex_premium.length()").value(2))
                 .andExpect(jsonPath("$.areas[0].rent_source.org").value("REB"))
                 .andExpect(jsonPath("$.areas[0].transit.station").value("망원"))
+                // BE-01a: 목록 헤더·카드 표기용 집계와 원자재
+                .andExpect(jsonPath("$.total_count").value(3))
+                .andExpect(jsonPath("$.summary.avg_rent").value(309))
+                .andExpect(jsonPath("$.summary.avg_sales").value(2100))
+                .andExpect(jsonPath("$.areas[0].score").value(75))
+                .andExpect(jsonPath("$.areas[0].monthly_rent").value(198))
+                .andExpect(jsonPath("$.areas[0].est_sales").value(1800))
+                .andExpect(jsonPath("$.areas[0].daily_floating").value(24500))
                 .andExpect(jsonPath("$.risk_review.applied").value(true))
                 .andExpect(jsonPath("$.risk_review.skipped").value(false));
     }
@@ -123,11 +153,17 @@ class ApiFlowTest {
         assertThat(content).contains("\"label\":\"보수\"");
         assertThat(content).contains("\"label\":\"적극\"");
         assertThat(content).contains("\"scenario_count\":2");
+        // BE-01a: 예산은 범위로, 상품은 한도·금리·기준일과 함께
+        assertThat(content).contains("\"budget_min\":5000");
+        assertThat(content).contains("\"budget_max\":8000");
+        assertThat(content).contains("\"amount_min\":0");
+        assertThat(content).contains("\"data_as_of\":\"2026-Q1\"");
     }
 
     @Test
     void explore_streamsPlanInsightRefineDoneInOrder() throws Exception {
         String sid = createSession();
+        confirmBudget(sid);   // done.current_budget = 확정 예산 B₀
         MvcResult result = mockMvc.perform(get("/api/explore/" + sid).param("v", "1"))
                 .andExpect(request().asyncStarted())
                 .andReturn();
@@ -143,6 +179,9 @@ class ApiFlowTest {
         assertThat(content).contains("\"n_entry_after\":11");   // T1: 진입 3→11
         assertThat(content).contains("\"n_sustain_after\":7");  // 지속 안정 7 병기
         assertThat(content).contains("frontier_points");
+        // BE-01a: 축 라벨은 서버가 송출(프론트 하드코딩 사전 제거), 차트 마커용 현재 예산
+        assertThat(content).contains("\"axis_labels\":{\"A1\":\"예산\",\"A4\":\"권리금 조건\"}");
+        assertThat(content).contains("\"current_budget\":8000");
     }
 
     @Test
