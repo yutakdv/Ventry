@@ -4,7 +4,8 @@ Thumbs.db
 
 # Env / secrets
 .env
-.env.local
+.env.*
+!.env.example
 frontend/.env*
 *.pem
 
