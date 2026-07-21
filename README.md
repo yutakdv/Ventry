@@ -118,7 +118,7 @@ Ventry/
 ├── ai/                # 배치 파이프라인(batch/) + 평가 하네스(eval/, make eval) — AI 담당
 ├── db/init/           # 배치 산출 사전 적재 덤프 (compose 최초 기동 시 실행)
 ├── docs/
-│   ├── specs/         # 최종 스펙 v6.2 · 탐색 에이전트 스펙 v2.1 (단일 진실 원천)
+│   ├── specs/         # 최종 스펙 v6.3 · 탐색 에이전트 스펙 v2.1 (단일 진실 원천)
 │   ├── ONBOARDING.md  # 팀원 첫날 30분 가이드
 │   ├── TASKS.md       # 태스크 분해 총괄 (D1~D14, 마일스톤·병렬화 구조)
 │   ├── tasks/         # 팀원별 상세 체크리스트: FRONTEND.md · BACKEND.md · AI.md

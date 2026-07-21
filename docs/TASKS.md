@@ -1,6 +1,6 @@
 # TASKS — 역할별 상세 태스크 분해 (D1~D14)
 
-기준: `docs/specs/최종_스펙문서.md` v6.2 · `docs/specs/exploration_agent_spec_v2_1.md` v2.1
+기준: `docs/specs/최종_스펙문서.md` v6.3 · `docs/specs/exploration_agent_spec_v2_1.md` v2.1
 역할: **AI**(데이터·배치·평가) / **BE**(Spring 서빙·에이전트) / **FE**(React·지도) / **CM**(공통)
 
 - **팀원별 세부 체크리스트(파일 단위·명령·PR 슬라이스)**: [tasks/FRONTEND.md](tasks/FRONTEND.md) ·
