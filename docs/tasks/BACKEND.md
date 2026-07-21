@@ -3,6 +3,10 @@
 담당: BE 1인 · 스택: Spring Boot 4.1 (Java 25) + PostgreSQL + Caffeine + SseEmitter
 개요·의존 관계는 [../TASKS.md](../TASKS.md), 알고리즘 상세는 `../specs/exploration_agent_spec_v2_1.md`.
 
+> **처음 이어받는다면 [../HANDOFF_BACKEND.md](../HANDOFF_BACKEND.md)를 먼저 읽을 것.**
+> 이 문서는 "무엇을 할 것인가"의 체크리스트이고, 인수인계 문서는 "지금 무엇이 진짜로 도는가"
+> (엔드포인트별 목/실 상태·도구 계층 결선 현황·함정 목록)를 다룬다.
+
 ## 0. 환경 준비 (Day 0)
 
 - [ ] `git config core.hooksPath .githooks`
