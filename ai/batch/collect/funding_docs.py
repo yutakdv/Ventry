@@ -24,17 +24,34 @@ def extract_text(path: Path) -> str:
     from pypdf import PdfReader  # 배치 전용 의존
 
     reader = PdfReader(str(path))
-    return "\n".join((page.extract_text() or "") for page in reader.pages)
+    text = "\n".join((page.extract_text() or "") for page in reader.pages)
+    # 서울신보 프린트본은 ToUnicode 누락으로 서로게이트 코드포인트를 뱉는다 → UTF-8 저장 불가.
+    # 어차피 판독 불가 구간이라 U+FFFD로 치환해 통과시키고, 깨짐 판정에서 걸러낸다.
+    return text.encode("utf-8", "replace").decode("utf-8")
 
 
-def looks_garbled(text: str, *, sample: int = 2000) -> bool:
-    """한글 비율이 매우 낮으면 폰트 추출 실패로 간주(서울신보 프린트본)."""
+# 한국어에서 빈출하는 음절. 정상 문서는 전체 한글의 20% 이상이 여기 속하지만,
+# 폰트 ToUnicode 누락으로 깨진 문서는 '폀·햋·밃·쨊' 같은 희귀 음절만 쏟아내 0%에 가깝다.
+_COMMON_SYLLABLES = frozenset(
+    "이다는에하지의로기있인스니대시서아한자도리어고상정나가무부수전소원을를은과"
+    "와안내년월일등및또그것위중제조회관업금액용신청보증출개발생활문화교육장국민단"
+    "체성형방법목적요건간환사면때말등말차물면점표사용현재확인신규제출"
+)
+
+
+def looks_garbled(text: str, *, sample: int = 4000) -> bool:
+    """폰트 추출 실패(서울신보 프린트본) 판별.
+
+    한글 비율만 보면 깨진 글자도 완성형 한글이라 통과해버린다 → **빈출 음절 비중**으로 본다.
+    """
     head = text[:sample]
-    stripped = head.strip()
-    if not stripped:
+    if not head.strip():
         return True
-    hangul = sum(1 for ch in head if "가" <= ch <= "힣")
-    return hangul / len(stripped) < 0.05
+    hangul = [ch for ch in head if "가" <= ch <= "힣"]
+    if len(hangul) < 30:  # 한글이 거의 없으면 추출 실패로 간주
+        return True
+    common = sum(1 for ch in hangul if ch in _COMMON_SYLLABLES)
+    return common / len(hangul) < 0.20
 
 
 def run(env: dict[str, str], session: object | None = None) -> None:
