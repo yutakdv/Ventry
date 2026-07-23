@@ -23,8 +23,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'com.github.ben-manes.caffeine:caffeine'
 
-    // D4~5 (BE-02) DB 연동 시 활성화:
-    // implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    // BE-02 DB 연동 (스펙 §3-1, expl §5 "탐색당 쿼리 1회")
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
     runtimeOnly 'org.postgresql:postgresql'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
