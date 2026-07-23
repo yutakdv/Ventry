@@ -15,7 +15,8 @@ import org.junit.jupiter.api.Test;
 /** BE-03f — 도구 계층 결선(엔진 오케스트레이션) 검증. 데모 프로필·예산 8,000 기준. */
 class LocationServiceTest {
 
-    private final LocationService svc = new LocationService(new DemoCandidates(), new DemoProducts());
+    private final LocationService svc =
+            new LocationService(new DemoCandidates(), new DemoProducts(), new DemoDataMeta());
     private final Profile demo = new Profile(32, 5000, false, "cafe", "망원");
 
     @Test

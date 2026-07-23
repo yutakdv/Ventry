@@ -22,6 +22,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'com.github.ben-manes.caffeine:caffeine'
+    // BE-02 캐시 — Caffeine CacheManager 연동(spring-context-support) + @EnableCaching
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
 
     // BE-02 DB 연동 (스펙 §3-1, expl §5 "탐색당 쿼리 1회")
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'

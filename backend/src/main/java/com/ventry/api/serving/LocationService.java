@@ -3,7 +3,6 @@ package com.ventry.api.serving;
 import com.ventry.api.checkarea.CheckAreaDtos.CheckAreaResponse;
 import com.ventry.api.common.ApiException;
 import com.ventry.api.common.FinanceDtos.Product;
-import com.ventry.api.common.MockData;
 import com.ventry.api.engine.CostCalculator;
 import com.ventry.api.engine.CostEstimate;
 import com.ventry.api.engine.EligibilityFilter;
@@ -37,10 +36,12 @@ public class LocationService {
 
     private final CandidateSource candidates;
     private final DemoProducts products;
+    private final DataMetaSource meta;
 
-    public LocationService(CandidateSource candidates, DemoProducts products) {
+    public LocationService(CandidateSource candidates, DemoProducts products, DataMetaSource meta) {
         this.candidates = candidates;
         this.products = products;
+        this.meta = meta;
     }
 
     /** 화면 3 입지 추천: 후보 풀 → 점수 정렬 → 판정 + 근거문. */
@@ -52,7 +53,7 @@ public class LocationService {
                         (CandidateArea c) -> ScoreLookup.score(c.axisScores(), weights)).reversed())
                 .map(c -> toArea(c, budget, weights))
                 .toList();
-        return new RecommendResponse(MockData.DATA_AS_OF, areas.size(), summary(pool), areas,
+        return new RecommendResponse(meta.asOf("sales"), areas.size(), summary(pool), areas,
                 ReasonTemplate.recommendReview());
     }
 
