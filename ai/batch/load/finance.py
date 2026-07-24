@@ -19,29 +19,29 @@ from batch.paths import INTERIM_DIR, REPO_ROOT, logger
 FUNDING_DIR = INTERIM_DIR / "funding_docs"
 DB_INIT = REPO_ROOT / "db" / "init"
 _SPLIT = re.compile(r"\n\s*\n|\n- \d+ -\n")
-# finance_product.rate 는 DDL NOT NULL(D3 동결·API 계약) → 변동금리도 숫자여야 한다.
-# 가산금리(+X%p)는 문서에서 추출한 값이고 기준금리는 공시 상수라 effective 산출은 LLM 수치생성이
-# 아니다(스펙 §0-1). 기준금리는 잠정 — 전건 검수에서 분기 확정치로 갱신 (코드리뷰 S4·S6).
-POLICY_BASE_RATE = 3.5  # 소상공인 정책자금 기준금리(잠정, 2026)
-CD_BASE_RATE = 3.5      # CD금리(잠정)
-_ADD_BASE = re.compile(r"기준금리\s*\+\s*([\d.]+)")
-_ADD_CD = re.compile(r"CD금리\s*\+\s*([\d.]+)")
+# finance_product.rate 는 nullable(스키마 A안, 3인 합의) — 변동금리는 rate=NULL + rate_note 원문.
+# 기준금리 실값을 지어내지 않는다(조작 금지, 스펙 §0-1). 검수에서 소진공 공시 기준금리로 채운다.
+_VAR_HINT = re.compile(r"기준금리|CD금리|변동")
+_ADDON = re.compile(r"(기준금리|CD금리)\s*\+")  # 가산금리 → 절대금리 아님(base 미상)
 _PCT = re.compile(r"([\d.]+)\s*%")
 
 
-def db_rate(product: dict) -> float:
-    """finance_product.rate(NOT NULL) 값 — 고정금리는 그대로, 변동금리는 note에서 effective 산출."""
+def rate_fields(product: dict) -> tuple[float | None, str, str | None]:
+    """(rate, rate_type, rate_note) — 조작 없이 원문 기록.
+
+    고정금리는 숫자·fixed. 변동금리는 공시 절대값이 있으면 그 값(variable), 없으면 NULL + 원문 note.
+    """
+    note = (product.get("rate_note") or "").strip() or None
     rate = product.get("rate")
     if isinstance(rate, (int, float)):
-        return float(rate)
-    note = product.get("rate_note") or ""
-    if m := _ADD_BASE.search(note):
-        return round(POLICY_BASE_RATE + float(m.group(1)), 3)
-    if m := _ADD_CD.search(note):
-        return round(CD_BASE_RATE + float(m.group(1)), 3)
-    if m := _PCT.search(note):  # "최저 연 X%", "연 X%~Y%" → 최저값
-        return float(m.group(1))
-    return POLICY_BASE_RATE  # 순수 변동·불명 → 기준금리 (검수 플래그)
+        return float(rate), "fixed", note
+    is_var = bool(note and _VAR_HINT.search(note))
+    rate_type = "variable" if is_var else "fixed"
+    if note and _ADDON.search(note):
+        return None, "variable", note  # "기준금리+X%p" → 절대금리 없음, 지어내지 않음
+    if note and (m := _PCT.search(note)):
+        return float(m.group(1)), rate_type, note  # 공시 절대 %("최저 연 X%")
+    return None, rate_type, note  # 순수 변동·불명 → NULL
 # source_quote 원문 청크는 클린 텍스트만 사용 — CID/JS 깨진 txt(서울신보 등)는 verbatim 불가라
 # 날조 대신 doc_chunk_ref=null (스펙 §5-4 "인용은 검색이지 생성이 아니다", 코드리뷰 S1)
 _KEYWORDS = ("대출", "융자", "한도", "금리", "보증", "지원", "소상공인", "상환", "기업")
@@ -80,6 +80,7 @@ def build_finance(reviewed: list[dict], docs_dir: Path) -> dict[str, pd.DataFram
     for idx, p in enumerate(reviewed):
         doc = p.get("doc", "")
         pid = p.get("product_id") or f"F-{idx:03d}"
+        rate, rate_type, rate_note = rate_fields(p)
         chunks = _load_doc_chunks(doc, docs_dir, doc_cache)
         name = p.get("name") or ""
         ref = next((c for c in chunks if name and name in c["text"]),
@@ -95,7 +96,8 @@ def build_finance(reviewed: list[dict], docs_dir: Path) -> dict[str, pd.DataFram
             "product_id": pid, "name": name, "org": p.get("org"),
             "max_age": p.get("max_age"), "industries": p.get("industries"),
             "regions": p.get("regions"), "pre_startup_only": bool(p.get("pre_startup_only")),
-            "amount_max": p.get("amount_max"), "rate": db_rate(p),
+            "amount_max": p.get("amount_max"),
+            "rate": rate, "rate_type": rate_type, "rate_note": rate_note,
             "term_months": p.get("term_months"), "exclusive_group": p.get("exclusive_group"),
             "status": p.get("status") or "open", "notice_date": p.get("notice_date"),
             "data_as_of": p.get("notice_date") or "2026", "source_org": p.get("org"),

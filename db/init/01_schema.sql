@@ -213,7 +213,11 @@ CREATE TABLE finance_product (
     regions          TEXT[],                  -- NULL/빈 배열 = 전 지역
     pre_startup_only BOOLEAN NOT NULL DEFAULT FALSE,
     amount_max       INTEGER NOT NULL,        -- 만원
-    rate             NUMERIC(6, 3) NOT NULL,  -- 연 %
+    rate             NUMERIC(6, 3),           -- 연 %. 고정금리 값. **변동금리는 NULL** → rate_note 참조
+    rate_type        TEXT NOT NULL DEFAULT 'fixed'
+                     CHECK (rate_type IN ('fixed', 'variable')),
+    rate_note        TEXT,                    -- 변동금리 원문 표현("정책자금 기준금리+0.6%p" 등).
+                                              -- LLM 재작성 금지(원문 그대로). 기준금리 실값 미주입
     term_months      INTEGER,                 -- NULL = 상품 조건 미정 (BE-04가 보증 가정 부여)
     exclusive_group  TEXT,                    -- 동일 그룹 1개만 (중복수혜 제약). NULL = 제약 없음
     status           TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'closed')),

@@ -3,28 +3,28 @@
 BEGIN;
 TRUNCATE finance_doc_chunk, finance_product RESTART IDENTITY CASCADE;
 
-INSERT INTO finance_product (product_id, name, org, max_age, industries, regions, pre_startup_only, amount_max, rate, term_months, exclusive_group, status, notice_date, data_as_of, source_org, source_url, source_collected, doc_chunk_ref) VALUES
-('F-000', 'KB소상공인 보증서대출', 'KB국민은행', NULL, NULL, ARRAY['서울'], FALSE, 10000, 2.1, NULL, NULL, 'open', '2026-07-21', '2026-07-21', 'KB국민은행', 'https://obank.kbstar.com', '2026-07-24', 'KB_소상공인_보증서대출_지역재단#0'),
-('F-001', 'KB소상공인 신용대출', 'KB국민은행', NULL, NULL, NULL, FALSE, 20000, 3.62, 60, NULL, 'open', '2026-07-21', '2026-07-21', 'KB국민은행', 'https://obank.kbstar.com', '2026-07-24', 'KB_소상공인_신용대출_상품안내#0'),
-('F-002', '이자지원 보증서 대출', 'KB국민은행', NULL, NULL, ARRAY['서울'], FALSE, 10000, 3.5, NULL, NULL, 'open', '2026-07-21', '2026-07-21', 'KB국민은행', 'https://obank.kbstar.com', '2026-07-24', 'KB_소상공인정책자금_이자지원보증서대출_안내#0'),
-('F-003', 'ESG 실천기업 보증', '서울신용보증재단', NULL, NULL, ARRAY['서울'], FALSE, 10000, 2.5, NULL, NULL, 'open', '2026-07-21', '2026-07-21', '서울신용보증재단', 'https://www.seoulshinbo.co.kr', '2026-07-24', NULL),
-('F-004', '서울형 자영업자 위기극복 안심동행 특별보증', '서울신용보증재단', NULL, NULL, ARRAY['서울'], FALSE, 10000, 1, NULL, NULL, 'open', '2026-07-21', '2026-07-21', '서울신용보증재단', 'https://www.seoulshinbo.co.kr', '2026-07-24', NULL),
-('F-005', '지능형 모바일 자동심사 특별보증', '서울신용보증재단', NULL, NULL, ARRAY['서울'], FALSE, 10000, 5.5, NULL, NULL, 'open', '2026-07-21', '2026-07-21', '서울신용보증재단', 'https://www.seoulshinbo.co.kr', '2026-07-24', NULL),
-('F-006', '미래 유망기업 성장지원 보증', '서울신용보증재단', NULL, NULL, ARRAY['서울'], FALSE, 8000, 1, NULL, NULL, 'open', '2026-07-21', '2026-07-21', '서울신용보증재단', 'https://www.seoulshinbo.co.kr', '2026-07-24', NULL),
-('F-007', '일자리 창출 및 고용안정 우수기업 특별보증', '서울신용보증재단', NULL, NULL, ARRAY['서울'], FALSE, 4000, 1, 60, NULL, 'open', '2026-07-21', '2026-07-21', '서울신용보증재단', 'https://www.seoulshinbo.co.kr', '2026-07-24', NULL),
-('F-008', '사회적경제기업 특별보증', '서울신용보증재단', NULL, NULL, ARRAY['서울'], TRUE, 4000, 1.75, 60, NULL, 'open', '2026-07-21', '2026-07-21', '서울신용보증재단', 'https://www.seoulshinbo.co.kr', '2026-07-24', NULL),
-('F-009', '장애인 기업 특별보증', '서울신용보증재단', NULL, NULL, ARRAY['서울'], FALSE, 10000, 0.7, NULL, NULL, 'open', '2026-07-21', '2026-07-21', '서울신용보증재단', 'https://www.seoulshinbo.co.kr', '2026-07-24', NULL),
-('F-010', '창업자금 및 사업장 임차자금 특별보증', '서울신용보증재단', NULL, NULL, ARRAY['서울'], FALSE, 5000, 3.5, NULL, NULL, 'open', '2026-07-21', '2026-07-21', '서울신용보증재단', 'https://www.seoulshinbo.co.kr', '2026-07-24', NULL),
-('F-011', '일반경영안정자금', '소진공', NULL, NULL, ARRAY['서울'], FALSE, 7000, 4.1, 60, NULL, 'open', '2025-12-29', '2025-12-29', '소진공', 'https://ols.semas.or.kr', '2026-07-24', '소진공_2026_소상공인정책자금_융자공고#0'),
-('F-012', '긴급경영안정자금 (재해)', '소진공', NULL, NULL, ARRAY['서울'], FALSE, 10000, 2, 60, NULL, 'open', '2025-12-29', '2025-12-29', '소진공', 'https://ols.semas.or.kr', '2026-07-24', '소진공_2026_소상공인정책자금_융자공고#0'),
-('F-013', '긴급경영안정자금 (일시적 경영애로)', '소진공', NULL, NULL, ARRAY['서울'], FALSE, 7000, 3.5, 60, NULL, 'open', '2025-12-29', '2025-12-29', '소진공', 'https://ols.semas.or.kr', '2026-07-24', '소진공_2026_소상공인정책자금_융자공고#0'),
-('F-014', '신용취약소상공인자금', '소진공', NULL, NULL, ARRAY['서울'], FALSE, 3000, 5.1, 60, NULL, 'open', '2025-12-29', '2025-12-29', '소진공', 'https://ols.semas.or.kr', '2026-07-24', '소진공_2026_소상공인정책자금_융자공고#3'),
-('F-015', '대환대출', '소진공', NULL, NULL, ARRAY['서울'], FALSE, 5000, 4.5, 120, NULL, 'open', '2025-12-29', '2025-12-29', '소진공', 'https://ols.semas.or.kr', '2026-07-24', '소진공_2026_소상공인정책자금_융자공고#0'),
-('F-016', '재도전특별자금 (일반형)', '소진공', NULL, NULL, ARRAY['서울'], FALSE, 7000, 5.1, 60, NULL, 'open', '2025-12-29', '2025-12-29', '소진공', 'https://ols.semas.or.kr', '2026-07-24', '소진공_2026_소상공인정책자금_융자공고#0'),
-('F-017', '재도전특별자금 (희망형)', '소진공', NULL, NULL, ARRAY['서울'], FALSE, 10000, 4.1, 60, NULL, 'open', '2025-12-29', '2025-12-29', '소진공', 'https://ols.semas.or.kr', '2026-07-24', '소진공_2026_소상공인정책자금_융자공고#0'),
-('F-018', '재도전특별자금 (도약형)', '소진공', NULL, NULL, ARRAY['서울'], FALSE, 20000, 3.9, 60, NULL, 'open', '2025-12-29', '2025-12-29', '소진공', 'https://ols.semas.or.kr', '2026-07-24', '소진공_2026_소상공인정책자금_융자공고#0'),
-('F-019', '장애인기업지원자금', '소진공', NULL, NULL, ARRAY['서울'], FALSE, 10000, 2, 84, NULL, 'open', '2025-12-29', '2025-12-29', '소진공', 'https://ols.semas.or.kr', '2026-07-24', '소진공_2026_소상공인정책자금_융자공고#1'),
-('F-020', '청년고용연계자금', '소진공', 39, NULL, ARRAY['서울'], FALSE, 7000, 3.5, 60, NULL, 'open', '2025-12-29', '2025-12-29', '소진공', 'https://ols.semas.or.kr', '2026-07-24', '소진공_2026_소상공인정책자금_융자공고#0');
+INSERT INTO finance_product (product_id, name, org, max_age, industries, regions, pre_startup_only, amount_max, rate, rate_type, rate_note, term_months, exclusive_group, status, notice_date, data_as_of, source_org, source_url, source_collected, doc_chunk_ref) VALUES
+('F-000', 'KB소상공인 보증서대출', 'KB국민은행', NULL, NULL, ARRAY['서울'], FALSE, 10000, 2.1, 'fixed', NULL, NULL, NULL, 'open', '2026-07-21', '2026-07-21', 'KB국민은행', 'https://obank.kbstar.com', '2026-07-24', 'KB_소상공인_보증서대출_지역재단#0'),
+('F-001', 'KB소상공인 신용대출', 'KB국민은행', NULL, NULL, NULL, FALSE, 20000, 3.62, 'variable', '최저 연 3.62% (2026.07.21 기준) 3개월 변동금리', 60, NULL, 'open', '2026-07-21', '2026-07-21', 'KB국민은행', 'https://obank.kbstar.com', '2026-07-24', 'KB_소상공인_신용대출_상품안내#0'),
+('F-002', '이자지원 보증서 대출', 'KB국민은행', NULL, NULL, ARRAY['서울'], FALSE, 10000, NULL, 'fixed', '은행 대출 금리 - 이자 지원 금리', NULL, NULL, 'open', '2026-07-21', '2026-07-21', 'KB국민은행', 'https://obank.kbstar.com', '2026-07-24', 'KB_소상공인정책자금_이자지원보증서대출_안내#0'),
+('F-003', 'ESG 실천기업 보증', '서울신용보증재단', NULL, NULL, ARRAY['서울'], FALSE, 10000, 2.5, 'fixed', '서울시금고(ESG 차주) 이용 시 은행금리에서 2.5% 차감(서울시 부담)', NULL, NULL, 'open', '2026-07-21', '2026-07-21', '서울신용보증재단', 'https://www.seoulshinbo.co.kr', '2026-07-24', NULL),
+('F-004', '서울형 자영업자 위기극복 안심동행 특별보증', '서울신용보증재단', NULL, NULL, ARRAY['서울'], FALSE, 10000, 1, 'fixed', '연 1.0%', NULL, NULL, 'open', '2026-07-21', '2026-07-21', '서울신용보증재단', 'https://www.seoulshinbo.co.kr', '2026-07-24', NULL),
+('F-005', '지능형 모바일 자동심사 특별보증', '서울신용보증재단', NULL, NULL, ARRAY['서울'], FALSE, 10000, NULL, 'variable', '변동금리: CD금리 + 2.0% 이내', NULL, NULL, 'open', '2026-07-21', '2026-07-21', '서울신용보증재단', 'https://www.seoulshinbo.co.kr', '2026-07-24', NULL),
+('F-006', '미래 유망기업 성장지원 보증', '서울신용보증재단', NULL, NULL, ARRAY['서울'], FALSE, 8000, 1, 'fixed', NULL, NULL, NULL, 'open', '2026-07-21', '2026-07-21', '서울신용보증재단', 'https://www.seoulshinbo.co.kr', '2026-07-24', NULL),
+('F-007', '일자리 창출 및 고용안정 우수기업 특별보증', '서울신용보증재단', NULL, NULL, ARRAY['서울'], FALSE, 4000, 1, 'fixed', NULL, 60, NULL, 'open', '2026-07-21', '2026-07-21', '서울신용보증재단', 'https://www.seoulshinbo.co.kr', '2026-07-24', NULL),
+('F-008', '사회적경제기업 특별보증', '서울신용보증재단', NULL, NULL, ARRAY['서울'], TRUE, 4000, 1.75, 'variable', '서울시금고(사회적경제기업자금) 이용 시 연 1.75% 고정금리, 그 외의 경우 자금에 따라 변동', 60, NULL, 'open', '2026-07-21', '2026-07-21', '서울신용보증재단', 'https://www.seoulshinbo.co.kr', '2026-07-24', NULL),
+('F-009', '장애인 기업 특별보증', '서울신용보증재단', NULL, NULL, ARRAY['서울'], FALSE, 10000, 0.7, 'fixed', '연 0.7%', NULL, NULL, 'open', '2026-07-21', '2026-07-21', '서울신용보증재단', 'https://www.seoulshinbo.co.kr', '2026-07-24', NULL),
+('F-010', '창업자금 및 사업장 임차자금 특별보증', '서울신용보증재단', NULL, NULL, ARRAY['서울'], FALSE, 5000, NULL, 'fixed', '신용보증 이수자: 연체된 5천만원 이내', NULL, NULL, 'open', '2026-07-21', '2026-07-21', '서울신용보증재단', 'https://www.seoulshinbo.co.kr', '2026-07-24', NULL),
+('F-011', '일반경영안정자금', '소진공', NULL, NULL, ARRAY['서울'], FALSE, 7000, NULL, 'variable', '정책자금 기준금리 + 0.6%p', 60, NULL, 'open', '2025-12-29', '2025-12-29', '소진공', 'https://ols.semas.or.kr', '2026-07-24', '소진공_2026_소상공인정책자금_융자공고#0'),
+('F-012', '긴급경영안정자금 (재해)', '소진공', NULL, NULL, ARRAY['서울'], FALSE, 10000, 2, 'fixed', NULL, 60, NULL, 'open', '2025-12-29', '2025-12-29', '소진공', 'https://ols.semas.or.kr', '2026-07-24', '소진공_2026_소상공인정책자금_융자공고#0'),
+('F-013', '긴급경영안정자금 (일시적 경영애로)', '소진공', NULL, NULL, ARRAY['서울'], FALSE, 7000, NULL, 'variable', '정책자금 기준금리', 60, NULL, 'open', '2025-12-29', '2025-12-29', '소진공', 'https://ols.semas.or.kr', '2026-07-24', '소진공_2026_소상공인정책자금_융자공고#0'),
+('F-014', '신용취약소상공인자금', '소진공', NULL, NULL, ARRAY['서울'], FALSE, 3000, NULL, 'variable', '정책자금 기준금리 + 1.6%p', 60, NULL, 'open', '2025-12-29', '2025-12-29', '소진공', 'https://ols.semas.or.kr', '2026-07-24', '소진공_2026_소상공인정책자금_융자공고#3'),
+('F-015', '대환대출', '소진공', NULL, NULL, ARRAY['서울'], FALSE, 5000, 4.5, 'fixed', NULL, 120, NULL, 'open', '2025-12-29', '2025-12-29', '소진공', 'https://ols.semas.or.kr', '2026-07-24', '소진공_2026_소상공인정책자금_융자공고#0'),
+('F-016', '재도전특별자금 (일반형)', '소진공', NULL, NULL, ARRAY['서울'], FALSE, 7000, NULL, 'variable', '정책자금 기준금리 + 1.6%p', 60, NULL, 'open', '2025-12-29', '2025-12-29', '소진공', 'https://ols.semas.or.kr', '2026-07-24', '소진공_2026_소상공인정책자금_융자공고#0'),
+('F-017', '재도전특별자금 (희망형)', '소진공', NULL, NULL, ARRAY['서울'], FALSE, 10000, NULL, 'variable', '정책자금 기준금리 + 0.6%p', 60, NULL, 'open', '2025-12-29', '2025-12-29', '소진공', 'https://ols.semas.or.kr', '2026-07-24', '소진공_2026_소상공인정책자금_융자공고#0'),
+('F-018', '재도전특별자금 (도약형)', '소진공', NULL, NULL, ARRAY['서울'], FALSE, 20000, NULL, 'variable', '정책자금 기준금리 + 0.4%p', 60, NULL, 'open', '2025-12-29', '2025-12-29', '소진공', 'https://ols.semas.or.kr', '2026-07-24', '소진공_2026_소상공인정책자금_융자공고#0'),
+('F-019', '장애인기업지원자금', '소진공', NULL, NULL, ARRAY['서울'], FALSE, 10000, 2, 'fixed', NULL, 84, NULL, 'open', '2025-12-29', '2025-12-29', '소진공', 'https://ols.semas.or.kr', '2026-07-24', '소진공_2026_소상공인정책자금_융자공고#1'),
+('F-020', '청년고용연계자금', '소진공', 39, NULL, ARRAY['서울'], FALSE, 7000, NULL, 'variable', '정책자금 기준금리', 60, NULL, 'open', '2025-12-29', '2025-12-29', '소진공', 'https://ols.semas.or.kr', '2026-07-24', '소진공_2026_소상공인정책자금_융자공고#0');
 
 INSERT INTO finance_doc_chunk (chunk_id, product_id, doc_meta, text) VALUES
 ('KB_소상공인_보증서대출_지역재단#0', 'F-000', '{"org": "KB국민은행", "doc": "KB_소상공인_보증서대출_지역재단", "date": "2026-07-21"}', '2026. 7. 21. য়੹ 1:03ࢲ ୹ | ୹ | KBҕੋ ୹(ױ)

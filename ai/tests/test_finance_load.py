@@ -1,23 +1,27 @@
 """정책자금 적재·청킹 단위 테스트 (AI-06-2)."""
-from batch.load.finance import POLICY_BASE_RATE, build_finance, chunk_document, db_rate
+from batch.load.finance import build_finance, chunk_document, rate_fields
 
 
-def test_db_rate_fixed_passthrough():
-    assert db_rate({"rate": 2.1, "rate_note": None}) == 2.1
+def test_rate_fields_fixed_passthrough():
+    assert rate_fields({"rate": 2.1, "rate_note": None}) == (2.1, "fixed", None)
 
 
-def test_db_rate_variable_base_plus_addon():
-    # '기준금리+0.6%p' → 기준금리 상수 + 가산 (effective)
-    got = db_rate({"rate": None, "rate_note": "기준금리+0.6%p"})
-    assert got == round(POLICY_BASE_RATE + 0.6, 3)
+def test_rate_fields_addon_not_fabricated():
+    # '기준금리+0.6%p' → 절대금리 지어내지 않음: rate=None, 원문 note 보존
+    rate, rtype, note = rate_fields({"rate": None, "rate_note": "정책자금 기준금리 + 0.6%p"})
+    assert rate is None and rtype == "variable"
+    assert note == "정책자금 기준금리 + 0.6%p"
 
 
-def test_db_rate_range_takes_lowest():
-    assert db_rate({"rate": None, "rate_note": "연 2.5%~최고 연 3.5%"}) == 2.5
+def test_rate_fields_disclosed_reference_variable():
+    # 변동이지만 공시 절대값('최저 연 3.62%')이 있으면 그 값 + variable
+    rate, rtype, _ = rate_fields({"rate": None, "rate_note": "최저 연 3.62% 3개월 변동금리"})
+    assert rate == 3.62 and rtype == "variable"
 
 
-def test_db_rate_pure_variable_fallback_not_null():
-    assert db_rate({"rate": None, "rate_note": "기준금리 변동"}) == POLICY_BASE_RATE
+def test_rate_fields_pure_variable_null():
+    note = "정책자금 기준금리"
+    assert rate_fields({"rate": None, "rate_note": note}) == (None, "variable", note)
 
 
 def test_chunk_document_keeps_original_text():
