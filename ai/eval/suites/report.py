@@ -5,12 +5,17 @@ import datetime as _dt
 import json
 from pathlib import Path
 
-import matplotlib
+from eval.suites import extraction, grounding, sensitivity
 
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
 
-from eval.suites import extraction, grounding, sensitivity  # noqa: E402
+def _pyplot():
+    """matplotlib 지연 로드 — 차트 산출 시에만 필요(경량 CI·비차트 스위트는 미의존)."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    return plt
 
 
 def run(out_dir: Path) -> dict:
@@ -34,6 +39,7 @@ def run(out_dir: Path) -> dict:
 
 
 def _chart_extraction(ext: dict, path: Path) -> None:
+    plt = _pyplot()
     keys = list(ext["per_field"])
     vals = [ext["per_field"][k] for k in keys]
     fig, ax = plt.subplots(figsize=(8, 4))
@@ -49,6 +55,7 @@ def _chart_extraction(ext: dict, path: Path) -> None:
 
 
 def _chart_sensitivity(sens: dict, path: Path) -> None:
+    plt = _pyplot()
     inds = list(sens)
     vals = [sens[i]["mean_retention"] for i in inds]
     fig, ax = plt.subplots(figsize=(5, 4))

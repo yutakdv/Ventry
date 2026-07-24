@@ -1,7 +1,11 @@
 import json
 from pathlib import Path
 
-from eval.suites import report
+import pytest
+
+pytest.importorskip("matplotlib")  # 차트 산출 의존 — 경량 CI(미설치)에선 skip
+
+from eval.suites import report  # noqa: E402
 
 
 def test_report_writes_metrics_json(tmp_path: Path):
