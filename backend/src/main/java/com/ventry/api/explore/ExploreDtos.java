@@ -24,7 +24,8 @@ public final class ExploreDtos {
     public record Delta(int nEntryBefore, int nEntryAfter, Integer nSustainAfter,
                         Double scoreDelta) {}
 
-    public record Funding(String name, int amountMax, double rate, int termAssumed,
+    /** rate는 확정 이율이 없으면 null — 그때는 응답에서 필드가 생략된다 (계약 공통 규약). */
+    public record Funding(String name, int amountMax, Double rate, int termAssumed,
                           String status, String noticeDate, String exclusiveGroup,
                           Source source, SourceQuote sourceQuote) {}
 

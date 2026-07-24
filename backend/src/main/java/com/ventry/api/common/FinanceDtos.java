@@ -15,9 +15,11 @@ public final class FinanceDtos {
      * 화면이 "○○ 기준"을 표기할 근거이며 상품 조건의 신선도를 사용자에게 드러낸다.
      *
      * @param amountMax 최대 한도(만원). 승인 금액이 아니라 상품 공고상 한도
-     * @param rate      연 금리(%)
+     * @param rate      연 금리(%). <b>확정 이율이 없으면 null</b> — 계약 공통 규약
+     *                  ("값이 없는 필드는 응답에서 생략")에 따라 필드 자체가 사라진다.
+     *                  0을 넣어 무이자로 오인시키지 않기 위한 선택이다 (assumptions #28)
      */
-    public record Product(String name, int amountMax, double rate, String dataAsOf,
+    public record Product(String name, int amountMax, Double rate, String dataAsOf,
                           Source source, SourceQuote sourceQuote) {}
 
     public record RiskReview(String objectionText, boolean applied, boolean skipped) {}
