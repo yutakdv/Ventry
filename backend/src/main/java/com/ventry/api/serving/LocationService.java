@@ -3,7 +3,6 @@ package com.ventry.api.serving;
 import com.ventry.api.checkarea.CheckAreaDtos.CheckAreaResponse;
 import com.ventry.api.common.ApiException;
 import com.ventry.api.common.FinanceDtos.Product;
-import com.ventry.api.common.MockData;
 import com.ventry.api.engine.CostCalculator;
 import com.ventry.api.engine.CostEstimate;
 import com.ventry.api.engine.EligibilityFilter;
@@ -35,24 +34,26 @@ public class LocationService {
     /** 업종 프리셋 가중치 (화면 공개, assumptions.md). 현재 카페·음식점 공용. */
     private static final Weights DEFAULT_WEIGHTS = new Weights(0.30, 0.20, 0.20, 0.15, 0.15);
 
-    private final DemoCandidates candidates;
+    private final CandidateSource candidates;
     private final DemoProducts products;
+    private final DataMetaSource meta;
 
-    public LocationService(DemoCandidates candidates, DemoProducts products) {
+    public LocationService(CandidateSource candidates, DemoProducts products, DataMetaSource meta) {
         this.candidates = candidates;
         this.products = products;
+        this.meta = meta;
     }
 
     /** 화면 3 입지 추천: 후보 풀 → 점수 정렬 → 판정 + 근거문. */
     public RecommendResponse recommend(Profile profile, int budget) {
         Weights weights = DEFAULT_WEIGHTS;   // 업종 프리셋 (현재 카페·음식점 공용, assumptions.md)
-        List<CandidateArea> pool = candidates.recommendPool();
+        List<CandidateArea> pool = candidates.findCandidates(profile.industry());
         List<Area> areas = pool.stream()
                 .sorted(Comparator.comparingDouble(
                         (CandidateArea c) -> ScoreLookup.score(c.axisScores(), weights)).reversed())
                 .map(c -> toArea(c, budget, weights))
                 .toList();
-        return new RecommendResponse(MockData.DATA_AS_OF, areas.size(), summary(pool), areas,
+        return new RecommendResponse(meta.asOf("sales"), areas.size(), summary(pool), areas,
                 ReasonTemplate.recommendReview());
     }
 
@@ -60,8 +61,8 @@ public class LocationService {
      * 화면 2 예산 확정 프리뷰: 확정 예산으로 진입하는 후보 수와 그 후보군의 임대료·유동인구 범위.
      * 진입 판정은 recommend와 동일한 기준(권리금 포함 비용 중앙값 ≤ 예산, expl §2-1)을 쓴다.
      */
-    public BudgetPreview preview(int budget) {
-        List<CandidateArea> pool = candidates.recommendPool();
+    public BudgetPreview preview(String industry, int budget) {
+        List<CandidateArea> pool = candidates.findCandidates(industry);
         int[] costs = pool.stream().mapToInt(LocationService::inclMedian).toArray();
         int areaCount = Frontier.nEntry(costs, budget);   // 개수는 도구 계층이 계산 (스펙 §5-1)
         if (areaCount == 0) {
@@ -75,7 +76,7 @@ public class LocationService {
 
     /** 역방향 판정: 임의 클릭 상권 → 판정 4단계 + 부족분 + 자격 부합 상품. */
     public CheckAreaResponse checkArea(Profile profile, int budget, String areaCode) {
-        CandidateArea area = candidates.find(areaCode)
+        CandidateArea area = candidates.find(profile.industry(), areaCode)
                 .orElseThrow(() -> ApiException.areaNotFound(areaCode));
         CostEstimate cost = CostCalculator.estimate(area.costBlocks());
         ReverseResult result = ReverseCheck.evaluate(budget, cost, area.burdenRatio(),
