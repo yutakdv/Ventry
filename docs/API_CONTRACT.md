@@ -13,11 +13,18 @@ FE 검토 의견 6건은 2026-07-21 반영됨 (5건 수용 · 1건 스코프 외
 - 좌표: **WGS84** (lat, lng)
 - 금액: **만원 단위 정수**
 - 금융상품 응답에는 `source`(org·url·collected) 필수, 화면 표기용 `data_as_of`(기준일) 필수
-- **금리 표기 (★2026-07-24 변경, 3인 합의 대상)**: 정책자금 상당수가 "정책자금 기준금리+가산"
-  변동금리라 고정 숫자로 담을 수 없다. 따라서 금융상품의 `rate`(연 %)는 **nullable**이며,
-  `rate_type`(`fixed`|`variable`)와 `rate_note`(변동금리 원문 표현, 예 "정책자금 기준금리+0.6%p")를
-  동반한다. 화면은 `rate`가 있으면 숫자, 없으면(`variable`) `rate_note`를 그대로 표기한다
-  (기준금리 실값은 서비스가 지어내지 않는다 — 스펙 §0-1). BE는 `rate` NULL을 허용해 파싱한다.
+- **금리 표기 (★2026-07-24 변경 · 2026-07-25 ratify — 3인 합의 완료, BE·FE 조건 반영)**: 정책자금
+  상당수가 "정책자금 기준금리+가산" 변동금리라 고정 숫자로 담을 수 없다. 따라서 금융상품의
+  `rate`(연 %)는 **nullable**이며, `rate_type`(`fixed`|`variable`)·`rate_note`(원문 표현, 예
+  "정책자금 기준금리+0.6%p")를 동반한다. 계약 규칙(FE 분기 안정성):
+  - `rate_type`은 **항상 존재**한다(DDL `NOT NULL DEFAULT 'fixed'`). FE 분기 키는 `rate_type`이며
+    `fixed`/`variable` 라벨 판단에 쓴다. non_null 직렬화라 `rate` NULL은 `null`이 아니라 **키 생략**으로
+    도착하므로, prose의 "rate 있으면/없으면"이 아니라 위 필드로 판단한다.
+  - **표시 규칙**: `rate`가 실려 오면 "연 {rate}%"를 표기, 생략되면 `rate_note`를 **그대로** 표기한다
+    (기준금리 실값은 서비스가 지어내지 않는다 — 스펙 §0-1).
+  - **`rate_note`·폴백 문구는 서버가 단일 통제한다.** `rate`가 생략된 모든 상품에 대해 서버가
+    `rate_note`를 항상 채우며(원문 표현, 원문에 금리 표현이 없으면 표준 폴백 문구), FE는 금리 표기용
+    하드코딩 사전을 두지 않는다(용어 컴플라이언스 — `axis_labels` 선례와 동일). BE는 `rate` NULL 허용 파싱.
 - 판정 enum: `FIT`(적합) / `CONDITIONAL`(조건부 적합) / `CAUTION`(유의) / `OUT_OF_SCOPE`(범위 외)
   — 화면 문구는 용어 컴플라이언스 표(CLAUDE.md) 준수
 - 세션·버전: 슬라이더 변경마다 프론트가 `v`(version) 증가시켜 전달. 서버는 세션 최신 version이
@@ -59,7 +66,8 @@ FE 검토 의견 6건은 2026-07-21 반영됨 (5건 수용 · 1건 스코프 외
   "budget_max": 6500,      // budget_min + Σ 상품 한도(amount_max)
   "composition": [ { "type": "equity", "amount_min": 5000, "amount_max": 5000 },
                    { "type": "guarantee", "amount_min": 0, "amount_max": 1500 } ],
-  "products": [ { "name": "…", "amount_max": 1500, "rate": 2.5,
+  "products": [ { "name": "…", "amount_max": 1500,
+                  "rate": 2.5, "rate_type": "fixed",   // 변동금리면 rate 생략 + "rate_type":"variable","rate_note":"정책자금 기준금리+0.6%p"
                   "data_as_of": "2026-Q1", "source": {…}, "source_quote": null } ] }
 // done
 { "scenario_count": 2 }
@@ -129,8 +137,9 @@ FE 검토 의견 6건은 2026-07-21 반영됨 (5건 수용 · 1건 스코프 외
 // insight (T1 예) — insight_id는 refine 이벤트의 교체 대상 키 (BE-01 구현 중 추가)
 { "insight_id": "i-1", "type": "T1", "headline": "…",
   "delta": { "n_entry_before": 3, "n_entry_after": 11, "n_sustain_after": 7, "score_delta": … },
-  "gap_amount": 1320, "marginal_payment": 28,
-  "funding": { "name": "…", "amount_max": …, "rate": 2.5, "term_assumed": 60,
+  "gap_amount": 1320, "marginal_payment": 28,   // 변동금리 근거면 생략 → "marginal_payment_note": "…"(서버 송출)로 대체
+  "funding": { "name": "…", "amount_max": …, "rate": 2.5, "rate_type": "fixed", "term_assumed": 60,
+               // 변동금리(rate 생략·"rate_type":"variable")면 "rate_note" 동반, 상위 marginal_payment 생략
                "status": "open", "notice_date": "…", "exclusive_group": "…",
                "source": { "org": "…", "url": "…", "collected": "…" },
                "source_quote": null },        // RAG 구현 전 null 허용 (P1-①)
@@ -153,6 +162,10 @@ FE 검토 의견 6건은 2026-07-21 반영됨 (5건 수용 · 1건 스코프 외
 
 - 라벨은 `plan.axis_labels`로 매 이벤트에 실려 오므로 프론트는 하드코딩 사전을 두지 않는다
   (화면 문구는 용어 컴플라이언스 대상이라 서버가 단일 통제한다).
+- **`marginal_payment`(월 상환액 증분, 만원)은 고정금리 근거일 때만 실린다.** 근거 상품이
+  변동금리(`rate` 생략·`rate_type`=`variable`)면 BE-05는 월 상환액 m을 지어내지 않고(§0-1)
+  `marginal_payment`를 **생략**하며, 대신 서버가 `marginal_payment_note`(대체 표기 문자열,
+  용어 컴플라이언스)를 보낸다. FE는 해당 슬롯을 비우고 이 문구를 표시한다(하드코딩 금지).
 
 ### 6) `POST /api/check-area/{sid}`
 역방향 판정.
@@ -162,12 +175,17 @@ FE 검토 의견 6건은 2026-07-21 반영됨 (5건 수용 · 1건 스코프 외
 { "area_code": "…" }
 // res
 { "verdict": "CONDITIONAL", "gap_amount": 1320,
-  "matching_products": [ { "name": "…", "amount_max": 3000, "rate": 2.5,
+  "matching_products": [ { "name": "…", "amount_max": 3000,
+      "rate": 2.5, "rate_type": "fixed",   // 변동금리면 rate 생략 + "rate_type":"variable","rate_note":"…"
       "data_as_of": "2026-Q1", "source": {…},
       "source_quote": { "text": "만 39세 이하 예비창업자로서…", "org": "소진공",
                         "doc": "○○공고", "date": "2026-06" } } ],
   "risk_review": { "objection_text": "…", "applied": true } }
 ```
+
+- `matching_products`는 서버가 `amount_max` **내림차순**(동점 시 `product_id` 오름차순)으로 **고정 정렬**해
+  반환한다. **금리 정렬은 하지 않는다** — `rate`가 생략된 상품(변동금리)의 순위를 프론트가 정하면 사실상
+  순위 조작이 되므로 정렬 기준은 계약이 고정하고 FE는 재정렬하지 않는다. scenarios의 `products`도 동일.
 
 ## 시스템 계약
 
@@ -189,3 +207,4 @@ FE 검토 의견 6건은 2026-07-21 반영됨 (5건 수용 · 1건 스코프 외
 | D0 (7/20) | 5건 전부 확정 반영: 판정 enum `CAUTION`(유의), 만원 단위(스펙 §6 정정), scenarios SSE 스키마, recommend `risk_review`, `parse_source` — 근거 DECISIONS.md | 리더 확정 (D3 CP1 최종 동결) |
 | D2 (7/21) | **FE 검토 의견 6건 반영** — ①diagnose 폼 3필드 ②budget 프리뷰 응답 ③recommend `score`·`total_count`·`summary`·원자재 3종 ④scenarios 예산 범위·상품 `amount_max`/`rate`/`data_as_of` ⑤explore `axis_labels`·`current_budget` ⑥결과 저장 API = 스코프 외 회신. 근거 DECISIONS.md §8~§11 | FE 제안 → 리더 반영 (D3 CP1 확인 대상) |
 | D6 (7/24) | **금융상품 `rate` nullable + `rate_type`·`rate_note` 추가** (AI 제안) — 정책자금 변동금리("기준금리+가산")를 고정 숫자로 조작하지 않고 원문 그대로 기록. `finance_product` DDL·`20_finance.sql` 반영, BE는 `rate` NULL 허용 파싱 필요. 근거 assumptions #28 | ⚠️ **AI 발의 — BE·리더 3인 합의·ratify 대기** (변동금리를 표현 못 하던 계약 공백 보완) |
+| D8 (7/25) | **위 D6 변경 ratify 완료** (BE @Jongkwang131 · FE @youngjun1227, 이슈 #73) + **FE 조건 4건 반영**: ①JSON 예시 3곳 `rate_type`·`rate_note` ②분기 키 `rate_type`(항상 존재) 명문화 ③`rate_note`·폴백 문구 서버 단일 통제 ④변동금리 `marginal_payment` 생략+`marginal_payment_note`·`matching_products` `amount_max` desc 고정(금리 정렬 금지). BE-05는 변동금리 m 미산출. 데이터 검수 게이트 2건(F-002·F-010 `fixed`+`rate` NULL, F-010 `rate_note` 비금리)은 assumptions #30 등재 | ✅ **3인 합의 완료** (BE·FE ratify · AI 반영) |
