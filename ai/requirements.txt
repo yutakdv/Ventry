@@ -16,5 +16,8 @@ lightgbm>=4.4
 shap>=0.46
 matplotlib>=3.9
 
+# --- LLM 배치 추출 (AI-06, 오프라인 전용 — 서빙 수치 생성 아님, DECISIONS §6) ---
+openai>=1.40
+
 # --- 테스트 (개발용, 서빙 경로 아님) ---
 pytest>=8.0
