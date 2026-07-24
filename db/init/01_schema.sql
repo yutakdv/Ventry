@@ -230,6 +230,20 @@ CREATE INDEX idx_finance_product_open ON finance_product (status, amount_max DES
 COMMENT ON TABLE finance_product IS
     '자격 요건 부합 판정용 정규칙만 담는다. 한도·승인은 기관 심사 사항이며 서비스는 판단하지 않는다.';
 
+-- 원문 문단 청크 — source_quote 는 doc_chunk_ref 직접 조회 (pgvector 미도입, AI-06 결정)
+-- LLM 재작성 금지: text 는 공고문 원문 그대로 (인용은 검색이지 생성이 아니다, 스펙 §5-4)
+CREATE TABLE finance_doc_chunk (
+    chunk_id   TEXT PRIMARY KEY,
+    product_id TEXT REFERENCES finance_product (product_id),
+    doc_meta   JSONB NOT NULL,          -- {org, doc, date, para} 화면 출처 표기용
+    text       TEXT NOT NULL            -- 원문 문단 (BE-06 RAG source_quote 원천)
+);
+
+CREATE INDEX idx_finance_doc_chunk_product ON finance_doc_chunk (product_id);
+
+COMMENT ON TABLE finance_doc_chunk IS
+    'finance_product.doc_chunk_ref 가 가리키는 원문 청크. text 는 LLM 재작성 없이 공고문 원문 그대로.';
+
 -- =============================================================================
 -- [6] 서빙 뷰 — BE CandidateArea 1행에 대응. "탐색당 쿼리 1회" 원칙 (expl §5)
 --     부담률·종합점수는 여기서도 굽지 않는다 (BE 파생).
