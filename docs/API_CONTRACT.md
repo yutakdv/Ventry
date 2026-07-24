@@ -13,6 +13,11 @@ FE 검토 의견 6건은 2026-07-21 반영됨 (5건 수용 · 1건 스코프 외
 - 좌표: **WGS84** (lat, lng)
 - 금액: **만원 단위 정수**
 - 금융상품 응답에는 `source`(org·url·collected) 필수, 화면 표기용 `data_as_of`(기준일) 필수
+- **금리 표기 (★2026-07-24 변경, 3인 합의 대상)**: 정책자금 상당수가 "정책자금 기준금리+가산"
+  변동금리라 고정 숫자로 담을 수 없다. 따라서 금융상품의 `rate`(연 %)는 **nullable**이며,
+  `rate_type`(`fixed`|`variable`)와 `rate_note`(변동금리 원문 표현, 예 "정책자금 기준금리+0.6%p")를
+  동반한다. 화면은 `rate`가 있으면 숫자, 없으면(`variable`) `rate_note`를 그대로 표기한다
+  (기준금리 실값은 서비스가 지어내지 않는다 — 스펙 §0-1). BE는 `rate` NULL을 허용해 파싱한다.
 - 판정 enum: `FIT`(적합) / `CONDITIONAL`(조건부 적합) / `CAUTION`(유의) / `OUT_OF_SCOPE`(범위 외)
   — 화면 문구는 용어 컴플라이언스 표(CLAUDE.md) 준수
 - 세션·버전: 슬라이더 변경마다 프론트가 `v`(version) 증가시켜 전달. 서버는 세션 최신 version이
@@ -183,3 +188,4 @@ FE 검토 의견 6건은 2026-07-21 반영됨 (5건 수용 · 1건 스코프 외
 | D0 (7/20) | 초안 공백 5건 식별 (용어·단위·scenarios SSE·risk_review·parse_source) | 초안 단계 |
 | D0 (7/20) | 5건 전부 확정 반영: 판정 enum `CAUTION`(유의), 만원 단위(스펙 §6 정정), scenarios SSE 스키마, recommend `risk_review`, `parse_source` — 근거 DECISIONS.md | 리더 확정 (D3 CP1 최종 동결) |
 | D2 (7/21) | **FE 검토 의견 6건 반영** — ①diagnose 폼 3필드 ②budget 프리뷰 응답 ③recommend `score`·`total_count`·`summary`·원자재 3종 ④scenarios 예산 범위·상품 `amount_max`/`rate`/`data_as_of` ⑤explore `axis_labels`·`current_budget` ⑥결과 저장 API = 스코프 외 회신. 근거 DECISIONS.md §8~§11 | FE 제안 → 리더 반영 (D3 CP1 확인 대상) |
+| D6 (7/24) | **금융상품 `rate` nullable + `rate_type`·`rate_note` 추가** (AI 제안) — 정책자금 변동금리("기준금리+가산")를 고정 숫자로 조작하지 않고 원문 그대로 기록. `finance_product` DDL·`20_finance.sql` 반영, BE는 `rate` NULL 허용 파싱 필요. 근거 assumptions #28 | ⚠️ **AI 발의 — BE·리더 3인 합의·ratify 대기** (변동금리를 표현 못 하던 계약 공백 보완) |

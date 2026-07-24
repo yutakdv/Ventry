@@ -5,6 +5,7 @@
 - transit          : 역사마스터 좌표(+ t-data 폴백) + 승하차, 환승역 정규화·합산
 - reb_rent         : 부동산원 임대료·전환율(R-ONE OpenAPI) + 상권구획도 SHP + 권리금 연간치
 - permits          : 인허가 CSV(CP949) 영업중 필터 + 카페·음식점 재분류
+- startup_cost      : 공정위 가맹정보(창업비용 분해) + KOSIS 소상공인실태(총액) — AI-05 상수
 - funding_docs     : 정책자금·보증·대출 PDF 텍스트 추출(AI-06 RAG 입력)
 
 원칙: 원본 raw/ 보존, 스크립트 재실행 가능(스펙 §2-2). 좌표변환은 preprocess(AI-04).
@@ -23,6 +24,7 @@ from batch.collect import (
     permits,
     reb_rent,
     seoul_commercial,
+    startup_cost,
     transit,
 )
 from batch.collect._common import http_session, load_env, logger, setup_logging
@@ -32,6 +34,7 @@ MODULES = {
     "transit": transit,
     "reb_rent": reb_rent,
     "permits": permits,
+    "startup_cost": startup_cost,
     "funding_docs": funding_docs,
 }
 
