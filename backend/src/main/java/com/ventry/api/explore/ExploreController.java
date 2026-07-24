@@ -3,6 +3,8 @@ package com.ventry.api.explore;
 import com.ventry.api.common.MockData;
 import com.ventry.api.common.SessionStore;
 import com.ventry.api.common.SseSupport;
+import com.ventry.api.explore.ExploreDtos.DoneEvent;
+import com.ventry.api.serving.FrontierService;
 import com.ventry.api.serving.SessionMapper;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,10 +23,12 @@ public class ExploreController {
 
     private final SessionStore sessions;
     private final SseSupport sse;
+    private final FrontierService frontier;
 
-    public ExploreController(SessionStore sessions, SseSupport sse) {
+    public ExploreController(SessionStore sessions, SseSupport sse, FrontierService frontier) {
         this.sessions = sessions;
         this.sse = sse;
+        this.frontier = frontier;
     }
 
     @GetMapping(value = "/api/explore/{sid}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -46,8 +50,13 @@ public class ExploreController {
                 emitter.send(SseEmitter.event().name("refine")
                         .data(MockData.refineT1(), MediaType.APPLICATION_JSON));
             }
+            // done의 frontier_points·current_budget은 실계산(결정적) — 나머지 이벤트와
+            // scenarios_explored(실 탐색 수)는 BE-05에서 교체될 때까지 목을 유지한다.
+            int budget = SessionMapper.budget(state);
+            String industry = SessionMapper.profile(state).industry();
             emitter.send(SseEmitter.event().name("done")
-                    .data(MockData.exploreDone(SessionMapper.budget(state)),
+                    .data(new DoneEvent(MockData.exploreDone(budget).scenariosExplored(),
+                                    frontier.frontierPoints(industry), budget),
                             MediaType.APPLICATION_JSON));
         });
     }
