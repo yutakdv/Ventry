@@ -1,3 +1,5 @@
+import pytest
+
 from eval.suites import grounding
 
 
@@ -24,6 +26,8 @@ def test_real_gold_all_verbatim():
     from eval import common
     gold = grounding.load_gold()
     docs = {g["doc"]: common.load_source_text(g["doc"]) for g in gold}
+    if not any(docs.values()):
+        pytest.skip("원문 txt 부재(ai/data/interim 미커밋) — 데이터 의존 테스트")
     m = grounding.evaluate(gold, docs)
     assert m["verbatim_match_rate"] == 1.0, m["mismatches"]
     assert m["linked"] == 6
@@ -33,6 +37,8 @@ def test_null_buckets_split_legit_vs_unexpected():
     from eval import common
     gold = grounding.load_gold()
     docs = {g["doc"]: common.load_source_text(g["doc"]) for g in gold}
+    if not any(docs.values()):
+        pytest.skip("원문 txt 부재(ai/data/interim 미커밋) — is_clean_source 데이터 의존")
     m = grounding.evaluate(gold, docs)
     # 깨진 서울신보 6문서 = 정당 null; 그 어느 것도 클린 버킷에 새지 않는다
     assert all("서울신보" in d for d in m["legitimate_null_docs"])
