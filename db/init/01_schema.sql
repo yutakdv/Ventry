@@ -213,8 +213,9 @@ CREATE TABLE finance_product (
     regions          TEXT[],                  -- NULL/빈 배열 = 전 지역
     pre_startup_only BOOLEAN NOT NULL DEFAULT FALSE,
     amount_max       INTEGER NOT NULL,        -- 만원
-    rate             NUMERIC(6, 3),           -- 연 %. 고정금리 값. **변동금리는 NULL** → rate_note 참조
-    rate_type        TEXT NOT NULL DEFAULT 'fixed'
+    rate             NUMERIC(6, 3),           -- 연 %. 고정금리 숫자값. 단일 숫자로 표기 불가면 NULL → rate_note 참조.
+                                              -- ⚠️ NULL ≠ variable: fixed도 숫자 미표기 시 NULL 가능(분기는 rate_type로, API_CONTRACT 금리 표기)
+    rate_type        TEXT NOT NULL DEFAULT 'fixed'   -- 항상 존재(FE 분기 키)
                      CHECK (rate_type IN ('fixed', 'variable')),
     rate_note        TEXT,                    -- 변동금리 원문 표현("정책자금 기준금리+0.6%p" 등).
                                               -- LLM 재작성 금지(원문 그대로). 기준금리 실값 미주입
