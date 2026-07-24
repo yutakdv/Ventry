@@ -19,12 +19,45 @@ from batch.paths import INTERIM_DIR, REPO_ROOT, logger
 FUNDING_DIR = INTERIM_DIR / "funding_docs"
 DB_INIT = REPO_ROOT / "db" / "init"
 _SPLIT = re.compile(r"\n\s*\n|\n- \d+ -\n")
+# finance_product.rate 는 DDL NOT NULL(D3 동결·API 계약) → 변동금리도 숫자여야 한다.
+# 가산금리(+X%p)는 문서에서 추출한 값이고 기준금리는 공시 상수라 effective 산출은 LLM 수치생성이
+# 아니다(스펙 §0-1). 기준금리는 잠정 — 전건 검수에서 분기 확정치로 갱신 (코드리뷰 S4·S6).
+POLICY_BASE_RATE = 3.5  # 소상공인 정책자금 기준금리(잠정, 2026)
+CD_BASE_RATE = 3.5      # CD금리(잠정)
+_ADD_BASE = re.compile(r"기준금리\s*\+\s*([\d.]+)")
+_ADD_CD = re.compile(r"CD금리\s*\+\s*([\d.]+)")
+_PCT = re.compile(r"([\d.]+)\s*%")
+
+
+def db_rate(product: dict) -> float:
+    """finance_product.rate(NOT NULL) 값 — 고정금리는 그대로, 변동금리는 note에서 effective 산출."""
+    rate = product.get("rate")
+    if isinstance(rate, (int, float)):
+        return float(rate)
+    note = product.get("rate_note") or ""
+    if m := _ADD_BASE.search(note):
+        return round(POLICY_BASE_RATE + float(m.group(1)), 3)
+    if m := _ADD_CD.search(note):
+        return round(CD_BASE_RATE + float(m.group(1)), 3)
+    if m := _PCT.search(note):  # "최저 연 X%", "연 X%~Y%" → 최저값
+        return float(m.group(1))
+    return POLICY_BASE_RATE  # 순수 변동·불명 → 기준금리 (검수 플래그)
+# source_quote 원문 청크는 클린 텍스트만 사용 — CID/JS 깨진 txt(서울신보 등)는 verbatim 불가라
+# 날조 대신 doc_chunk_ref=null (스펙 §5-4 "인용은 검색이지 생성이 아니다", 코드리뷰 S1)
+_KEYWORDS = ("대출", "융자", "한도", "금리", "보증", "지원", "소상공인", "상환", "기업")
+_CLEAN_DENSITY = 3.0  # 1000자당 키워드 히트
+
+
+def _is_clean(text: str) -> bool:
+    if not text:
+        return False
+    return sum(text.count(k) for k in _KEYWORDS) / len(text) * 1000 >= _CLEAN_DENSITY
 
 
 def chunk_document(doc_name: str, text: str) -> list[dict]:
     """원문을 문단/페이지 단위로 분할. text 는 원문 그대로 보존."""
     chunks = []
-    for i, part in enumerate(p.strip() for p in _SPLIT.split(text)):
+    for part in (p.strip() for p in _SPLIT.split(text)):
         if part:
             chunks.append({"chunk_id": f"{doc_name}#{len(chunks)}", "text": part})
     return chunks
@@ -33,7 +66,8 @@ def chunk_document(doc_name: str, text: str) -> list[dict]:
 def _load_doc_chunks(doc: str, docs_dir: Path, cache: dict) -> list[dict]:
     if doc not in cache:
         path = Path(docs_dir) / f"{doc}.txt"
-        cache[doc] = chunk_document(doc, path.read_text(encoding="utf-8")) if path.exists() else []
+        text = path.read_text(encoding="utf-8") if path.exists() else ""
+        cache[doc] = chunk_document(doc, text) if _is_clean(text) else []
     return cache[doc]
 
 
@@ -50,22 +84,23 @@ def build_finance(reviewed: list[dict], docs_dir: Path) -> dict[str, pd.DataFram
         name = p.get("name") or ""
         ref = next((c for c in chunks if name and name in c["text"]),
                    chunks[0] if chunks else None)
-        if ref is None:  # 문서 부재 → 상품명 기반 폴백 청크
-            ref = {"chunk_id": f"{doc or pid}#0", "text": name or pid}
-        used_chunks.setdefault(ref["chunk_id"], {"chunk_id": ref["chunk_id"], "product_id": pid,
-                                                 "doc_meta": {"org": p.get("org"), "doc": doc,
-                                                              "date": p.get("notice_date")},
-                                                 "text": ref["text"]})
+        chunk_ref = None
+        if ref is not None:  # 클린 원문 청크가 있을 때만 링크 (없으면 source_quote 없음)
+            used_chunks.setdefault(ref["chunk_id"], {
+                "chunk_id": ref["chunk_id"], "product_id": pid,
+                "doc_meta": {"org": p.get("org"), "doc": doc, "date": p.get("notice_date")},
+                "text": ref["text"]})
+            chunk_ref = ref["chunk_id"]
         products.append({
             "product_id": pid, "name": name, "org": p.get("org"),
             "max_age": p.get("max_age"), "industries": p.get("industries"),
             "regions": p.get("regions"), "pre_startup_only": bool(p.get("pre_startup_only")),
-            "amount_max": p.get("amount_max"), "rate": p.get("rate"),
+            "amount_max": p.get("amount_max"), "rate": db_rate(p),
             "term_months": p.get("term_months"), "exclusive_group": p.get("exclusive_group"),
             "status": p.get("status") or "open", "notice_date": p.get("notice_date"),
             "data_as_of": p.get("notice_date") or "2026", "source_org": p.get("org"),
             "source_url": p.get("source_url") or "", "source_collected": today,
-            "doc_chunk_ref": ref["chunk_id"],
+            "doc_chunk_ref": chunk_ref,
         })
     chunk_rows = [{"chunk_id": c["chunk_id"], "product_id": c["product_id"],
                    "doc_meta": json.dumps(c["doc_meta"], ensure_ascii=False), "text": c["text"]}

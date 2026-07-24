@@ -1,7 +1,8 @@
 [
   {
-    "name": "KB소상공인 보증서대출 - 서울",
+    "name": "KB소상공인 보증서대출",
     "org": "KB국민은행",
+    "product_type": "loan",
     "max_age": null,
     "industries": null,
     "regions": [
@@ -19,319 +20,16 @@
     "doc": "KB_소상공인_보증서대출_지역재단"
   },
   {
-    "name": "KB소상공인 보증서대출 - 경기",
-    "org": "KB국민은행",
-    "max_age": null,
-    "industries": null,
-    "regions": [
-      "경기"
-    ],
-    "pre_startup_only": false,
-    "amount_max": 10000,
-    "rate": 3.49,
-    "rate_note": null,
-    "term_months": null,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2026-07-21",
-    "source_url": "https://obank.kbstar.com",
-    "doc": "KB_소상공인_보증서대출_지역재단"
-  },
-  {
-    "name": "KB소상공인 보증서대출 - 충북",
-    "org": "KB국민은행",
-    "max_age": null,
-    "industries": null,
-    "regions": [
-      "충북"
-    ],
-    "pre_startup_only": false,
-    "amount_max": 10000,
-    "rate": 2.4,
-    "rate_note": null,
-    "term_months": null,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2026-07-21",
-    "source_url": "https://obank.kbstar.com",
-    "doc": "KB_소상공인_보증서대출_지역재단"
-  },
-  {
-    "name": "KB소상공인 보증서대출 - 충남",
-    "org": "KB국민은행",
-    "max_age": null,
-    "industries": null,
-    "regions": [
-      "충남"
-    ],
-    "pre_startup_only": false,
-    "amount_max": 10000,
-    "rate": 3.1,
-    "rate_note": null,
-    "term_months": null,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2026-07-21",
-    "source_url": "https://obank.kbstar.com",
-    "doc": "KB_소상공인_보증서대출_지역재단"
-  },
-  {
-    "name": "KB소상공인 보증서대출 - 강원",
-    "org": "KB국민은행",
-    "max_age": null,
-    "industries": null,
-    "regions": [
-      "강원"
-    ],
-    "pre_startup_only": false,
-    "amount_max": 10000,
-    "rate": 3.26,
-    "rate_note": null,
-    "term_months": null,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2026-07-21",
-    "source_url": "https://obank.kbstar.com",
-    "doc": "KB_소상공인_보증서대출_지역재단"
-  },
-  {
-    "name": "KB소상공인 보증서대출 - 경북",
-    "org": "KB국민은행",
-    "max_age": null,
-    "industries": null,
-    "regions": [
-      "경북"
-    ],
-    "pre_startup_only": false,
-    "amount_max": 10000,
-    "rate": 2.9,
-    "rate_note": null,
-    "term_months": null,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2026-07-21",
-    "source_url": "https://obank.kbstar.com",
-    "doc": "KB_소상공인_보증서대출_지역재단"
-  },
-  {
-    "name": "KB소상공인 보증서대출 - 경남",
-    "org": "KB국민은행",
-    "max_age": null,
-    "industries": null,
-    "regions": [
-      "경남"
-    ],
-    "pre_startup_only": false,
-    "amount_max": 10000,
-    "rate": 2.4,
-    "rate_note": null,
-    "term_months": null,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2026-07-21",
-    "source_url": "https://obank.kbstar.com",
-    "doc": "KB_소상공인_보증서대출_지역재단"
-  },
-  {
-    "name": "KB소상공인 보증서대출 - 전북",
-    "org": "KB국민은행",
-    "max_age": null,
-    "industries": null,
-    "regions": [
-      "전북"
-    ],
-    "pre_startup_only": false,
-    "amount_max": 10000,
-    "rate": 3.06,
-    "rate_note": null,
-    "term_months": null,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2026-07-21",
-    "source_url": "https://obank.kbstar.com",
-    "doc": "KB_소상공인_보증서대출_지역재단"
-  },
-  {
-    "name": "KB소상공인 보증서대출 - 전남",
-    "org": "KB국민은행",
-    "max_age": null,
-    "industries": null,
-    "regions": [
-      "전남"
-    ],
-    "pre_startup_only": false,
-    "amount_max": 10000,
-    "rate": 1.1,
-    "rate_note": null,
-    "term_months": null,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2026-07-21",
-    "source_url": "https://obank.kbstar.com",
-    "doc": "KB_소상공인_보증서대출_지역재단"
-  },
-  {
-    "name": "KB소상공인 보증서대출 - 제주",
-    "org": "KB국민은행",
-    "max_age": null,
-    "industries": null,
-    "regions": [
-      "제주"
-    ],
-    "pre_startup_only": false,
-    "amount_max": 10000,
-    "rate": 2.5,
-    "rate_note": null,
-    "term_months": null,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2026-07-21",
-    "source_url": "https://obank.kbstar.com",
-    "doc": "KB_소상공인_보증서대출_지역재단"
-  },
-  {
-    "name": "KB소상공인 보증서대출 - 인천",
-    "org": "KB국민은행",
-    "max_age": null,
-    "industries": null,
-    "regions": [
-      "인천"
-    ],
-    "pre_startup_only": false,
-    "amount_max": 10000,
-    "rate": 2.6,
-    "rate_note": null,
-    "term_months": null,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2026-07-21",
-    "source_url": "https://obank.kbstar.com",
-    "doc": "KB_소상공인_보증서대출_지역재단"
-  },
-  {
-    "name": "KB소상공인 보증서대출 - 대전",
-    "org": "KB국민은행",
-    "max_age": null,
-    "industries": null,
-    "regions": [
-      "대전"
-    ],
-    "pre_startup_only": false,
-    "amount_max": 10000,
-    "rate": 1.6,
-    "rate_note": null,
-    "term_months": null,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2026-07-21",
-    "source_url": "https://obank.kbstar.com",
-    "doc": "KB_소상공인_보증서대출_지역재단"
-  },
-  {
-    "name": "KB소상공인 보증서대출 - 세종",
-    "org": "KB국민은행",
-    "max_age": null,
-    "industries": null,
-    "regions": [
-      "세종"
-    ],
-    "pre_startup_only": false,
-    "amount_max": 10000,
-    "rate": 2.9,
-    "rate_note": null,
-    "term_months": null,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2026-07-21",
-    "source_url": "https://obank.kbstar.com",
-    "doc": "KB_소상공인_보증서대출_지역재단"
-  },
-  {
-    "name": "KB소상공인 보증서대출 - 대구",
-    "org": "KB국민은행",
-    "max_age": null,
-    "industries": null,
-    "regions": [
-      "대구"
-    ],
-    "pre_startup_only": false,
-    "amount_max": 10000,
-    "rate": 3.6,
-    "rate_note": null,
-    "term_months": null,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2026-07-21",
-    "source_url": "https://obank.kbstar.com",
-    "doc": "KB_소상공인_보증서대출_지역재단"
-  },
-  {
-    "name": "KB소상공인 보증서대출 - 울산",
-    "org": "KB국민은행",
-    "max_age": null,
-    "industries": null,
-    "regions": [
-      "울산"
-    ],
-    "pre_startup_only": false,
-    "amount_max": 10000,
-    "rate": 2.4,
-    "rate_note": null,
-    "term_months": null,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2026-07-21",
-    "source_url": "https://obank.kbstar.com",
-    "doc": "KB_소상공인_보증서대출_지역재단"
-  },
-  {
-    "name": "KB소상공인 보증서대출 - 부산",
-    "org": "KB국민은행",
-    "max_age": null,
-    "industries": null,
-    "regions": [
-      "부산"
-    ],
-    "pre_startup_only": false,
-    "amount_max": 10000,
-    "rate": 3.3,
-    "rate_note": null,
-    "term_months": null,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2026-07-21",
-    "source_url": "https://obank.kbstar.com",
-    "doc": "KB_소상공인_보증서대출_지역재단"
-  },
-  {
-    "name": "KB소상공인 보증서대출 - 광주",
-    "org": "KB국민은행",
-    "max_age": null,
-    "industries": null,
-    "regions": [
-      "광주"
-    ],
-    "pre_startup_only": false,
-    "amount_max": 10000,
-    "rate": 0.6,
-    "rate_note": null,
-    "term_months": null,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2026-07-21",
-    "source_url": "https://obank.kbstar.com",
-    "doc": "KB_소상공인_보증서대출_지역재단"
-  },
-  {
     "name": "KB소상공인 신용대출",
     "org": "KB국민은행",
+    "product_type": "loan",
     "max_age": null,
     "industries": null,
     "regions": null,
     "pre_startup_only": false,
     "amount_max": 20000,
-    "rate": 3.62,
-    "rate_note": "기준금리+3.62%p",
+    "rate": null,
+    "rate_note": "최저 연 3.62% (2026.07.21 기준) 3개월 변동금리",
     "term_months": 60,
     "exclusive_group": null,
     "status": "open",
@@ -342,9 +40,12 @@
   {
     "name": "이자지원 보증서 대출",
     "org": "KB국민은행",
+    "product_type": "loan",
     "max_age": null,
     "industries": null,
-    "regions": null,
+    "regions": [
+      "서울"
+    ],
     "pre_startup_only": false,
     "amount_max": 10000,
     "rate": null,
@@ -357,15 +58,198 @@
     "doc": "KB_소상공인정책자금_이자지원보증서대출_안내"
   },
   {
-    "name": "일반경영안정자금",
-    "org": "소진공",
+    "name": "소상공인 정책자금대출",
+    "org": "KB국민은행",
+    "product_type": "loan",
     "max_age": null,
     "industries": null,
-    "regions": null,
+    "regions": [
+      "서울"
+    ],
+    "pre_startup_only": false,
+    "amount_max": null,
+    "rate": null,
+    "rate_note": "연 2.5%~최고 연 3.5%",
+    "term_months": null,
+    "exclusive_group": null,
+    "status": "open",
+    "notice_date": "2026-07-21",
+    "source_url": "https://obank.kbstar.com",
+    "doc": "KB_소상공인정책자금대출_상품목록"
+  },
+  {
+    "name": "ESG 실천기업 보증",
+    "org": "서울신용보증재단",
+    "product_type": "guarantee",
+    "max_age": null,
+    "industries": null,
+    "regions": [
+      "서울"
+    ],
+    "pre_startup_only": false,
+    "amount_max": 10000,
+    "rate": null,
+    "rate_note": "서울시금고(ESG 차주) 이용 시 은행금리에서 2.5% 차감(서울시 부담)",
+    "term_months": null,
+    "exclusive_group": null,
+    "status": "open",
+    "notice_date": "2026-07-21",
+    "source_url": "https://www.seoulshinbo.co.kr",
+    "doc": "서울신보_보증상품_ESG실천기업"
+  },
+  {
+    "name": "서울형 자영업자 위기극복 안심동행 특별보증",
+    "org": "서울신용보증재단",
+    "product_type": "guarantee",
+    "max_age": null,
+    "industries": null,
+    "regions": [
+      "서울"
+    ],
+    "pre_startup_only": false,
+    "amount_max": 10000,
+    "rate": null,
+    "rate_note": "연 1.0%",
+    "term_months": null,
+    "exclusive_group": null,
+    "status": "open",
+    "notice_date": "2026-07-21",
+    "source_url": "https://www.seoulshinbo.co.kr",
+    "doc": "서울신보_보증상품_모바일앱자동심사"
+  },
+  {
+    "name": "지능형 모바일 자동심사 특별보증",
+    "org": "서울신용보증재단",
+    "product_type": "guarantee",
+    "max_age": null,
+    "industries": null,
+    "regions": [
+      "서울"
+    ],
+    "pre_startup_only": false,
+    "amount_max": 10000,
+    "rate": null,
+    "rate_note": "변동금리: CD금리 + 2.0% 이내",
+    "term_months": null,
+    "exclusive_group": null,
+    "status": "open",
+    "notice_date": "2026-07-21",
+    "source_url": "https://www.seoulshinbo.co.kr",
+    "doc": "서울신보_보증상품_모바일앱자동심사"
+  },
+  {
+    "name": "미래 유망기업 성장지원 보증",
+    "org": "서울신용보증재단",
+    "product_type": "guarantee",
+    "max_age": null,
+    "industries": null,
+    "regions": [
+      "서울"
+    ],
+    "pre_startup_only": false,
+    "amount_max": 8000,
+    "rate": 1.0,
+    "rate_note": null,
+    "term_months": null,
+    "exclusive_group": null,
+    "status": "open",
+    "notice_date": "2026-07-21",
+    "source_url": "https://www.seoulshinbo.co.kr",
+    "doc": "서울신보_보증상품_미래성장산업"
+  },
+  {
+    "name": "일자리 창출 및 고용안정 우수기업 특별보증",
+    "org": "서울신용보증재단",
+    "product_type": "guarantee",
+    "max_age": null,
+    "industries": null,
+    "regions": [
+      "서울"
+    ],
+    "pre_startup_only": false,
+    "amount_max": 4000,
+    "rate": 1.0,
+    "rate_note": null,
+    "term_months": 60,
+    "exclusive_group": null,
+    "status": "open",
+    "notice_date": "2026-07-21",
+    "source_url": "https://www.seoulshinbo.co.kr",
+    "doc": "서울신보_보증상품_일자리창출사회적기업"
+  },
+  {
+    "name": "사회적경제기업 특별보증",
+    "org": "서울신용보증재단",
+    "product_type": "guarantee",
+    "max_age": null,
+    "industries": null,
+    "regions": [
+      "서울"
+    ],
+    "pre_startup_only": true,
+    "amount_max": 4000,
+    "rate": null,
+    "rate_note": "서울시금고(사회적경제기업자금) 이용 시 연 1.75% 고정금리, 그 외의 경우 자금에 따라 변동",
+    "term_months": 60,
+    "exclusive_group": null,
+    "status": "open",
+    "notice_date": "2026-07-21",
+    "source_url": "https://www.seoulshinbo.co.kr",
+    "doc": "서울신보_보증상품_일자리창출사회적기업"
+  },
+  {
+    "name": "장애인 기업 특별보증",
+    "org": "서울신용보증재단",
+    "product_type": "guarantee",
+    "max_age": null,
+    "industries": null,
+    "regions": [
+      "서울"
+    ],
+    "pre_startup_only": false,
+    "amount_max": 10000,
+    "rate": null,
+    "rate_note": "연 0.7%",
+    "term_months": null,
+    "exclusive_group": null,
+    "status": "open",
+    "notice_date": "2026-07-21",
+    "source_url": "https://www.seoulshinbo.co.kr",
+    "doc": "서울신보_보증상품_장애인기업"
+  },
+  {
+    "name": "창업자금 및 사업장 임차자금 특별보증",
+    "org": "서울신용보증재단",
+    "product_type": "guarantee",
+    "max_age": null,
+    "industries": null,
+    "regions": [
+      "서울"
+    ],
+    "pre_startup_only": false,
+    "amount_max": 5000,
+    "rate": null,
+    "rate_note": "신용보증 이수자: 연체된 5천만원 이내",
+    "term_months": null,
+    "exclusive_group": null,
+    "status": "open",
+    "notice_date": "2026-07-21",
+    "source_url": "https://www.seoulshinbo.co.kr",
+    "doc": "서울신보_보증상품_창업기업"
+  },
+  {
+    "name": "일반경영안정자금",
+    "org": "소진공",
+    "product_type": "loan",
+    "max_age": null,
+    "industries": null,
+    "regions": [
+      "서울"
+    ],
     "pre_startup_only": false,
     "amount_max": 7000,
-    "rate": 0.6,
-    "rate_note": "기준금리+0.6%p",
+    "rate": null,
+    "rate_note": "정책자금 기준금리 + 0.6%p",
     "term_months": 60,
     "exclusive_group": null,
     "status": "open",
@@ -376,9 +260,12 @@
   {
     "name": "긴급경영안정자금 (재해)",
     "org": "소진공",
+    "product_type": "loan",
     "max_age": null,
     "industries": null,
-    "regions": null,
+    "regions": [
+      "서울"
+    ],
     "pre_startup_only": false,
     "amount_max": 10000,
     "rate": 2.0,
@@ -393,13 +280,16 @@
   {
     "name": "긴급경영안정자금 (일시적 경영애로)",
     "org": "소진공",
+    "product_type": "loan",
     "max_age": null,
     "industries": null,
-    "regions": null,
+    "regions": [
+      "서울"
+    ],
     "pre_startup_only": false,
     "amount_max": 7000,
     "rate": null,
-    "rate_note": "기준금리",
+    "rate_note": "정책자금 기준금리",
     "term_months": 60,
     "exclusive_group": null,
     "status": "open",
@@ -410,13 +300,16 @@
   {
     "name": "신용취약소상공인자금",
     "org": "소진공",
+    "product_type": "loan",
     "max_age": null,
     "industries": null,
-    "regions": null,
+    "regions": [
+      "서울"
+    ],
     "pre_startup_only": false,
     "amount_max": 3000,
-    "rate": 1.6,
-    "rate_note": "기준금리+1.6%p",
+    "rate": null,
+    "rate_note": "정책자금 기준금리 + 1.6%p",
     "term_months": 60,
     "exclusive_group": null,
     "status": "open",
@@ -427,9 +320,12 @@
   {
     "name": "대환대출",
     "org": "소진공",
+    "product_type": "loan",
     "max_age": null,
     "industries": null,
-    "regions": null,
+    "regions": [
+      "서울"
+    ],
     "pre_startup_only": false,
     "amount_max": 5000,
     "rate": 4.5,
@@ -444,13 +340,16 @@
   {
     "name": "재도전특별자금 (일반형)",
     "org": "소진공",
+    "product_type": "loan",
     "max_age": null,
     "industries": null,
-    "regions": null,
+    "regions": [
+      "서울"
+    ],
     "pre_startup_only": false,
     "amount_max": 7000,
-    "rate": 1.6,
-    "rate_note": "기준금리+1.6%p",
+    "rate": null,
+    "rate_note": "정책자금 기준금리 + 1.6%p",
     "term_months": 60,
     "exclusive_group": null,
     "status": "open",
@@ -461,13 +360,16 @@
   {
     "name": "재도전특별자금 (희망형)",
     "org": "소진공",
+    "product_type": "loan",
     "max_age": null,
     "industries": null,
-    "regions": null,
+    "regions": [
+      "서울"
+    ],
     "pre_startup_only": false,
     "amount_max": 10000,
-    "rate": 0.6,
-    "rate_note": "기준금리+0.6%p",
+    "rate": null,
+    "rate_note": "정책자금 기준금리 + 0.6%p",
     "term_months": 60,
     "exclusive_group": null,
     "status": "open",
@@ -478,13 +380,16 @@
   {
     "name": "재도전특별자금 (도약형)",
     "org": "소진공",
+    "product_type": "loan",
     "max_age": null,
     "industries": null,
-    "regions": null,
+    "regions": [
+      "서울"
+    ],
     "pre_startup_only": false,
     "amount_max": 20000,
-    "rate": 0.4,
-    "rate_note": "기준금리+0.4%p",
+    "rate": null,
+    "rate_note": "정책자금 기준금리 + 0.4%p",
     "term_months": 60,
     "exclusive_group": null,
     "status": "open",
@@ -495,11 +400,12 @@
   {
     "name": "장애인기업지원자금",
     "org": "소진공",
+    "product_type": "loan",
     "max_age": null,
-    "industries": [
-      "장애인기업"
+    "industries": null,
+    "regions": [
+      "서울"
     ],
-    "regions": null,
     "pre_startup_only": false,
     "amount_max": 10000,
     "rate": 2.0,
@@ -514,13 +420,16 @@
   {
     "name": "청년고용연계자금",
     "org": "소진공",
+    "product_type": "loan",
     "max_age": 39,
     "industries": null,
-    "regions": null,
+    "regions": [
+      "서울"
+    ],
     "pre_startup_only": false,
     "amount_max": 7000,
     "rate": null,
-    "rate_note": "기준금리",
+    "rate_note": "정책자금 기준금리",
     "term_months": 60,
     "exclusive_group": null,
     "status": "open",
@@ -529,169 +438,40 @@
     "doc": "소진공_2026_소상공인정책자금_융자공고"
   },
   {
-    "name": "소공인특화자금 (일반)",
+    "name": "성장기반자금",
     "org": "소진공",
+    "product_type": "loan",
     "max_age": null,
     "industries": [
       "제조업"
     ],
-    "regions": null,
-    "pre_startup_only": false,
-    "amount_max": 10000,
-    "rate": 0.6,
-    "rate_note": "기준금리+0.6%p",
-    "term_months": 60,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2025-12-29",
-    "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_2026_소상공인정책자금_융자공고"
-  },
-  {
-    "name": "소공인특화자금 (유망)",
-    "org": "소진공",
-    "max_age": null,
-    "industries": [
-      "제조업"
+    "regions": [
+      "서울"
     ],
-    "regions": null,
     "pre_startup_only": false,
-    "amount_max": 20000,
-    "rate": 0.4,
-    "rate_note": "기준금리+0.4%p",
-    "term_months": 60,
+    "amount_max": null,
+    "rate": null,
+    "rate_note": "매분기별로 변동",
+    "term_months": null,
     "exclusive_group": null,
     "status": "open",
-    "notice_date": "2025-12-29",
+    "notice_date": "2026-07-21",
     "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_2026_소상공인정책자금_융자공고"
-  },
-  {
-    "name": "혁신성장촉진자금 (혁신형)",
-    "org": "소진공",
-    "max_age": null,
-    "industries": [
-      "수출",
-      "스마트공장"
-    ],
-    "regions": null,
-    "pre_startup_only": false,
-    "amount_max": 20000,
-    "rate": 0.4,
-    "rate_note": "기준금리+0.4%p",
-    "term_months": 60,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2025-12-29",
-    "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_2026_소상공인정책자금_융자공고"
-  },
-  {
-    "name": "혁신성장촉진자금 (일반형)",
-    "org": "소진공",
-    "max_age": null,
-    "industries": [
-      "스마트기술"
-    ],
-    "regions": null,
-    "pre_startup_only": false,
-    "amount_max": 10000,
-    "rate": 0.4,
-    "rate_note": "기준금리+0.4%p",
-    "term_months": 60,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2025-12-29",
-    "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_2026_소상공인정책자금_융자공고"
-  },
-  {
-    "name": "민간투자연계형매칭융자",
-    "org": "소진공",
-    "max_age": null,
-    "industries": null,
-    "regions": null,
-    "pre_startup_only": false,
-    "amount_max": 50000,
-    "rate": 0.4,
-    "rate_note": "기준금리+0.4%p",
-    "term_months": 96,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2025-12-29",
-    "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_2026_소상공인정책자금_융자공고"
-  },
-  {
-    "name": "상생성장지원자금 (일반형)",
-    "org": "소진공",
-    "max_age": null,
-    "industries": [
-      "온라인플랫폼"
-    ],
-    "regions": null,
-    "pre_startup_only": false,
-    "amount_max": 7000,
-    "rate": 0.4,
-    "rate_note": "기준금리+0.4%p",
-    "term_months": 60,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2025-12-29",
-    "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_2026_소상공인정책자금_융자공고"
-  },
-  {
-    "name": "상생성장지원자금 (성장형)",
-    "org": "소진공",
-    "max_age": null,
-    "industries": [
-      "온라인플랫폼"
-    ],
-    "regions": null,
-    "pre_startup_only": false,
-    "amount_max": 10000,
-    "rate": 0.4,
-    "rate_note": "기준금리+0.4%p",
-    "term_months": 60,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2025-12-29",
-    "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_2026_소상공인정책자금_융자공고"
-  },
-  {
-    "name": "상생성장지원자금 (도약형)",
-    "org": "소진공",
-    "max_age": null,
-    "industries": [
-      "온라인플랫폼"
-    ],
-    "regions": null,
-    "pre_startup_only": false,
-    "amount_max": 20000,
-    "rate": 0.4,
-    "rate_note": "기준금리+0.4%p",
-    "term_months": 60,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2025-12-29",
-    "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_2026_소상공인정책자금_융자공고"
+    "doc": "소진공_소상공인정책자금_지원사업안내"
   },
   {
     "name": "혁신성장촉진자금",
     "org": "소진공",
+    "product_type": "loan",
     "max_age": null,
-    "industries": [
-      "수출 소상공인",
-      "스마트 공장 도입"
+    "industries": null,
+    "regions": [
+      "서울"
     ],
-    "regions": null,
     "pre_startup_only": false,
     "amount_max": null,
-    "rate": 0.4,
-    "rate_note": "기준금리+0.4%p",
+    "rate": 4.25,
+    "rate_note": null,
     "term_months": null,
     "exclusive_group": null,
     "status": "open",
@@ -700,15 +480,18 @@
     "doc": "소진공_소상공인정책자금_지원사업안내"
   },
   {
-    "name": "민간투자연계매칭융자",
+    "name": "민간투자연계형 매칭융자",
     "org": "소진공",
+    "product_type": "loan",
     "max_age": null,
     "industries": null,
-    "regions": null,
+    "regions": [
+      "서울"
+    ],
     "pre_startup_only": false,
     "amount_max": null,
-    "rate": 0.4,
-    "rate_note": "기준금리+0.4%p",
+    "rate": 4.25,
+    "rate_note": null,
     "term_months": null,
     "exclusive_group": null,
     "status": "open",
@@ -717,15 +500,18 @@
     "doc": "소진공_소상공인정책자금_지원사업안내"
   },
   {
-    "name": "신용취약소상공인자금",
+    "name": "일시적 경영애로자금",
     "org": "소진공",
+    "product_type": "loan",
     "max_age": null,
     "industries": null,
-    "regions": null,
+    "regions": [
+      "서울"
+    ],
     "pre_startup_only": false,
     "amount_max": null,
-    "rate": 1.6,
-    "rate_note": "기준금리+1.6%p",
+    "rate": 3.85,
+    "rate_note": null,
     "term_months": null,
     "exclusive_group": null,
     "status": "open",
@@ -734,15 +520,18 @@
     "doc": "소진공_소상공인정책자금_지원사업안내"
   },
   {
-    "name": "일시적경영애로자금",
+    "name": "상생성장 지원자금",
     "org": "소진공",
+    "product_type": "loan",
     "max_age": null,
     "industries": null,
-    "regions": null,
+    "regions": [
+      "서울"
+    ],
     "pre_startup_only": false,
     "amount_max": null,
-    "rate": 0.0,
-    "rate_note": "기준금리+0.0%p",
+    "rate": 4.25,
+    "rate_note": null,
     "term_months": null,
     "exclusive_group": null,
     "status": "open",
@@ -751,154 +540,19 @@
     "doc": "소진공_소상공인정책자금_지원사업안내"
   },
   {
-    "name": "재도전 특별자금(일반형)",
+    "name": "소공인 특화자금(일반)",
     "org": "소진공",
-    "max_age": null,
-    "industries": null,
-    "regions": null,
-    "pre_startup_only": false,
-    "amount_max": null,
-    "rate": 1.6,
-    "rate_note": "기준금리+1.6%p",
-    "term_months": null,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2026-07-21",
-    "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_소상공인정책자금_지원사업안내"
-  },
-  {
-    "name": "재도전 특별자금(희망형)",
-    "org": "소진공",
-    "max_age": null,
-    "industries": null,
-    "regions": null,
-    "pre_startup_only": false,
-    "amount_max": null,
-    "rate": 0.6,
-    "rate_note": "기준금리+0.6%p",
-    "term_months": null,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2026-07-21",
-    "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_소상공인정책자금_지원사업안내"
-  },
-  {
-    "name": "재도전특별자금(도약형)",
-    "org": "소진공",
-    "max_age": null,
-    "industries": null,
-    "regions": null,
-    "pre_startup_only": false,
-    "amount_max": null,
-    "rate": 0.4,
-    "rate_note": "기준금리+0.4%p",
-    "term_months": null,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2026-07-21",
-    "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_소상공인정책자금_지원사업안내"
-  },
-  {
-    "name": "상생성장지원자금",
-    "org": "소진공",
-    "max_age": null,
-    "industries": null,
-    "regions": null,
-    "pre_startup_only": false,
-    "amount_max": null,
-    "rate": 0.4,
-    "rate_note": "기준금리+0.4%p",
-    "term_months": null,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2026-07-21",
-    "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_소상공인정책자금_지원사업안내"
-  },
-  {
-    "name": "소공인특화자금(일반)",
-    "org": "소진공",
+    "product_type": "loan",
     "max_age": null,
     "industries": [
       "제조업"
     ],
-    "regions": null,
-    "pre_startup_only": false,
-    "amount_max": null,
-    "rate": 0.6,
-    "rate_note": "기준금리+0.6%p",
-    "term_months": null,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2026-07-21",
-    "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_소상공인정책자금_지원사업안내"
-  },
-  {
-    "name": "일반경영안정자금",
-    "org": "소진공",
-    "max_age": null,
-    "industries": null,
-    "regions": null,
-    "pre_startup_only": false,
-    "amount_max": null,
-    "rate": 0.6,
-    "rate_note": "기준금리+0.6%p",
-    "term_months": null,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2026-07-21",
-    "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_소상공인정책자금_지원사업안내"
-  },
-  {
-    "name": "긴급경영안정자금(재해피해)",
-    "org": "소진공",
-    "max_age": null,
-    "industries": null,
-    "regions": null,
-    "pre_startup_only": false,
-    "amount_max": null,
-    "rate": 2.0,
-    "rate_note": null,
-    "term_months": null,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2026-07-21",
-    "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_소상공인정책자금_지원사업안내"
-  },
-  {
-    "name": "긴급경영안정자금(일시적 경영애로)",
-    "org": "소진공",
-    "max_age": null,
-    "industries": null,
-    "regions": null,
-    "pre_startup_only": false,
-    "amount_max": null,
-    "rate": 0.0,
-    "rate_note": "기준금리+0.0%p",
-    "term_months": null,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2026-07-21",
-    "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_소상공인정책자금_지원사업안내"
-  },
-  {
-    "name": "장애인기업지원자금",
-    "org": "소진공",
-    "max_age": null,
-    "industries": [
-      "장애인 소상공인"
+    "regions": [
+      "서울"
     ],
-    "regions": null,
     "pre_startup_only": false,
     "amount_max": null,
-    "rate": 2.0,
+    "rate": 4.45,
     "rate_note": null,
     "term_months": null,
     "exclusive_group": null,
@@ -908,31 +562,17 @@
     "doc": "소진공_소상공인정책자금_지원사업안내"
   },
   {
-    "name": "청년고용연계자금",
+    "name": "긴급경영 안정자금(재해피해)",
     "org": "소진공",
-    "max_age": 39,
-    "industries": null,
-    "regions": null,
-    "pre_startup_only": false,
-    "amount_max": null,
-    "rate": 0.0,
-    "rate_note": "기준금리+0.0%p",
-    "term_months": null,
-    "exclusive_group": null,
-    "status": "open",
-    "notice_date": "2026-07-21",
-    "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_소상공인정책자금_지원사업안내"
-  },
-  {
-    "name": "대환대출",
-    "org": "소진공",
+    "product_type": "loan",
     "max_age": null,
     "industries": null,
-    "regions": null,
+    "regions": [
+      "서울"
+    ],
     "pre_startup_only": false,
     "amount_max": null,
-    "rate": 4.5,
+    "rate": 2.0,
     "rate_note": null,
     "term_months": null,
     "exclusive_group": null,
