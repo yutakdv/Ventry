@@ -147,8 +147,14 @@
 | 역 좌표 | `subwayStationMaster` (OA-21232) | 784 | `BLDN_ID`·`BLDN_NM`·`ROUTE`·**`LAT`·`LOT`** | **WGS84 확정** → t-data 교체 불필요 |
 | 승하차 | `CardSubwayStatsNew` (OA-12914) | 일별 618 | `USE_YMD`·`SBWY_ROUT_LN_NM`·`SBWY_STNS_NM`·`GTON_TNOPE`·`GTOFF_TNOPE` | 경로 파라미터 **`USE_YMD` 필수**, 3일 지연 갱신 |
 
-## 9. 미수집 / 후속
+## 9. 창업비용 통계 (AI-02e · `startup_cost` — 인테리어·시설비 업종 상수)
 
-| 항목 | 받는 곳 · 스크립트 |
-|---|---|
-| 창업비용(시설비 상수) | 공정위 가맹정보 업종별 창업비용 API(data.go.kr 15110293, 신청 완료) · 배치 |
+`raw/startup_cost/`에 2종 병용 수집 (분해 + 총액). 필드·단위·상수 상세는 `startup_cost.py`
+docstring과 `docs/assumptions.md` #21~#23.
+
+| 파일 | 서비스 | 전건 | 핵심 컬럼 | 비고 |
+|---|---|---|---|---|
+| `ftc_franchise_cost.json` | 공정위 가맹정보 (15110293) 외식·서비스·도소매 | 308 (2019~2025) | `group`·`yr`·`indutyMlsfcNm`·`avrgJngEtcAmt`(기타=인테리어·시설)·`smtnAmt` | **⚠️ 단위=만원**(라벨 천원은 버그) · **필드명 오배치**(`frcsCnt`=보증금, count 아님) · 가맹점 기준(상향) |
+| `kosis_startup_cost.json` | KOSIS 소상공인실태 (142/DT_3ME0126) | 18 | `C1`(전국/서울)·`C2`(I/I56)·`C3`(창업비용/본인부담)·`DT`(백만원) | 독립창업 총액 상한 · **서울×I56 없음**(대분류 I까지) |
+
+잠정 인테리어·시설 상수(2025): **카페 2,485만원 · 음식점 4,595만원** — AI-05에서 permit 분포로 정련.
