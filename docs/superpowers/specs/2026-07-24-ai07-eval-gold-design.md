@@ -113,7 +113,7 @@ ai/eval/
 통합/§5-4 이원화("설계 확정·본선 반영") 소관이며 본 스위트 밖이다.
 
 ### 5-2. 입력·골드
-- 적재된 `finance_doc_chunk`(**6청크**, 전부 소진공 클린 문서) + `finance_product.doc_chunk_ref`.
+- 적재된 `finance_doc_chunk`(**6청크** — 3 KB(F-000·001·002 클린 문서) + 3 소진공(F-011·014·019)) + `finance_product.doc_chunk_ref`.
 - 신규 `ai/eval/gold/grounding_quotes.jsonl` — 링크된 상품마다 기대 verbatim 부분문자열 + 원문
   `.txt` 내 바이트 오프셋.
 

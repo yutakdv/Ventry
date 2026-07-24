@@ -10,9 +10,6 @@ from pathlib import Path
 
 from eval import common
 
-# 근거 청크가 불가능한(§5-4 정당 null) 깨진 원문 — 서울신보·KB 일부 CID/JS 렌더
-_LEGIT_NULL_PREFIX = ("서울신보", "KB")
-
 
 def load_gold() -> list[dict]:
     lines = (common.GOLD_DIR / "grounding_quotes.jsonl").read_text(encoding="utf-8").splitlines()
@@ -24,9 +21,13 @@ def evaluate(gold: list[dict], docs: dict[str, str]) -> dict:
     draft = common.load_extraction_draft()
     total = len(draft)
     linked = len(gold)
-    legit_null = sorted({d["doc"] for d in draft
-                         if d["doc"].startswith(_LEGIT_NULL_PREFIX)
-                         and not common.is_clean_source(d["doc"])})
+    gold_docs = {g["doc"] for g in gold}
+    draft_docs = {d["doc"] for d in draft}
+    # §5-3 정당 null(깨진 원문 → 청크 불가) vs 예상 밖 null(클린인데 근거 없음) 구분
+    legit_null = sorted(d for d in draft_docs
+                        if not common.is_clean_source(d) and d not in gold_docs)
+    unexpected_null = sorted(d for d in draft_docs
+                             if common.is_clean_source(d) and d not in gold_docs)
     return {
         "verbatim_match_rate": (linked - len(mismatches)) / linked if linked else 0.0,
         "linked": linked,
@@ -34,6 +35,7 @@ def evaluate(gold: list[dict], docs: dict[str, str]) -> dict:
         "coverage": linked / total if total else 0.0,
         "mismatches": mismatches,
         "legitimate_null_docs": legit_null,
+        "unexpected_null_docs": unexpected_null,
     }
 
 
