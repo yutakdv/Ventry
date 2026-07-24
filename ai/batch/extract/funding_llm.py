@@ -17,7 +17,6 @@ import base64
 import csv
 import json
 
-from batch.collect._common import load_env, require_key
 from batch.paths import AI_ROOT, RAW_DIR, logger
 
 OPENAI_MODEL = "gpt-4o"
@@ -180,6 +179,8 @@ def write_review_sheet(products: list[dict], coverage: dict[str, int], path) -> 
 
 def run() -> None:
     from openai import OpenAI
+
+    from batch.collect._common import load_env, require_key
 
     key = require_key(load_env(), "OPENAI_API_KEY")
     client = OpenAI(api_key=key)
