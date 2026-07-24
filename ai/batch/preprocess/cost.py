@@ -5,6 +5,8 @@
 """
 from __future__ import annotations
 
+import pandas as pd
+
 # 대표면적 = 인허가 소재지면적 영업중 중앙값 (채움률 99.8%, design 2-1)
 REPRESENTATIVE_AREA_M2 = {"cafe": 29.2, "food": 55.2}
 # 보증금 관행배수 (상가; 인허가 보증액 0% → 실측 불가라 관행, 전환율은 라벨 병기)
@@ -72,3 +74,31 @@ def cost_ex_premium(
 def cost_incl_premium(ex: tuple[int, int], premium: tuple[int, int]) -> tuple[int, int]:
     """권리금 포함 합계 구간 = 권리금 제외 합계 + 권리금."""
     return (ex[0] + premium[0], ex[1] + premium[1])
+
+
+def build_initial_cost(rent_df: pd.DataFrame, seoul_median_rent: int) -> pd.DataFrame:
+    """상권×업종 임대료 단가 → 초기비용 4블록 + 합계 구간 DataFrame.
+
+    입력 `rent_df` 컬럼: area_code, industry, unit_price(천원/㎡).
+    """
+    rows = []
+    for r in rent_df.itertuples():
+        industry = r.industry
+        rent = converted_rent(r.unit_price, industry)
+        dep = deposit_interval(rent)
+        prem = premium_interval(rent, seoul_median_rent, industry)
+        intr = interior_interval(industry)
+        mfc = monthly_fixed_cost(rent, industry)
+        ex = cost_ex_premium(dep, intr, mfc)
+        incl = cost_incl_premium(ex, prem)
+        rows.append({
+            "area_code": r.area_code, "industry": industry,
+            "monthly_rent": rent,
+            "deposit_low": dep[0], "deposit_high": dep[1],
+            "premium_low": prem[0], "premium_high": prem[1],
+            "interior_low": intr[0], "interior_high": intr[1],
+            "monthly_fixed_cost": mfc,
+            "cost_ex_premium_low": ex[0], "cost_ex_premium_high": ex[1],
+            "cost_incl_premium_low": incl[0], "cost_incl_premium_high": incl[1],
+        })
+    return pd.DataFrame(rows)
