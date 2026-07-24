@@ -9,7 +9,6 @@ import com.ventry.api.scenario.ScenarioDtos.ScenarioCard;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
 
@@ -25,14 +24,6 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class ScenarioBuilder {
-
-    /** 상품 종류 컬럼이 없어 기관명으로 판별한다 — AI-06 확정 시 제거 (assumptions #25). */
-    private static final Map<String, String> ORG_TO_TYPE = Map.of(
-            "서울신용보증재단", "guarantee",
-            "소상공인시장진흥공단", "policy_loan");
-    private static final String DEFAULT_TYPE = "policy_loan";
-    private static final String TYPE_EQUITY = "equity";
-    private static final String TYPE_GUARANTEE = "guarantee";
 
     /** 상품 카드의 기준일은 상품 데이터 기준일을 쓴다 (data_source_meta.finance_product). */
     private static final String META_SOURCE_PRODUCT = "finance_product";
@@ -51,7 +42,7 @@ public class ScenarioBuilder {
         int equity = profile.capital();
 
         Optional<FundingProduct> conservative = qualified.stream()
-                .filter(p -> TYPE_GUARANTEE.equals(typeOf(p)))
+                .filter(p -> ProductType.GUARANTEE.equals(ProductType.of(p)))
                 .max(Comparator.comparingInt(FundingProduct::amountMax));
         Optional<FundingProduct> aggressive = qualified.stream()
                 .max(Comparator.comparingInt(FundingProduct::amountMax));
@@ -61,23 +52,18 @@ public class ScenarioBuilder {
 
     private ScenarioCard card(String label, int equity, Optional<FundingProduct> selected) {
         List<CompositionRange> composition = new ArrayList<>();
-        composition.add(new CompositionRange(TYPE_EQUITY, equity, equity));   // 심사와 무관한 확정 재원
+        composition.add(new CompositionRange(ProductType.EQUITY, equity, equity));  // 심사와 무관한 확정 재원
         List<Product> cardProducts = new ArrayList<>();
         int budgetMax = equity;
 
         if (selected.isPresent()) {
             FundingProduct product = selected.get();
-            composition.add(new CompositionRange(typeOf(product), 0, product.amountMax()));
+            composition.add(new CompositionRange(ProductType.of(product), 0, product.amountMax()));
             cardProducts.add(new Product(product.name(), product.amountMax(), product.rate(),
                     meta.asOf(META_SOURCE_PRODUCT), product.source(), null));   // source_quote=RAG(P1)
             budgetMax += product.amountMax();
         }
         // 슬라이더 초기 선택값 = 상한(한도 전액 활용 가정) — 승인 금액이라는 뜻이 아니다
         return new ScenarioCard(label, budgetMax, equity, budgetMax, composition, cardProducts);
-    }
-
-    /** 기관명 → composition type. 미등록 기관은 정책자금으로 본다 (assumptions #25). */
-    private static String typeOf(FundingProduct product) {
-        return ORG_TO_TYPE.getOrDefault(product.source().org(), DEFAULT_TYPE);
     }
 }

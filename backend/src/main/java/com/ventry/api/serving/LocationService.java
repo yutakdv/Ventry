@@ -32,7 +32,7 @@ import org.springframework.stereotype.Service;
 public class LocationService {
 
     /** 업종 프리셋 가중치 (화면 공개, assumptions.md). 현재 카페·음식점 공용. */
-    private static final Weights DEFAULT_WEIGHTS = new Weights(0.30, 0.20, 0.20, 0.15, 0.15);
+    static final Weights DEFAULT_WEIGHTS = new Weights(0.30, 0.20, 0.20, 0.15, 0.15);
 
     private final CandidateSource candidates;
     private final DemoProducts products;
@@ -63,12 +63,13 @@ public class LocationService {
      */
     public BudgetPreview preview(String industry, int budget) {
         List<CandidateArea> pool = candidates.findCandidates(industry);
-        int[] costs = pool.stream().mapToInt(LocationService::inclMedian).toArray();
+        int[] costs = pool.stream().mapToInt(CandidateArea::inclusiveCostMedian).toArray();
         int areaCount = Frontier.nEntry(costs, budget);   // 개수는 도구 계층이 계산 (스펙 §5-1)
         if (areaCount == 0) {
             return new BudgetPreview(0, null, null);
         }
-        List<CandidateArea> entered = pool.stream().filter(c -> inclMedian(c) <= budget).toList();
+        List<CandidateArea> entered = pool.stream()
+                .filter(c -> c.inclusiveCostMedian() <= budget).toList();
         return new BudgetPreview(areaCount,
                 range(entered, CandidateArea::monthlyRent),
                 range(entered, CandidateArea::dailyFloating));
@@ -120,11 +121,6 @@ public class LocationService {
                                        java.util.function.ToIntFunction<CandidateArea> field) {
         var stats = areas.stream().mapToInt(field).summaryStatistics();
         return List.of(stats.getMin(), stats.getMax());
-    }
-
-    /** 진입 비교 기준 = 권리금 포함 비용 중앙값 (스펙 §4-1 · Frontier의 c_a). */
-    private static int inclMedian(CandidateArea c) {
-        return (int) Math.ceil(CostCalculator.estimate(c.costBlocks()).inclPremium().median());
     }
 
     private static Breakdown breakdown(CandidateArea c) {
