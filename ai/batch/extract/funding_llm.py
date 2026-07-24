@@ -12,11 +12,12 @@ import csv
 import json
 
 from batch.collect._common import load_env, require_key
-from batch.paths import INTERIM_DIR, logger
+from batch.paths import AI_ROOT, INTERIM_DIR, logger
 
 OPENAI_MODEL = "gpt-4o"
 FUNDING_DIR = INTERIM_DIR / "funding_docs"
-OUT_DIR = INTERIM_DIR / "finance"
+# 추적 경로(data/interim 은 gitignore) — 검수대조표는 DoD '보존'·AI-07 골드라 커밋한다
+OUT_DIR = AI_ROOT / "data" / "finance"
 
 # 상품 스키마 키 (finance_product DDL + 검수 메타 rate_note)
 PRODUCT_KEYS = (
@@ -28,16 +29,34 @@ REQUIRED_FIELDS = ("name", "org", "amount_max", "rate", "status")
 # 용어 컴플라이언스 — 추출 값에 '승인/추천/권장'(자금 서술 금칙어) 유입 차단 (CLAUDE.md)
 BANNED_WORDS = ("승인", "추천", "권장")
 
+# 문서 출처 → (org, source_url) — 기관·URL 은 LLM 추출이 아니라 문서 메타데이터로 결정적 주입
+DOC_SOURCES: dict[str, tuple[str, str]] = {
+    "소진공": ("소진공", "https://ols.semas.or.kr"),
+    "서울신보": ("서울신용보증재단", "https://www.seoulshinbo.co.kr"),
+    "KB": ("KB국민은행", "https://obank.kbstar.com"),
+}
+
+
+def _doc_source(doc_name: str) -> tuple[str | None, str | None]:
+    for prefix, (org, url) in DOC_SOURCES.items():
+        if doc_name.startswith(prefix):
+            return org, url
+    return None, None
+
+
 SYSTEM_PROMPT = """당신은 소상공인 정책자금 공고문에서 상품 정보를 '추출'하는 도구다. 규칙:
 - 문서에 명시된 값만 추출한다. 없으면 null 로 둔다. 값을 생성·추정·계산하지 마라.
 - 한 공고문에 세부 자금이 여러 개면 각각을 별도 상품으로 추출한다.
-- 금액(amount_max)은 만원 단위 정수(1억원=10000, 7천만원=7000).
+- **name(자금명)과 amount_max(한도)는 반드시 채운다.** 자금명이 없는 잡음 항목은 만들지 마라.
+  세부 자금별 '대출한도'·'보증한도'가 명시된 것만 상품으로 추출한다.
+- 금액(amount_max)은 만원 단위 정수(1억원=10000, 7천만원=7000, 5천만원=5000).
 - 금리(rate)는 연 % 숫자. '기준금리+X%p' 변동금리면 rate 에 가산 X 를 넣고 rate_note 에
   "기준금리+X%p" 를 기재한다. 고정금리면 rate 에 그 값, rate_note 는 null.
-- term_months 는 대출기간(개월). max_age 는 상한 연령(청년 등), 없으면 null.
+- term_months 는 대출기간(개월, 5년=60). max_age 는 상한 연령(청년 등), 없으면 null.
 - industries/regions 는 제한이 있으면 배열, 전 업종/지역이면 null.
 - pre_startup_only 는 예비창업자 한정이면 true, 아니면 false.
-- status 는 접수중이면 "open", 마감이면 "closed".
+- status 는 접수중이면 "open", 마감이면 "closed"(불명확하면 "open").
+- notice_date 는 공고일(YYYY-MM-DD), 없으면 null. org·source_url 은 비워둬도 된다(후처리).
 반드시 JSON 객체만 출력: {"products": [ { …위 키… }, ... ]}"""
 
 
@@ -80,9 +99,12 @@ def extract_doc(client, doc_name: str, text: str) -> list[dict]:
     )
     payload = json.loads(resp.choices[0].message.content)
     products = payload.get("products", []) if isinstance(payload, dict) else []
+    org, url = _doc_source(doc_name)
     out = []
     for raw in products:
         product = {k: raw.get(k) for k in PRODUCT_KEYS}
+        product["org"] = org  # 문서 메타 결정적 주입 (LLM 값 무시)
+        product["source_url"] = product.get("source_url") or url
         product["doc"] = doc_name
         out.append(product)
     return out
