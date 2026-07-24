@@ -5,6 +5,7 @@ import com.ventry.api.engine.CostBlocks;
 import com.ventry.api.engine.Interval;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 /**
@@ -18,7 +19,8 @@ import org.springframework.stereotype.Component;
  * 픽스처 내부 순서 정합은 유지한다: 매출 순위 = w2 순위, (매출÷임대료) 순위 = w5 순위.
  */
 @Component
-public class DemoCandidates {
+@Profile("!db")
+public class DemoCandidates implements CandidateSource {
 
     // 추천 풀 (예산 8,000·θ 0.15에서 FIT·FIT·CAUTION, 점수순 망원>합정>홍대)
     private static final CandidateArea MANGWON = new CandidateArea(
@@ -57,13 +59,15 @@ public class DemoCandidates {
     private static final List<CandidateArea> RECOMMEND_POOL = List.of(MANGWON, HAPJEONG, HONGDAE);
     private static final List<CandidateArea> ALL = List.of(MANGWON, HAPJEONG, HONGDAE, YEONNAM);
 
-    /** 추천(화면 3) 후보 풀. */
-    public List<CandidateArea> recommendPool() {
+    /** 추천(화면 3)·프리뷰 후보 풀. 데모는 cafe 단일 업종이라 industry 는 무시한다. */
+    @Override
+    public List<CandidateArea> findCandidates(String industry) {
         return RECOMMEND_POOL;
     }
 
-    /** 역방향 판정용 상권 조회 (임의 클릭). */
-    public Optional<CandidateArea> find(String areaCode) {
+    /** 역방향 판정용 상권 조회 (임의 클릭). 데모는 단일 업종이라 industry 는 무시한다. */
+    @Override
+    public Optional<CandidateArea> find(String industry, String areaCode) {
         return ALL.stream().filter(c -> c.areaCode().equals(areaCode)).findFirst();
     }
 }

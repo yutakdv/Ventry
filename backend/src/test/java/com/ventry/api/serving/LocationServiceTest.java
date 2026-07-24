@@ -15,7 +15,8 @@ import org.junit.jupiter.api.Test;
 /** BE-03f — 도구 계층 결선(엔진 오케스트레이션) 검증. 데모 프로필·예산 8,000 기준. */
 class LocationServiceTest {
 
-    private final LocationService svc = new LocationService(new DemoCandidates(), new DemoProducts());
+    private final LocationService svc =
+            new LocationService(new DemoCandidates(), new DemoProducts(), new DemoDataMeta());
     private final Profile demo = new Profile(32, 5000, false, "cafe", "망원");
 
     @Test
@@ -80,7 +81,7 @@ class LocationServiceTest {
     /** 프리뷰 개수는 진입 프론티어 N_entry(B)와 같아야 한다 (expl §2-1). */
     @Test
     void preview_countMatchesEntryFrontier_andRangesCoverEnteredAreas() {
-        BudgetPreview preview = svc.preview(8000);
+        BudgetPreview preview = svc.preview("cafe", 8000);
         assertThat(preview.areaCount()).isEqualTo(3);
         assertThat(preview.rentRange()).containsExactly(198, 456);
         assertThat(preview.floatingRange()).containsExactly(22800, 38200);
@@ -88,13 +89,13 @@ class LocationServiceTest {
 
     @Test
     void preview_narrowsAsBudgetDrops() {
-        assertThat(svc.preview(7600).areaCount()).isEqualTo(1);   // 홍대(7,500)만 진입
-        assertThat(svc.preview(7600).rentRange()).containsExactly(456, 456);
+        assertThat(svc.preview("cafe", 7600).areaCount()).isEqualTo(1);   // 홍대(7,500)만 진입
+        assertThat(svc.preview("cafe", 7600).rentRange()).containsExactly(456, 456);
     }
 
     @Test
     void preview_belowEveryCandidate_hasNoRanges() {
-        BudgetPreview preview = svc.preview(5000);
+        BudgetPreview preview = svc.preview("cafe", 5000);
         assertThat(preview.areaCount()).isZero();
         assertThat(preview.rentRange()).isNull();
         assertThat(preview.floatingRange()).isNull();

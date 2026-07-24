@@ -8,6 +8,7 @@ import com.ventry.api.scenario.ScenarioDtos.BudgetResponse;
 import com.ventry.api.scenario.ScenarioDtos.ScenarioCard;
 import com.ventry.api.scenario.ScenarioDtos.ScenarioDone;
 import com.ventry.api.serving.LocationService;
+import com.ventry.api.serving.SessionMapper;
 import java.util.List;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -58,6 +59,7 @@ public class ScenarioController {
         SessionStore.SessionState state = sessions.get(sid);
         state.confirmBudget(request.confirmedBudget(), request.composition());
         return new BudgetResponse(request.confirmedBudget(), request.composition(),
-                locationService.preview(request.confirmedBudget()));
+                locationService.preview(SessionMapper.profile(state).industry(),
+                        request.confirmedBudget()));
     }
 }
