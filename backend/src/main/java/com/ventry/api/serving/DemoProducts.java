@@ -5,6 +5,7 @@ import com.ventry.api.common.MockData;
 import com.ventry.api.engine.Eligibility;
 import com.ventry.api.engine.FundingProduct;
 import java.util.List;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 /**
@@ -14,7 +15,8 @@ import org.springframework.stereotype.Component;
  * 적극 = 자기자본 5,000 + 정책자금 3,000 = 8,000 (expl §8).
  */
 @Component
-public class DemoProducts {
+@Profile("!db")
+public class DemoProducts implements ProductSource {
 
     private static final FundingProduct YOUTH_STARTUP = new FundingProduct(
             "소진공 청년 전용 창업자금",
@@ -30,6 +32,7 @@ public class DemoProducts {
 
     private static final List<FundingProduct> ALL = List.of(YOUTH_STARTUP, SEOUL_GUARANTEE);
 
+    @Override
     public List<FundingProduct> all() {
         return ALL;
     }
