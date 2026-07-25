@@ -37,6 +37,11 @@ ai/data/raw/*
 !ai/data/raw/README.md
 ai/data/interim/*
 !ai/data/interim/.gitkeep
+# 예외: 정책자금 원문 텍스트(128KB)는 **근거 자료**다 — 부록 1 「근거 충실도」의 verbatim 대조가
+# 이 파일들을 읽으므로, 없으면 신규 클론에서 `make eval` 이 지표를 0으로 산출한다.
+# README 가 약속하는 재현 가능성이 여기에 달려 있다 (#72).
+!ai/data/interim/funding_docs/
+!ai/data/interim/funding_docs/*.txt
 
 # Eval 산출물 (부록 확정본만 docs/에 복사)
 ai/eval/out/

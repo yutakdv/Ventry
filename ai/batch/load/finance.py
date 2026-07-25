@@ -19,8 +19,10 @@ from batch.paths import INTERIM_DIR, REPO_ROOT, logger
 FUNDING_DIR = INTERIM_DIR / "funding_docs"
 DB_INIT = REPO_ROOT / "db" / "init"
 _SPLIT = re.compile(r"\n\s*\n|\n- \d+ -\n")
-# finance_product.rate 는 nullable(스키마 A안, 3인 합의) — 변동금리는 rate=NULL + rate_note 원문.
-# 기준금리 실값을 지어내지 않는다(조작 금지, 스펙 §0-1). 검수에서 소진공 공시 기준금리로 채운다.
+# finance_product.rate 는 nullable(스키마 A안, 3인 합의) —
+# 절대금리 미상이면 rate=NULL + rate_note 원문.
+# 기준금리 실값을 지어내지 않는다(조작 금지, 스펙 §0-1). 소진공 변동금리는 공시 「금리안내」
+# 표(‘26년 3/4분기 기준금리 3.85%)로 검수에서 채웠다 — docs/assumptions.md #34, 이슈 #72.
 # rate 는 월 상환액(§4-2·§353)에 쓰는 연 대출금리(%). 보증료율·차감폭·보증금비율은 rate 가 아니다.
 _VAR_HINT = re.compile(r"기준금리|CD금리|변동")
 # 절대금리 미상(base 미상) → 지어내지 않음: "기준금리/CD금리+가산" · "은행금리에서 X% 차감"
@@ -49,7 +51,9 @@ def rate_fields(product: dict) -> tuple[float | None, str, str | None]:
             return float(m.group(1)), "fixed", note  # note 에 명시된 고정 대출금리
         return None, "variable", note  # 보증료율은 대출금리 아님 → NULL
     if isinstance(raw, (int, float)) and _in_range(float(raw)):
-        return float(raw), "fixed", note
+        # 검수본이 해당 분기 실값을 확정한 경우 — 값은 절대금리지만 성격은 여전히 분기 변동이다.
+        # note 에 기준금리/변동 단서가 있으면 variable 로 표기해야 사용자가 재확인 시점을 안다.
+        return float(raw), ("variable" if note and _VAR_HINT.search(note) else "fixed"), note
     if (m := _FLOOR.search(note or "")) and _in_range(float(m.group(1))):  # 공시 최저 절대값
         return float(m.group(1)), ("variable" if note and _VAR_HINT.search(note) else "fixed"), note
     return None, ("variable" if note and _VAR_HINT.search(note) else "fixed"), note

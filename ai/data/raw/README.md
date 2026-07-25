@@ -150,7 +150,7 @@
 ## 9. 창업비용 통계 (AI-02e · `startup_cost` — 인테리어·시설비 업종 상수)
 
 `raw/startup_cost/`에 2종 병용 수집 (분해 + 총액). 필드·단위·상수 상세는 `startup_cost.py`
-docstring과 `docs/assumptions.md` #21~#23.
+docstring과 `docs/assumptions.md` #38~#40.
 
 | 파일 | 서비스 | 전건 | 핵심 컬럼 | 비고 |
 |---|---|---|---|---|

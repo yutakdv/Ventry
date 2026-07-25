@@ -1,23 +1,23 @@
 """평가 하네스 엔트리포인트 — AI-07 (D9~10). 스펙 §12-1.
 
-사용: python -m eval.run --suite extraction|grounding|sensitivity|report
-matching(BE 소관)·model(AI-08 소관)은 안내 후 통과한다.
+사용: python -m eval.run --suite extraction|grounding|sensitivity|model|report
+matching(BE 소관)만 안내 후 통과한다 — model 은 AI-08(#21)에서 구현됐다.
 """
 import argparse
 import json
 from pathlib import Path
 
-from eval.suites import extraction, grounding, report, sensitivity
+from eval.suites import extraction, grounding, model, report, sensitivity
 
 DISPATCH = {
     "extraction": extraction.run,
     "grounding": grounding.run,
     "sensitivity": sensitivity.run,
+    "model": model.run,
     "report": report.run,
 }
 PASSTHROUGH = {
     "matching": "BE 소관 — EligibilityFilter 는 BE 단위 + 통합 테스트가 검증",
-    "model": "AI-08 소관 — §12-2 LightGBM+SHAP 설계 교차 검증",
 }
 SUITES = (*DISPATCH, *PASSTHROUGH)
 
