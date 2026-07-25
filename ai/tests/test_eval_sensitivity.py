@@ -23,6 +23,17 @@ def test_theta_gate_excludes_high_burden():
     assert "A" not in t and t == ["B", "C", "D"]
 
 
+def test_zero_est_sales_row_is_reported_not_silently_dropped():
+    """부담률을 못 구한 행은 n_areas 에서 빼고 별도로 센다 (리뷰 #12)."""
+    rows = _rows()
+    rows.append({"area_code": "E", "industry": "cafe", "w1": 0.5, "w2": 0.5, "w3": 0.5,
+                 "w4": 0.5, "w5": 0.5, "est_sales": 0, "monthly_rent": 100,
+                 "burden_ratio": None})
+    m = sensitivity.evaluate(rows)
+    assert m["cafe"]["n_areas"] == 4          # 부담률 산출 가능 행만
+    assert m["cafe"]["n_burden_unavailable"] == 1
+
+
 def test_evaluate_reports_retention():
     m = sensitivity.evaluate(_rows())
     assert m["cafe"]["base_top3"] == ["A", "B", "C"]

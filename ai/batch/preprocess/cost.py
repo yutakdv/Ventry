@@ -37,9 +37,18 @@ def deposit_interval(monthly_rent: int) -> tuple[int, int]:
     return (monthly_rent * DEPOSIT_MULT_LOW, monthly_rent * DEPOSIT_MULT_HIGH)
 
 
-def premium_interval(monthly_rent: int, seoul_median_rent: int, industry: str) -> tuple[int, int]:
-    """권리금 구간 = ㎡당 권리금 × 대표면적 × 임대료비례 × 업종보정."""
-    ratio = monthly_rent / seoul_median_rent if seoul_median_rent else 1.0
+def premium_interval(
+    unit_price_1000won_m2: float, seoul_median_unit_price: float, industry: str
+) -> tuple[int, int]:
+    """권리금 구간 = ㎡당 권리금 × 대표면적 × 임대료비례 × 업종보정.
+
+    임대료비례는 **단가(천원/㎡) 비**로 잡는다 — 환산임대료 비로 잡으면 대표면적이
+    center 항과 ratio 항에 두 번 들어가고, 분모(서울 중위)는 음식점 55.2㎡ 기준
+    단일값이라 카페가 구조적으로 0.53배 작아져 하한 클립에 몰린다 (리뷰 #1).
+    """
+    ratio = (
+        unit_price_1000won_m2 / seoul_median_unit_price if seoul_median_unit_price else 1.0
+    )
     ratio = min(max(ratio, RENT_RATIO_CLIP[0]), RENT_RATIO_CLIP[1])
     center = (
         PREMIUM_PER_M2_MANWON
@@ -76,17 +85,18 @@ def cost_incl_premium(ex: tuple[int, int], premium: tuple[int, int]) -> tuple[in
     return (ex[0] + premium[0], ex[1] + premium[1])
 
 
-def build_initial_cost(rent_df: pd.DataFrame, seoul_median_rent: int) -> pd.DataFrame:
+def build_initial_cost(rent_df: pd.DataFrame, seoul_median_unit_price: float) -> pd.DataFrame:
     """상권×업종 임대료 단가 → 초기비용 4블록 + 합계 구간 DataFrame.
 
     입력 `rent_df` 컬럼: area_code, industry, unit_price(천원/㎡).
+    `seoul_median_unit_price` 도 같은 단위(천원/㎡)다 — 권리금 비례계수의 분모.
     """
     rows = []
     for r in rent_df.itertuples():
         industry = r.industry
         rent = converted_rent(r.unit_price, industry)
         dep = deposit_interval(rent)
-        prem = premium_interval(rent, seoul_median_rent, industry)
+        prem = premium_interval(r.unit_price, seoul_median_unit_price, industry)
         intr = interior_interval(industry)
         mfc = monthly_fixed_cost(rent, industry)
         ex = cost_ex_premium(dep, intr, mfc)

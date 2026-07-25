@@ -82,12 +82,26 @@ def _build_rent(area_master: pd.DataFrame) -> pd.DataFrame:
     def _px_of(n: str):
         return unit_px.get(n.strip(), (None, None))[0]
 
-    region_px: dict[str, float] = {}
     tmp = assign.assign(_px=assign["reb_district_name"].map(_px_of))
-    for region, g in tmp.groupby("reb_region"):
-        vals = [v for v in g["_px"] if pd.notna(v)]
-        if vals:
-            region_px[region] = sum(vals) / len(vals)
+
+    def _avg_by(key: str) -> dict[str, float]:
+        """key 별 **구획 단위** 평균 단가. 같은 구획을 여러 상권이 참조하므로 중복을 뺀다."""
+        out: dict[str, float] = {}
+        for value, g in tmp.groupby(key):
+            by_district = {
+                str(n).strip(): v
+                for n, v in zip(g["reb_district_name"], g["_px"], strict=True)
+                if pd.notna(v) and str(n).strip()
+            }
+            if by_district:
+                out[value] = sum(by_district.values()) / len(by_district)
+        return out
+
+    region_px = _avg_by("reb_region")
+    # 자치구 평균 — assign_level 'gu_avg' 의 정의(assumptions #18 「자치구 내 구획들의 평균」)를
+    # 실제로 구현한다. 이게 없으면 gu_avg 가 권역 평균으로 흘러 region_avg 와 구분되지 않고,
+    # 23개 자치구가 R-ONE 권역 4종 값으로 붕괴한다 (리뷰 #8).
+    gu_px = _avg_by("sigungu_name")
 
     def _opt(lookup: dict, name: str):  # 전환율·공실 값(round) 또는 None
         hit = lookup.get(name)
@@ -98,8 +112,9 @@ def _build_rent(area_master: pd.DataFrame) -> pd.DataFrame:
         name = (r.reb_district_name or "").strip()
         px, store_type = unit_px.get(name, (None, None))
         fallback = str(r.fallback_flag).lower() == "true"
-        if px is None:  # region_avg 폴백
-            px, store_type, fallback = region_px.get(r.reb_region), None, True
+        if px is None:  # 폴백 — 자치구 평균 우선, 구획 없는 자치구만 권역 평균
+            px = gu_px.get(r.sigungu_name) or region_px.get(r.reb_region)
+            store_type, fallback = None, True
         if px is None:
             continue
         rows.append({
@@ -240,11 +255,11 @@ def _derive(
     rent, est, floating, resident, worker, density, change
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """초기비용(area×industry) + 점수 metrics(교통 유입 제외)."""
-    seoul_median_rent = int(rent["monthly_rent"].median())
+    seoul_median_unit_price = float(rent["unit_price"].median())
     rent_df = pd.concat(
         [rent[["area_code", "unit_price"]].assign(industry=ind) for ind in INDUSTRIES],
         ignore_index=True)
-    initial_cost = cost.build_initial_cost(rent_df, seoul_median_rent)
+    initial_cost = cost.build_initial_cost(rent_df, seoul_median_unit_price)
 
     rent_by_area = rent.set_index("area_code")["monthly_rent"].to_dict()
     flo = floating.set_index("area_code")["daily_floating"].to_dict()
@@ -289,8 +304,9 @@ def assemble() -> dict[str, pd.DataFrame]:
     metrics["distance_m"] = metrics["distance_m"].fillna(10**9)
     location_score = score.build_location_score(metrics)
 
-    # initial_cost: DDL 정합 — 내부용 monthly_rent 제거, based_on_quarter 추가
-    initial_cost = initial_cost.drop(columns=["monthly_rent"]).assign(based_on_quarter="20261")
+    # initial_cost: monthly_rent 는 업종별 부담률 분자로 유지한다 (리뷰 #2).
+    # rent.monthly_rent 는 상권 단위 표기값(음식점 55.2㎡ 기준)이라 업종 부담률에 못 쓴다.
+    initial_cost = initial_cost.assign(based_on_quarter="20261")
 
     tables = {
         "data_source_meta": _data_source_meta(),

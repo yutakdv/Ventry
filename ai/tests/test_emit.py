@@ -25,5 +25,14 @@ def test_emit_deterministic():
     assert to_insert_sql("t", df) == to_insert_sql("t", df)
 
 
+def test_to_insert_sql_rejects_nul_in_values():
+    """NUL 이 덤프에 새면 psql 이 값 일부를 조용히 삼킨다 — 경계에서 막는다 (리뷰 #4)."""
+    import pytest
+
+    df = pd.DataFrame([{"text": "정상\x00문자열"}])
+    with pytest.raises(ValueError, match="NUL"):
+        to_insert_sql("finance_doc_chunk", df)
+
+
 def test_empty_dataframe_no_insert():
     assert to_insert_sql("t", pd.DataFrame()) == ""

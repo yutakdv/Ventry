@@ -89,5 +89,6 @@ cd ai && make eval               # AI 품질 평가 하네스 (D9~10 구현, §1
   순수 함수 + 단위 테스트 필수 (스펙 §5-1).
 - /explore SSE: 템플릿 문장 즉시 송출 → LLM refine은 선택적 교체. LLM 장애 시 템플릿이 최종본
   (데모 무중단 원칙, exploration spec §2-5·§5).
-- 인용은 검색이지 생성이 아니다: source_quote는 벡터DB 원문 청크 그대로, LLM 재작성 금지 (§5-4).
+- 인용은 검색이지 생성이 아니다: source_quote는 `finance_doc_chunk` 원문 그대로, LLM 재작성 금지 (§5-4).
+  유사도 검색·벡터DB 미도입 — `doc_chunk_ref` id 직접 조회 (DECISIONS §7 확정).
 - 배치 산출물의 모든 가정은 `docs/assumptions.md`에 즉시 등재 (좌표계·정규화·폴백 규칙 등).

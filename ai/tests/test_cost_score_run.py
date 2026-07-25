@@ -7,7 +7,7 @@ from batch.preprocess.score import build_location_score
 
 def test_build_initial_cost_columns():
     rent = pd.DataFrame([{"area_code": "A1", "industry": "cafe", "unit_price": 80.0}])
-    df = build_initial_cost(rent, seoul_median_rent=234)
+    df = build_initial_cost(rent, seoul_median_unit_price=80.0)
     assert {
         "deposit_low", "deposit_high", "premium_low", "premium_high",
         "interior_low", "interior_high", "monthly_fixed_cost",

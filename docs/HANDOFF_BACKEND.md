@@ -134,7 +134,7 @@ com.ventry.api
 
 ### BE-06 (D9~10) P1 · [#18](https://github.com/yutakdv/Ventry/issues/18) → BE-07 (D11~12) QA · [#23](https://github.com/yutakdv/Ventry/issues/23)
 
-BE-06은 여유 시에만 (RAG → 근거문 캐시 → 개인화 순). 미구현 시 D10에 **문서 이월 처리**.
+BE-06은 여유 시에만 (원문 인용 → 근거문 캐시 → 개인화 순). 미구현 시 D10에 **문서 이월 처리**.
 BE-07은 시나리오 10종 + **LLM 전면 차단 QA**(템플릿 폴백 경로 확인).
 
 ---
@@ -270,3 +270,20 @@ curl -sN "localhost:8080/api/explore/$SID?v=1"     # → plan(axis_labels) / ins
 | `763598e` | BE-03f — recommend·check-area 도구 계층 결선 + 데모 픽스처 |
 | `827808f` | BE-03a~e — 결정적 도구 계층 5종 + 단위 테스트 |
 | `64f17ed` | BE-01 — 목 API 6종 + SSE 골격 + 공통 계층 |
+
+---
+
+## 2026-07-25 DDL 변경 공지 — `initial_cost.monthly_rent` 추가 (코드리뷰 #2)
+
+- `initial_cost` 에 `monthly_rent INTEGER NOT NULL` 추가. `v_candidate_area.monthly_rent` 의
+  출처가 `rent` → `initial_cost` 로 바뀐다.
+- **뷰의 컬럼 이름·개수·타입은 불변**이라 `CandidateRowMapper`·`CandidateArea`·API 계약은
+  손대지 않는다. 바뀌는 것은 **값**이다.
+- 이유: `rent` 는 `area_code` 단일 PK라 업종 축이 없어, 카페가 음식점 55.2㎡ 기준 임대료를
+  29.2㎡ 점포당 매출로 나누고 있었다. 실측 부담률 중앙값 카페 0.472 vs 음식점 0.209,
+  θ=0.15 통과 카페 176/1,060. 수정 후 카페 중앙값 **0.250**, θ 통과 **363/1,060**.
+- **데모 픽스처는 불변**: `db/init/02_mock_data.sql` 의 `initial_cost.monthly_rent` 는
+  `rent.monthly_rent` 와 같은 값을 업종 공통으로 넣었다. expl §8 데모 판정(🟢2·🟠1,
+  A-9999 조건부·갭 1,320)을 흔들지 않기 위함이다 (assumptions #7·#9).
+- 조치 필요 없음. 단 BE 통합 테스트에 **실테이블 기준** 부담률 기대값을 하드코딩한 곳이
+  있으면 갱신할 것 (`DemoCandidates` 픽스처 경로는 영향 없음).
