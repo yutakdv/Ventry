@@ -78,8 +78,14 @@ _PRINT_FOOTER = re.compile(r"^\d+\S{0,6}/\d+\S{0,6}https?://")     # N/M 페이�
 
 
 def strip_print_artifacts(text: str) -> str:
-    """인쇄 머리말/꼬리말 줄 제거. 본문 문장은 한 글자도 건드리지 않는다."""
-    kept = [ln for ln in text.splitlines()
+    """인쇄 머리말/꼬리말 줄 + NUL 제거. 본문 문장은 한 글자도 건드리지 않는다.
+
+    NUL(`\\x00`)은 pypdf 텍스트 추출이 남기는 제어문자이지 공고문의 글자가 아니다.
+    그대로 덤프에 실으면 psql 이 NUL 주변 구간을 조용히 삼켜 DB 저장본이 원문보다
+    짧아진다(실측 411자 소실) — 「인용은 검색이지 생성이 아니다」가 깨지는 지점이라,
+    지우는 쪽이 오히려 verbatim 을 복원한다 (스펙 §5-4, 리뷰 #4).
+    """
+    kept = [ln for ln in text.replace("\x00", "").splitlines()
             if not (_PRINT_HEADER.match(ln) or _PRINT_FOOTER.match(ln))]
     return "\n".join(kept)
 

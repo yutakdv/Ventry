@@ -69,6 +69,18 @@ def test_build_finance_missing_doc_null_ref(tmp_path):
     assert len(tables["finance_doc_chunk"]) == 0
 
 
+def test_chunk_document_strips_nul_bytes():
+    """PDF 추출 아티팩트인 NUL 은 제거한다 — psql 이 주변 문장까지 삼킨다 (리뷰 #4).
+
+    NUL 은 공고문의 글자가 아니라 pypdf 산출물의 제어문자다. 지우면 DB 저장본이
+    파이썬 청크와 정확히 같아져 verbatim 대조가 성립한다.
+    """
+    raw = "지원요건\x00(2026년정책자금)세부\x00지원요건.\n\n둘째 문단."
+    chunks = chunk_document("소진공_x", raw)
+    assert all("\x00" not in c["text"] for c in chunks)
+    assert chunks[0]["text"] == "지원요건(2026년정책자금)세부지원요건."
+
+
 def _chunks(*texts):
     return [{"chunk_id": f"D#{i}", "text": t} for i, t in enumerate(texts)]
 
