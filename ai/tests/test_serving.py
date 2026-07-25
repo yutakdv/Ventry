@@ -49,6 +49,33 @@ def test_initial_cost_carries_industry_aware_rent(tables):
     assert (pivot["cafe"] < pivot["food"]).all()
 
 
+def test_gu_avg_differs_from_region_avg(tables):
+    """gu_avg 는 자치구 평균, region_avg 는 권역 평균 — 두 등급이 같은 값이면 5등급이 무의미하다.
+
+    구 구현은 폴백 전건이 권역 평균으로 흘러 두 등급이 구분되지 않았다 (리뷰 #8).
+    """
+    import pandas as pd
+
+    from batch.paths import INTERIM_DIR
+
+    assign = pd.read_csv(INTERIM_DIR / "join" / "rent_assignment.csv", dtype=str)
+    assign.columns = [c.lstrip("﻿") for c in assign.columns]
+    gu_rows = assign[assign["assign_level"] == "gu_avg"]
+    if gu_rows["sigungu_name"].nunique() < 2:
+        pytest.skip("gu_avg 자치구가 1개뿐 — 비교 불가")
+    rent = tables["rent"].merge(
+        assign[["area_code", "assign_level", "sigungu_name"]], on="area_code", how="left")
+    gu = rent[rent["assign_level"] == "gu_avg"]
+    # 자치구 안에서는 단일값
+    assert gu.groupby("sigungu_name")["unit_price"].nunique().max() == 1
+    # 자치구마다 제 평균을 가져야 한다. 구 구현은 23개 자치구가 R-ONE 권역 4종 값으로
+    # 붕괴했다 — distinct 단가 수가 자치구 수에 못 미치면 권역 평균을 쓰고 있다는 뜻이다.
+    n_gu = gu["sigungu_name"].nunique()
+    assert gu["unit_price"].nunique() == n_gu, (
+        f"자치구 {n_gu}개인데 단가는 {gu['unit_price'].nunique()}종 — 권역 평균으로 붕괴"
+    )
+
+
 def test_fk_area_codes_subset_of_master(tables):
     valid = set(tables["commercial_area"]["area_code"])
     for name in ("sales", "rent", "location_score", "initial_cost", "transit"):
