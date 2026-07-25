@@ -4,11 +4,23 @@
     "name": "KB소상공인 보증서대출",
     "review_action": "유지",
     "confirmed": {
-      "name": "KB소상공인 보증서대출", "org": "KB국민은행", "product_type": "loan",
-      "max_age": null, "industries": null, "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": 10000, "rate": 2.1, "rate_note": null,
-      "term_months": null, "exclusive_group": null, "status": "open",
-      "notice_date": "2026-07-21", "source_url": "https://obank.kbstar.com"
+      "name": "KB소상공인 보증서대출",
+      "org": "KB국민은행",
+      "product_type": "loan",
+      "max_age": null,
+      "industries": null,
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": 10000,
+      "rate": 2.1,
+      "rate_note": null,
+      "term_months": null,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2026-07-21",
+      "source_url": "https://obank.kbstar.com"
     },
     "review_note": "원문 p.1·p.5 '한도 최대 1억원', Q&A '최대 1억원까지 신청가능' → amount_max=10000 확인. rate=2.1(서울 최저금리)은 p.6 '지역별 최저금리 예시' 표가 이미지로 렌더되어 본문 텍스트로 재확인 불가 → 초안값 유지(원문 반증 없음, 신뢰도 중). 금리는 17개 지역재단 보증서에 따라 지역별 상이(p.5).",
     "source_ref": "KB_소상공인_보증서대출_지역재단.pdf p.1, p.5"
@@ -18,12 +30,21 @@
     "name": "KB소상공인 신용대출",
     "review_action": "유지",
     "confirmed": {
-      "name": "KB소상공인 신용대출", "org": "KB국민은행", "product_type": "loan",
-      "max_age": null, "industries": null, "regions": null,
-      "pre_startup_only": false, "amount_max": 20000, "rate": null,
+      "name": "KB소상공인 신용대출",
+      "org": "KB국민은행",
+      "product_type": "loan",
+      "max_age": null,
+      "industries": null,
+      "regions": null,
+      "pre_startup_only": false,
+      "amount_max": 20000,
+      "rate": null,
       "rate_note": "최저 연 3.62% (2026.07.21 기준) 3개월 변동금리",
-      "term_months": 60, "exclusive_group": null, "status": "open",
-      "notice_date": "2026-07-21", "source_url": "https://obank.kbstar.com"
+      "term_months": 60,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2026-07-21",
+      "source_url": "https://obank.kbstar.com"
     },
     "review_note": "원문 p.1·p.3 '한도 최대 2억원'→amount_max=20000, '금리 최저 연 3.62%(2026.07.21 기준) 3개월 변동금리'→rate_note 원문 일치, '상환방법 원금균등분할상환(최대 5년)'→term_months=60. 대상 '사업 기간 1년 이상 개인사업자' → 예비창업 아님. 전 항목 초안 일치.",
     "source_ref": "KB_소상공인_신용대출_상품안내.pdf p.1, p.3"
@@ -33,12 +54,23 @@
     "name": "이자지원 보증서 대출",
     "review_action": "유지",
     "confirmed": {
-      "name": "이자지원 보증서 대출", "org": "KB국민은행", "product_type": "loan",
-      "max_age": null, "industries": null, "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": 10000, "rate": null,
+      "name": "이자지원 보증서 대출",
+      "org": "KB국민은행",
+      "product_type": "loan",
+      "max_age": null,
+      "industries": null,
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": 10000,
+      "rate": null,
       "rate_note": "은행 대출 금리 - 이자 지원 금리",
-      "term_months": null, "exclusive_group": null, "status": "open",
-      "notice_date": "2026-07-21", "source_url": "https://obank.kbstar.com"
+      "term_months": null,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2026-07-21",
+      "source_url": "https://obank.kbstar.com"
     },
     "review_note": "원문 p.4 '이자지원 보증서 대출의 금리와 최대 대출한도 … 적용금리: 은행 대출 금리 - 이자 지원 금리 / 한도: 최대 1억원' → amount_max=10000, rate_note 원문 일치. 이자지원액은 지자체별 상이(변동)라 rate=null. 초안 일치.",
     "source_ref": "KB_소상공인정책자금_이자지원보증서대출_안내.pdf p.4"
@@ -48,12 +80,23 @@
     "name": "소상공인 정책자금대출",
     "review_action": "수정",
     "confirmed": {
-      "name": "소상공인 정책자금대출", "org": "KB국민은행", "product_type": "loan",
-      "max_age": null, "industries": null, "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": 7000, "rate": null,
+      "name": "소상공인 정책자금대출",
+      "org": "KB국민은행",
+      "product_type": "loan",
+      "max_age": null,
+      "industries": null,
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": 7000,
+      "rate": null,
       "rate_note": "최저 연 2.76%~최고 연 3.56% (기준금리 연 2.96%+가산금리 연 0.6%p, 분기별 변동금리, 2026년 1분기 기준)",
-      "term_months": 60, "exclusive_group": null, "status": "open",
-      "notice_date": "2026-07-21", "source_url": "https://obank.kbstar.com"
+      "term_months": 60,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2026-07-21",
+      "source_url": "https://obank.kbstar.com"
     },
     "review_note": "amount_max 결측 8건 中 1건. 원문 p.3 상품정보 표 '한도: 최대 7천만원(보증서 대출금액 범위 내)' → 개별 업체 한도 명시 → amount_max=7000 채움(수정). 금리도 초안 '연 2.5%~최고 연 3.5%'는 원문과 불일치 → 원문 '최저 연 2.76%~최고 연 3.56%(기준금리 2.96%+가산 0.6%p, 분기별 변동)'로 rate_note 교정, rate=null(변동). '상환방법 2년 거치 3년 분할상환'=5년 → term_months=60.",
     "source_ref": "KB_소상공인정책자금대출_상품목록.pdf p.3"
@@ -63,14 +106,25 @@
     "name": "ESG 실천기업 보증",
     "review_action": "수정",
     "confirmed": {
-      "name": "ESG 실천기업 보증", "org": "서울신용보증재단", "product_type": "guarantee",
-      "max_age": null, "industries": null, "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": 80000, "rate": 1.0,
+      "name": "ESG 실천기업 보증",
+      "org": "서울신용보증재단",
+      "product_type": "guarantee",
+      "max_age": null,
+      "industries": null,
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": 80000,
+      "rate": null,
       "rate_note": "서울시자금(ESG 자금) 이용 시 은행금리에서 2.5% 차감(서울시 부담), 그 외의 경우 자금에 따라 상이",
-      "term_months": null, "exclusive_group": null, "status": "open",
-      "notice_date": "2026-07-21", "source_url": "https://www.seoulshinbo.co.kr"
+      "term_months": null,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2026-07-21",
+      "source_url": "https://www.seoulshinbo.co.kr"
     },
-    "review_note": "보증상품 검수: 원문 p.2 표 '보증한도 8억원 이내(재단 및 타지역재단 기보증, 신·기보 보증잔액 포함)' → amount_max=80000(초안 10000 오류, 8배). '보증료 연 1.0%' → 보증상품이므로 rate=보증료율=1.0(초안 rate=null, 보증료를 rate_note에 오배치). 대출금리(서울시자금 이용 시 2.5% 차감)는 rate_note로 이동. 보증기간 '지원자금 조건에 따름' → term_months=null.",
+    "review_note": "보증상품 검수: 원문 p.2 표 '보증한도 8억원 이내(재단 및 타지역재단 기보증, 신·기보 보증잔액 포함)' → amount_max=80000(초안 10000 오류, 8배). '보증료 연 1.0%' → 보증상품이므로 rate=보증료율=1.0(초안 rate=null, 보증료를 rate_note에 오배치). 대출금리(서울시자금 이용 시 2.5% 차감)는 rate_note로 이동. 보증기간 '지원자금 조건에 따름' → term_months=null. ※ [2026-07-25 #72 재검수] rate 1.0 → None. 보증료 연 1.0% 를 rate 로 잘못 채택했던 것을 교정(assumptions #31). 원문 [대출금리] 는 '서울시자금(ESG 자금) 이용 시 은행금리에서 2.5% 차감' — 차감폭이지 절대 금리가 아니므로 rate=null.",
     "source_ref": "서울신보_보증상품_ESG실천기업.pdf p.2"
   },
   {
@@ -78,14 +132,25 @@
     "name": "서울형 자영업자 위기극복 안심동행 특별보증",
     "review_action": "수정",
     "confirmed": {
-      "name": "서울형 자영업자 위기극복 안심통장 특별보증", "org": "서울신용보증재단", "product_type": "guarantee",
-      "max_age": null, "industries": null, "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": 1000, "rate": 1.0,
+      "name": "서울형 자영업자 위기극복 안심통장 특별보증",
+      "org": "서울신용보증재단",
+      "product_type": "guarantee",
+      "max_age": null,
+      "industries": null,
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": 1000,
+      "rate": null,
       "rate_note": "은행 일반자금 변동금리(CD금리 + 2.0% 이내 수준). 대상: 업력 1년 초과·대표자 NICE 600점 이상 개인사업자",
-      "term_months": null, "exclusive_group": null, "status": "open",
-      "notice_date": "2026-07-21", "source_url": "https://www.seoulshinbo.co.kr"
+      "term_months": null,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2026-07-21",
+      "source_url": "https://www.seoulshinbo.co.kr"
     },
-    "review_note": "보증상품 검수: 초안명 '안심동행'은 오추출 → 원문 p.1 정명 '서울형 자영업자 위기극복 안심통장 특별보증'으로 confirmed.name 교정(coverage 매칭 위해 최상위 name은 초안명 유지). 원문 p.1·p.2 '900만원(마이너스통장대출 1천만원)' → amount_max=1000(대출한도 1천만원; 보증금액 900만원). 초안 10000은 원문의 '재단 보증금액 1억원 이내'(기보증 포함 재단 캡, 총 8억 이내) 오독으로 추정. '보증료 연 1.0%' → rate=1.0. 대출금리 CD금리+2.0%는 p.2 이 상품 값(초안은 이 값을 지능형에 오배치). 보증기간 1년 만기 일시상환(최대 5년 연장).",
+    "review_note": "보증상품 검수: 초안명 '안심동행'은 오추출 → 원문 p.1 정명 '서울형 자영업자 위기극복 안심통장 특별보증'으로 confirmed.name 교정(coverage 매칭 위해 최상위 name은 초안명 유지). 원문 p.1·p.2 '900만원(마이너스통장대출 1천만원)' → amount_max=1000(대출한도 1천만원; 보증금액 900만원). 초안 10000은 원문의 '재단 보증금액 1억원 이내'(기보증 포함 재단 캡, 총 8억 이내) 오독으로 추정. '보증료 연 1.0%' → rate=1.0. 대출금리 CD금리+2.0%는 p.2 이 상품 값(초안은 이 값을 지능형에 오배치). 보증기간 1년 만기 일시상환(최대 5년 연장). ※ [2026-07-25 #72 재검수] rate 1.0 → None. 보증료 연 1.0% → rate 미채택(assumptions #31). 원문 대출금리는 'CD금리 + 2.0% 이내 수준' 변동이라 절대 금리 부재 → rate=null. ※ [2026-07-25 #72 재검수] 상품명 '안심동행' → '안심통장' 교정(웹 재수집 원문 표기).",
     "source_ref": "서울신보_보증상품_모바일앱자동심사.pdf p.1, p.2"
   },
   {
@@ -93,12 +158,23 @@
     "name": "지능형 모바일 자동심사 특별보증",
     "review_action": "수정",
     "confirmed": {
-      "name": "지능형 모바일 자동심사 특별보증", "org": "서울신용보증재단", "product_type": "guarantee",
-      "max_age": null, "industries": null, "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": 3000, "rate": null,
+      "name": "지능형 모바일 자동심사 특별보증",
+      "org": "서울신용보증재단",
+      "product_type": "guarantee",
+      "max_age": null,
+      "industries": null,
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": 3000,
+      "rate": null,
       "rate_note": "보증료 연 0.8%~1.0%. 대출금리 서울시자금 이용 시 은행금리에서 1.8% 차감(서울시 부담)",
-      "term_months": 60, "exclusive_group": null, "status": "open",
-      "notice_date": "2026-07-21", "source_url": "https://www.seoulshinbo.co.kr"
+      "term_months": 60,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2026-07-21",
+      "source_url": "https://www.seoulshinbo.co.kr"
     },
     "review_note": "보증상품 검수: 원문 p.2 '보증한도 3천만원 이내(기보증금액 포함 5천만원 이내), 신·기보 보증잔액 포함 총 8억원 이내' → amount_max=3000(상품 보증한도; 초안 10000 오류). 보증료 p.3 '연 0.8%~1.0%'(범위)라 단일 rate 불가 → rate=null, rate_note에 원문 기록. 대출금리 '서울시자금 이용 시 1.8% 차감'(p.3). 보증기간 '5년(1년 거치 4년 분할상환)' → term_months=60. 초안 rate_note(CD금리+2.0%)는 안심통장 값 오배치라 교정.",
     "source_ref": "서울신보_보증상품_모바일앱자동심사.pdf p.2, p.3"
@@ -108,14 +184,25 @@
     "name": "미래 유망기업 성장지원 보증",
     "review_action": "수정",
     "confirmed": {
-      "name": "미래 유망기업 성장지원 보증", "org": "서울신용보증재단", "product_type": "guarantee",
-      "max_age": null, "industries": null, "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": 80000, "rate": 1.0,
+      "name": "미래 유망기업 성장지원 보증",
+      "org": "서울신용보증재단",
+      "product_type": "guarantee",
+      "max_age": null,
+      "industries": null,
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": 80000,
+      "rate": 3.0,
       "rate_note": "서울시자금(혁신형기업도약자금) 이용 시 연 3.0% 고정금리, 그 외의 경우 자금에 따라 상이",
-      "term_months": null, "exclusive_group": null, "status": "open",
-      "notice_date": "2026-07-21", "source_url": "https://www.seoulshinbo.co.kr"
+      "term_months": null,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2026-07-21",
+      "source_url": "https://www.seoulshinbo.co.kr"
     },
-    "review_note": "보증상품 검수: 원문 p.2 '보증한도 8억원 이내(재단 기보증, 신보·기보 보증잔액 포함)' → amount_max=80000(초안 8000 오류, 10배). '보증료 연 1.0%' → rate=1.0(초안 일치). 대출금리(서울시자금 이용 시 연 3.0% 고정)는 rate_note 보완. 보증기간 '지원자금 조건에 따름' → term_months=null.",
+    "review_note": "보증상품 검수: 원문 p.2 '보증한도 8억원 이내(재단 기보증, 신보·기보 보증잔액 포함)' → amount_max=80000(초안 8000 오류, 10배). '보증료 연 1.0%' → rate=1.0(초안 일치). 대출금리(서울시자금 이용 시 연 3.0% 고정)는 rate_note 보완. 보증기간 '지원자금 조건에 따름' → term_months=null. ※ [2026-07-25 #72 재검수] rate 1.0 → 3.0. 보증료 연 1.0% 를 rate 로 잘못 채택했던 것을 교정(assumptions #31). 원문 [대출금리] '서울시자금(혁신형기업도약자금) 이용 시 연 3.0% 고정금리' → rate=3.0 fixed.",
     "source_ref": "서울신보_보증상품_미래성장산업.pdf p.2"
   },
   {
@@ -123,14 +210,25 @@
     "name": "일자리 창출 및 고용안정 우수기업 특별보증",
     "review_action": "수정",
     "confirmed": {
-      "name": "일자리 창출 및 고용안정 우수기업 특별보증", "org": "서울신용보증재단", "product_type": "guarantee",
-      "max_age": null, "industries": null, "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": 80000, "rate": 1.0,
+      "name": "일자리 창출 및 고용안정 우수기업 특별보증",
+      "org": "서울신용보증재단",
+      "product_type": "guarantee",
+      "max_age": null,
+      "industries": null,
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": 80000,
+      "rate": null,
       "rate_note": "서울시자금(일자리창출우수기업자금) 이용 시 은행금리에서 2.5% 차감(서울시 부담), 그 외의 경우 자금에 따라 상이",
-      "term_months": null, "exclusive_group": null, "status": "open",
-      "notice_date": "2026-07-21", "source_url": "https://www.seoulshinbo.co.kr"
+      "term_months": null,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2026-07-21",
+      "source_url": "https://www.seoulshinbo.co.kr"
     },
-    "review_note": "보증상품 검수: 원문 p.2 표 '보증한도 8억원 이내(재단 기보증, 신보·기보 보증잔액 포함)' → amount_max=80000(초안 4000 오류, 20배). '보증료 연 1.0%' → rate=1.0(초안 일치). 대출금리(서울시자금 이용 시 2.5% 차감)는 rate_note 보완. 보증기간 '지원자금 조건에 따름' → 원문에 고정 기간 부재이므로 term_months=null(초안 60은 근거 없음 → null 교정).",
+    "review_note": "보증상품 검수: 원문 p.2 표 '보증한도 8억원 이내(재단 기보증, 신보·기보 보증잔액 포함)' → amount_max=80000(초안 4000 오류, 20배). '보증료 연 1.0%' → rate=1.0(초안 일치). 대출금리(서울시자금 이용 시 2.5% 차감)는 rate_note 보완. 보증기간 '지원자금 조건에 따름' → 원문에 고정 기간 부재이므로 term_months=null(초안 60은 근거 없음 → null 교정). ※ [2026-07-25 #72 재검수] rate 1.0 → None. 보증료 연 1.0% → rate 미채택(assumptions #31). 원문 [대출금리] 는 '은행금리에서 2.5% 차감'(차감폭) → rate=null.",
     "source_ref": "서울신보_보증상품_일자리창출사회적기업.pdf p.2"
   },
   {
@@ -138,14 +236,25 @@
     "name": "사회적경제기업 특별보증",
     "review_action": "수정",
     "confirmed": {
-      "name": "사회적경제기업 특별보증", "org": "서울신용보증재단", "product_type": "guarantee",
-      "max_age": null, "industries": null, "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": 40000, "rate": 0.5,
+      "name": "사회적경제기업 특별보증",
+      "org": "서울신용보증재단",
+      "product_type": "guarantee",
+      "max_age": null,
+      "industries": null,
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": 40000,
+      "rate": 1.75,
       "rate_note": "서울시자금(사회적경제기업자금) 이용 시 연 1.75% 고정금리, 그 외의 경우 자금에 따라 상이",
-      "term_months": 60, "exclusive_group": null, "status": "open",
-      "notice_date": "2026-07-21", "source_url": "https://www.seoulshinbo.co.kr"
+      "term_months": 60,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2026-07-21",
+      "source_url": "https://www.seoulshinbo.co.kr"
     },
-    "review_note": "보증상품 검수: 원문 p.3 표 '보증한도 같은 기업당 4억원 이내(재단 기보증, 신보·기보 보증잔액 포함)' → amount_max=40000(초안 4000 오류, 10배). '보증료 연 0.5%' → rate=0.5(초안 rate=null·보증료 미기입 교정). '보증기간 최대 5년' → term_months=60(초안 일치). pre_startup_only: 대상은 협동조합·사회적기업·마을기업·자활기업 등 기존 기업(원문의 '예비사회적기업'은 인증단계이지 예비창업자 아님) → false(초안 true 교정).",
+    "review_note": "보증상품 검수: 원문 p.3 표 '보증한도 같은 기업당 4억원 이내(재단 기보증, 신보·기보 보증잔액 포함)' → amount_max=40000(초안 4000 오류, 10배). '보증료 연 0.5%' → rate=0.5(초안 rate=null·보증료 미기입 교정). '보증기간 최대 5년' → term_months=60(초안 일치). pre_startup_only: 대상은 협동조합·사회적기업·마을기업·자활기업 등 기존 기업(원문의 '예비사회적기업'은 인증단계이지 예비창업자 아님) → false(초안 true 교정). ※ [2026-07-25 #72 재검수] rate 0.5 → 1.75. 보증료 연 0.5% 를 rate 로 잘못 채택했던 것을 교정(assumptions #31). 원문 [대출금리] '서울시자금(사회적경제기업자금) 이용 시 연 1.75% 고정금리' → rate=1.75 fixed.",
     "source_ref": "서울신보_보증상품_일자리창출사회적기업.pdf p.3"
   },
   {
@@ -153,14 +262,25 @@
     "name": "장애인 기업 특별보증",
     "review_action": "수정",
     "confirmed": {
-      "name": "장애인 기업 특별보증", "org": "서울신용보증재단", "product_type": "guarantee",
-      "max_age": null, "industries": null, "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": 10000, "rate": 0.7,
+      "name": "장애인 기업 특별보증",
+      "org": "서울신용보증재단",
+      "product_type": "guarantee",
+      "max_age": null,
+      "industries": null,
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": 10000,
+      "rate": null,
       "rate_note": "서울시자금(경제활성화자금) 이용 시 은행금리에서 1.8% 차감(서울시 부담), 그 외의 경우 자금에 따라 상이. 업력 3개월 미만 시 최대 2천만원",
-      "term_months": 84, "exclusive_group": null, "status": "open",
-      "notice_date": "2026-07-21", "source_url": "https://www.seoulshinbo.co.kr"
+      "term_months": 84,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2026-07-21",
+      "source_url": "https://www.seoulshinbo.co.kr"
     },
-    "review_note": "보증상품 검수: 원문 p.2 '보증한도 1억원 이내(재단 기보증 포함)' → amount_max=10000(초안 일치). '보증료 연 0.7%' → rate=0.7(초안 rate=null·보증료 미기입 교정). 대출금리(서울시자금 이용 시 1.8% 차감) rate_note 보완. '보증기간 최대 7년' → term_months=84(초안 null 보완). ※업력 3개월 미만 최대 2천만원, 5천만원 초과 시 업력 6개월 이상 조건.",
+    "review_note": "보증상품 검수: 원문 p.2 '보증한도 1억원 이내(재단 기보증 포함)' → amount_max=10000(초안 일치). '보증료 연 0.7%' → rate=0.7(초안 rate=null·보증료 미기입 교정). 대출금리(서울시자금 이용 시 1.8% 차감) rate_note 보완. '보증기간 최대 7년' → term_months=84(초안 null 보완). ※업력 3개월 미만 최대 2천만원, 5천만원 초과 시 업력 6개월 이상 조건. ※ [2026-07-25 #72 재검수] rate 0.7 → None. 보증료 연 0.7% 를 rate 로 잘못 채택했던 것을 교정(assumptions #31). 원문 [대출금리] 는 '은행금리에서 1.8% 차감'(차감폭) → rate=null.",
     "source_ref": "서울신보_보증상품_장애인기업.pdf p.2"
   },
   {
@@ -168,12 +288,23 @@
     "name": "창업자금 및 사업장 임차자금 특별보증",
     "review_action": "수정",
     "confirmed": {
-      "name": "창업자금 및 사업장 임차자금 특별보증", "org": "서울신용보증재단", "product_type": "guarantee",
-      "max_age": null, "industries": null, "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": 5000, "rate": null,
+      "name": "창업자금 및 사업장 임차자금 특별보증",
+      "org": "서울신용보증재단",
+      "product_type": "guarantee",
+      "max_age": null,
+      "industries": null,
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": 5000,
+      "rate": null,
       "rate_note": "보증한도 업체당 5천만원 이내(창업자금은 심화교육 이수자에 한해 최대 2천만원 추가한도, 임차자금은 임차보증금의 80% 범위). 보증료 일반교육 이수자 연 1.0%·심화교육 이수자 연 0.8%. 대출금리 서울시자금(창업기업자금) 이용 시 은행금리에서 1.8% 차감(서울시 부담)",
-      "term_months": 60, "exclusive_group": null, "status": "open",
-      "notice_date": "2026-07-21", "source_url": "https://www.seoulshinbo.co.kr"
+      "term_months": 60,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2026-07-21",
+      "source_url": "https://www.seoulshinbo.co.kr"
     },
     "review_note": "보증상품 검수: 창업자금·사업장 임차자금 2개 보증을 초안이 1상품으로 병합(대상·한도 공통). 원문 p.1·p.2 '보증한도 업체당 5천만원 이내' → amount_max=5000(초안 일치). 보증료 일반 1.0%/심화 0.8%(범위)라 rate=null, rate_note 원문 기록. '보증기간 최대 5년' → term_months=60(초안 null 보완). 초안 rate_note '신용보증 이수자: 연체된 5천만원 이내'는 깨진 추출이라 원문 기준 교정. 대상 '사업자등록(창업) 후 1년 이내' → 예비창업 아님(false).",
     "source_ref": "서울신보_보증상품_창업기업.pdf p.1, p.2"
@@ -183,14 +314,25 @@
     "name": "일반경영안정자금",
     "review_action": "유지",
     "confirmed": {
-      "name": "일반경영안정자금", "org": "소진공", "product_type": "loan",
-      "max_age": null, "industries": null, "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": 7000, "rate": null,
-      "rate_note": "정책자금 기준금리 + 0.6%p", "term_months": 60,
-      "exclusive_group": null, "status": "open",
-      "notice_date": "2025-12-29", "source_url": "https://ols.semas.or.kr"
+      "name": "일반경영안정자금",
+      "org": "소진공",
+      "product_type": "loan",
+      "max_age": null,
+      "industries": null,
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": 7000,
+      "rate": 4.45,
+      "rate_note": "정책자금 기준금리 3.85% + 0.6%p = 연 4.45% (’26년 3/4분기, 2026-07-10 적용 · 분기별 변동금리)",
+      "term_months": 60,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2025-12-29",
+      "source_url": "https://ols.semas.or.kr"
     },
-    "review_note": "원문 p.6 '대출한도 연간 7천만원'→7000, '대출금리(변동) 정책자금 기준금리+0.6%p'→rate=null·rate_note 일치, '대출기간 5년 이내(거치 2년 포함)'→60. 초안 일치.",
+    "review_note": "원문 p.6 '대출한도 연간 7천만원'→7000, '대출금리(변동) 정책자금 기준금리+0.6%p'→rate=null·rate_note 일치, '대출기간 5년 이내(거치 2년 포함)'→60. 초안 일치. ※ [2026-07-25 #72 재검수] 지원사업안내 「금리안내」 표(’26년 3/4분기, 2026-07-10 적용)에서 rate=4.45 확정 — 융자공고는 '기준금리 + 가산' 산식만 규정하고 수치는 홈페이지로 넘기지만, 그 표가 이 문서에 수록돼 있다.",
     "source_ref": "소진공_2026_소상공인정책자금_융자공고.pdf p.6"
   },
   {
@@ -198,12 +340,23 @@
     "name": "긴급경영안정자금 (재해)",
     "review_action": "유지",
     "confirmed": {
-      "name": "긴급경영안정자금 (재해)", "org": "소진공", "product_type": "loan",
-      "max_age": null, "industries": null, "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": 10000, "rate": 2.0,
-      "rate_note": null, "term_months": 60,
-      "exclusive_group": null, "status": "open",
-      "notice_date": "2025-12-29", "source_url": "https://ols.semas.or.kr"
+      "name": "긴급경영안정자금 (재해)",
+      "org": "소진공",
+      "product_type": "loan",
+      "max_age": null,
+      "industries": null,
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": 10000,
+      "rate": 2.0,
+      "rate_note": null,
+      "term_months": 60,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2025-12-29",
+      "source_url": "https://ols.semas.or.kr"
     },
     "review_note": "원문 p.7·p.9 재해 소상공인 '대출한도 1억원, 대출금리(고정) 연 2.0%, 대출기간 5년(거치 2년)' → 10000/2.0/60. 초안 일치.",
     "source_ref": "소진공_2026_소상공인정책자금_융자공고.pdf p.7, p.9"
@@ -213,14 +366,25 @@
     "name": "긴급경영안정자금 (일시적 경영애로)",
     "review_action": "유지",
     "confirmed": {
-      "name": "긴급경영안정자금 (일시적 경영애로)", "org": "소진공", "product_type": "loan",
-      "max_age": null, "industries": null, "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": 7000, "rate": null,
-      "rate_note": "정책자금 기준금리", "term_months": 60,
-      "exclusive_group": null, "status": "open",
-      "notice_date": "2025-12-29", "source_url": "https://ols.semas.or.kr"
+      "name": "긴급경영안정자금 (일시적 경영애로)",
+      "org": "소진공",
+      "product_type": "loan",
+      "max_age": null,
+      "industries": null,
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": 7000,
+      "rate": 3.85,
+      "rate_note": "정책자금 기준금리 3.85% + 0.0%p = 연 3.85% (’26년 3/4분기, 2026-07-10 적용 · 분기별 변동금리)",
+      "term_months": 60,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2025-12-29",
+      "source_url": "https://ols.semas.or.kr"
     },
-    "review_note": "원문 p.7·p.9 일시적 경영애로 소상공인 '대출한도 7천만원, 대출금리(변동) 정책자금 기준금리, 대출기간 5년(거치 2년)' → 7000/rate_note/60. 초안 일치.",
+    "review_note": "원문 p.7·p.9 일시적 경영애로 소상공인 '대출한도 7천만원, 대출금리(변동) 정책자금 기준금리, 대출기간 5년(거치 2년)' → 7000/rate_note/60. 초안 일치. ※ [2026-07-25 #72 재검수] 지원사업안내 「금리안내」 표(’26년 3/4분기, 2026-07-10 적용)에서 rate=3.85 확정 — 융자공고는 '기준금리 + 가산' 산식만 규정하고 수치는 홈페이지로 넘기지만, 그 표가 이 문서에 수록돼 있다.",
     "source_ref": "소진공_2026_소상공인정책자금_융자공고.pdf p.7, p.9"
   },
   {
@@ -228,14 +392,25 @@
     "name": "신용취약소상공인자금",
     "review_action": "유지",
     "confirmed": {
-      "name": "신용취약소상공인자금", "org": "소진공", "product_type": "loan",
-      "max_age": null, "industries": null, "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": 3000, "rate": null,
-      "rate_note": "정책자금 기준금리 + 1.6%p", "term_months": 60,
-      "exclusive_group": null, "status": "open",
-      "notice_date": "2025-12-29", "source_url": "https://ols.semas.or.kr"
+      "name": "신용취약소상공인자금",
+      "org": "소진공",
+      "product_type": "loan",
+      "max_age": null,
+      "industries": null,
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": 3000,
+      "rate": 5.45,
+      "rate_note": "정책자금 기준금리 3.85% + 1.6%p = 연 5.45% (’26년 3/4분기, 2026-07-10 적용 · 분기별 변동금리)",
+      "term_months": 60,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2025-12-29",
+      "source_url": "https://ols.semas.or.kr"
     },
-    "review_note": "원문 p.10 '대출한도 3천만원, 대출금리(변동) 정책자금 기준금리+1.6%p, 대출기간 5년(거치 2년)' → 3000/rate_note/60. 초안 일치.",
+    "review_note": "원문 p.10 '대출한도 3천만원, 대출금리(변동) 정책자금 기준금리+1.6%p, 대출기간 5년(거치 2년)' → 3000/rate_note/60. 초안 일치. ※ [2026-07-25 #72 재검수] 지원사업안내 「금리안내」 표(’26년 3/4분기, 2026-07-10 적용)에서 rate=5.45 확정 — 융자공고는 '기준금리 + 가산' 산식만 규정하고 수치는 홈페이지로 넘기지만, 그 표가 이 문서에 수록돼 있다.",
     "source_ref": "소진공_2026_소상공인정책자금_융자공고.pdf p.10"
   },
   {
@@ -243,12 +418,23 @@
     "name": "대환대출",
     "review_action": "유지",
     "confirmed": {
-      "name": "대환대출", "org": "소진공", "product_type": "loan",
-      "max_age": null, "industries": null, "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": 5000, "rate": 4.5,
-      "rate_note": null, "term_months": 120,
-      "exclusive_group": null, "status": "open",
-      "notice_date": "2025-12-29", "source_url": "https://ols.semas.or.kr"
+      "name": "대환대출",
+      "org": "소진공",
+      "product_type": "loan",
+      "max_age": null,
+      "industries": null,
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": 5000,
+      "rate": 4.5,
+      "rate_note": null,
+      "term_months": 120,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2025-12-29",
+      "source_url": "https://ols.semas.or.kr"
     },
     "review_note": "원문 p.11·p.12 '대출한도 5천만원, 대출금리 연 4.5% 고정, 대출기간 10년' → 5000/4.5/120. 초안 일치.",
     "source_ref": "소진공_2026_소상공인정책자금_융자공고.pdf p.11, p.12"
@@ -258,14 +444,25 @@
     "name": "재도전특별자금 (일반형)",
     "review_action": "유지",
     "confirmed": {
-      "name": "재도전특별자금 (일반형)", "org": "소진공", "product_type": "loan",
-      "max_age": null, "industries": null, "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": 7000, "rate": null,
-      "rate_note": "정책자금 기준금리 + 1.6%p", "term_months": 60,
-      "exclusive_group": null, "status": "open",
-      "notice_date": "2025-12-29", "source_url": "https://ols.semas.or.kr"
+      "name": "재도전특별자금 (일반형)",
+      "org": "소진공",
+      "product_type": "loan",
+      "max_age": null,
+      "industries": null,
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": 7000,
+      "rate": 5.45,
+      "rate_note": "정책자금 기준금리 3.85% + 1.6%p = 연 5.45% (’26년 3/4분기, 2026-07-10 적용 · 분기별 변동금리)",
+      "term_months": 60,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2025-12-29",
+      "source_url": "https://ols.semas.or.kr"
     },
-    "review_note": "원문 p.14 '대출한도 (일반형)7천만원, 대출금리(변동) 기준금리+1.6%p, 대출기간 5년(거치 2년)' → 7000/rate_note/60. 초안 일치.",
+    "review_note": "원문 p.14 '대출한도 (일반형)7천만원, 대출금리(변동) 기준금리+1.6%p, 대출기간 5년(거치 2년)' → 7000/rate_note/60. 초안 일치. ※ [2026-07-25 #72 재검수] 지원사업안내 「금리안내」 표(’26년 3/4분기, 2026-07-10 적용)에서 rate=5.45 확정 — 융자공고는 '기준금리 + 가산' 산식만 규정하고 수치는 홈페이지로 넘기지만, 그 표가 이 문서에 수록돼 있다.",
     "source_ref": "소진공_2026_소상공인정책자금_융자공고.pdf p.14"
   },
   {
@@ -273,14 +470,25 @@
     "name": "재도전특별자금 (희망형)",
     "review_action": "유지",
     "confirmed": {
-      "name": "재도전특별자금 (희망형)", "org": "소진공", "product_type": "loan",
-      "max_age": null, "industries": null, "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": 10000, "rate": null,
-      "rate_note": "정책자금 기준금리 + 0.6%p", "term_months": 60,
-      "exclusive_group": null, "status": "open",
-      "notice_date": "2025-12-29", "source_url": "https://ols.semas.or.kr"
+      "name": "재도전특별자금 (희망형)",
+      "org": "소진공",
+      "product_type": "loan",
+      "max_age": null,
+      "industries": null,
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": 10000,
+      "rate": 4.45,
+      "rate_note": "정책자금 기준금리 3.85% + 0.6%p = 연 4.45% (’26년 3/4분기, 2026-07-10 적용 · 분기별 변동금리)",
+      "term_months": 60,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2025-12-29",
+      "source_url": "https://ols.semas.or.kr"
     },
-    "review_note": "원문 p.14 '대출한도 (희망형)1억원, 대출금리(변동) 기준금리+0.6%p, 대출기간 5년(거치 2년)' → 10000/rate_note/60. 초안 일치.",
+    "review_note": "원문 p.14 '대출한도 (희망형)1억원, 대출금리(변동) 기준금리+0.6%p, 대출기간 5년(거치 2년)' → 10000/rate_note/60. 초안 일치. ※ [2026-07-25 #72 재검수] 지원사업안내 「금리안내」 표(’26년 3/4분기, 2026-07-10 적용)에서 rate=4.45 확정 — 융자공고는 '기준금리 + 가산' 산식만 규정하고 수치는 홈페이지로 넘기지만, 그 표가 이 문서에 수록돼 있다.",
     "source_ref": "소진공_2026_소상공인정책자금_융자공고.pdf p.14"
   },
   {
@@ -288,14 +496,25 @@
     "name": "재도전특별자금 (도약형)",
     "review_action": "유지",
     "confirmed": {
-      "name": "재도전특별자금 (도약형)", "org": "소진공", "product_type": "loan",
-      "max_age": null, "industries": null, "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": 20000, "rate": null,
-      "rate_note": "정책자금 기준금리 + 0.4%p", "term_months": 60,
-      "exclusive_group": null, "status": "open",
-      "notice_date": "2025-12-29", "source_url": "https://ols.semas.or.kr"
+      "name": "재도전특별자금 (도약형)",
+      "org": "소진공",
+      "product_type": "loan",
+      "max_age": null,
+      "industries": null,
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": 20000,
+      "rate": 4.25,
+      "rate_note": "정책자금 기준금리 3.85% + 0.4%p = 연 4.25% (’26년 3/4분기, 2026-07-10 적용 · 분기별 변동금리)",
+      "term_months": 60,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2025-12-29",
+      "source_url": "https://ols.semas.or.kr"
     },
-    "review_note": "원문 p.14 '대출한도 (도약형)2억원, 대출금리(변동) 기준금리+0.4%p, 대출기간 5년(거치 2년)' → 20000/rate_note/60. 초안 일치.",
+    "review_note": "원문 p.14 '대출한도 (도약형)2억원, 대출금리(변동) 기준금리+0.4%p, 대출기간 5년(거치 2년)' → 20000/rate_note/60. 초안 일치. ※ [2026-07-25 #72 재검수] 지원사업안내 「금리안내」 표(’26년 3/4분기, 2026-07-10 적용)에서 rate=4.25 확정 — 융자공고는 '기준금리 + 가산' 산식만 규정하고 수치는 홈페이지로 넘기지만, 그 표가 이 문서에 수록돼 있다.",
     "source_ref": "소진공_2026_소상공인정책자금_융자공고.pdf p.14"
   },
   {
@@ -303,12 +522,23 @@
     "name": "장애인기업지원자금",
     "review_action": "유지",
     "confirmed": {
-      "name": "장애인기업지원자금", "org": "소진공", "product_type": "loan",
-      "max_age": null, "industries": null, "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": 10000, "rate": 2.0,
-      "rate_note": null, "term_months": 84,
-      "exclusive_group": null, "status": "open",
-      "notice_date": "2025-12-29", "source_url": "https://ols.semas.or.kr"
+      "name": "장애인기업지원자금",
+      "org": "소진공",
+      "product_type": "loan",
+      "max_age": null,
+      "industries": null,
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": 10000,
+      "rate": 2.0,
+      "rate_note": null,
+      "term_months": 84,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2025-12-29",
+      "source_url": "https://ols.semas.or.kr"
     },
     "review_note": "원문 p.15 '대출한도 1억원, 대출금리(고정) 연 2.0%, 대출기간 7년(거치 2년)' → 10000/2.0/84. 초안 일치.",
     "source_ref": "소진공_2026_소상공인정책자금_융자공고.pdf p.15"
@@ -318,14 +548,25 @@
     "name": "청년고용연계자금",
     "review_action": "유지",
     "confirmed": {
-      "name": "청년고용연계자금", "org": "소진공", "product_type": "loan",
-      "max_age": 39, "industries": null, "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": 7000, "rate": null,
-      "rate_note": "정책자금 기준금리", "term_months": 60,
-      "exclusive_group": null, "status": "open",
-      "notice_date": "2025-12-29", "source_url": "https://ols.semas.or.kr"
+      "name": "청년고용연계자금",
+      "org": "소진공",
+      "product_type": "loan",
+      "max_age": 39,
+      "industries": null,
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": 7000,
+      "rate": 3.85,
+      "rate_note": "정책자금 기준금리 3.85% + 0.0%p = 연 3.85% (’26년 3/4분기, 2026-07-10 적용 · 분기별 변동금리)",
+      "term_months": 60,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2025-12-29",
+      "source_url": "https://ols.semas.or.kr"
     },
-    "review_note": "원문 p.16 '신청대상 청년 소상공인(만39세 이하), 대출한도 7천만원, 대출금리(변동) 정책자금 기준금리, 대출기간 5년(거치 2년)' → max_age=39/7000/rate_note/60. 초안 일치.",
+    "review_note": "원문 p.16 '신청대상 청년 소상공인(만39세 이하), 대출한도 7천만원, 대출금리(변동) 정책자금 기준금리, 대출기간 5년(거치 2년)' → max_age=39/7000/rate_note/60. 초안 일치. ※ [2026-07-25 #72 재검수] 지원사업안내 「금리안내」 표(’26년 3/4분기, 2026-07-10 적용)에서 rate=3.85 확정 — 융자공고는 '기준금리 + 가산' 산식만 규정하고 수치는 홈페이지로 넘기지만, 그 표가 이 문서에 수록돼 있다.",
     "source_ref": "소진공_2026_소상공인정책자금_융자공고.pdf p.16"
   },
   {
@@ -333,12 +574,25 @@
     "name": "성장기반자금",
     "review_action": "드롭",
     "confirmed": {
-      "name": "성장기반자금", "org": "소진공", "product_type": "loan",
-      "max_age": null, "industries": ["제조업"], "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": null, "rate": null,
-      "rate_note": "매분기별로 변동", "term_months": null,
-      "exclusive_group": null, "status": "open",
-      "notice_date": "2026-07-21", "source_url": "https://ols.semas.or.kr"
+      "name": "성장기반자금",
+      "org": "소진공",
+      "product_type": "loan",
+      "max_age": null,
+      "industries": [
+        "제조업"
+      ],
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": null,
+      "rate": null,
+      "rate_note": "매분기별로 변동",
+      "term_months": null,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2026-07-21",
+      "source_url": "https://ols.semas.or.kr"
     },
     "review_note": "amount_max 결측 8건 中 1건 → 드롭. 성장기반자금은 개별 상품이 아니라 소공인특화자금·혁신성장촉진자금·민간투자연계형매칭융자·상생성장지원자금을 묶는 상위 구분(카테고리)이다. 융자공고 p.1 운용규모표에 '성장기반자금 공급규모 7,920억원'(자금 총량)만 있고, p.17 세부표에도 성장기반자금 자체의 개별 업체 한도는 부재(하위 자금만 각자 한도 보유). 개별 한도 미명시 → amount_max=null 유지, 서빙 부적격 드롭. (industries=[제조업]도 하위 소공인 자금에만 해당해 카테고리 대표값으로는 과협소이나 드롭이라 보정 불요.)",
     "source_ref": "소진공_2026_소상공인정책자금_융자공고.pdf p.1(운용규모 7,920억), p.17"
@@ -348,14 +602,25 @@
     "name": "혁신성장촉진자금",
     "review_action": "수정",
     "confirmed": {
-      "name": "혁신성장촉진자금", "org": "소진공", "product_type": "loan",
-      "max_age": null, "industries": null, "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": 10000, "rate": 4.25,
-      "rate_note": null, "term_months": 60,
-      "exclusive_group": null, "status": "open",
-      "notice_date": "2026-07-21", "source_url": "https://ols.semas.or.kr"
+      "name": "혁신성장촉진자금",
+      "org": "소진공",
+      "product_type": "loan",
+      "max_age": null,
+      "industries": null,
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": 10000,
+      "rate": 4.25,
+      "rate_note": "정책자금 기준금리 3.85% + 0.4%p = 연 4.25% (’26년 3/4분기, 2026-07-10 적용 · 분기별 변동금리)",
+      "term_months": 60,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2026-07-21",
+      "source_url": "https://ols.semas.or.kr"
     },
-    "review_note": "amount_max 결측 8건 中 1건. 상품 doc은 지원사업안내(한도 미기재)이나 동일 자금의 개별 업체 한도가 융자공고 p.20~21에 명시 → 수정. '(혁신형)연간 운전 2억원·시설 10억원 (일반형)연간 운전 1억원·시설 5억원'. 서비스 스코프(카페·음식점, 운전자금 중심)·하향 안전 마진 원칙에 따라 일반형 운전자금 한도로 amount_max=10000(만원) 채움(상위 혁신형 운전 2억=20000). '대출기간 운전 5년(거치 2년)' → term_months=60. rate=4.25는 지원사업안내 금리표 '연 4.25%'(3.85%+0.4%p, 분기별 변동, '26 3/4분기) 원문값 유지.",
+    "review_note": "amount_max 결측 8건 中 1건. 상품 doc은 지원사업안내(한도 미기재)이나 동일 자금의 개별 업체 한도가 융자공고 p.20~21에 명시 → 수정. '(혁신형)연간 운전 2억원·시설 10억원 (일반형)연간 운전 1억원·시설 5억원'. 서비스 스코프(카페·음식점, 운전자금 중심)·하향 안전 마진 원칙에 따라 일반형 운전자금 한도로 amount_max=10000(만원) 채움(상위 혁신형 운전 2억=20000). '대출기간 운전 5년(거치 2년)' → term_months=60. rate=4.25는 지원사업안내 금리표 '연 4.25%'(3.85%+0.4%p, 분기별 변동, '26 3/4분기) 원문값 유지. ※ [2026-07-25 #72 재검수] rate 값은 유지, rate_note 에 기준금리 실값·적용 분기 병기(’26년 3/4분기, 2026-07-10 적용).",
     "source_ref": "소진공_2026_소상공인정책자금_융자공고.pdf p.20, p.21"
   },
   {
@@ -363,14 +628,25 @@
     "name": "민간투자연계형 매칭융자",
     "review_action": "수정",
     "confirmed": {
-      "name": "민간투자연계형 매칭융자", "org": "소진공", "product_type": "loan",
-      "max_age": null, "industries": null, "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": 50000, "rate": 4.25,
-      "rate_note": null, "term_months": 96,
-      "exclusive_group": null, "status": "open",
-      "notice_date": "2026-07-21", "source_url": "https://ols.semas.or.kr"
+      "name": "민간투자연계형 매칭융자",
+      "org": "소진공",
+      "product_type": "loan",
+      "max_age": null,
+      "industries": null,
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": 50000,
+      "rate": 4.25,
+      "rate_note": "정책자금 기준금리 3.85% + 0.4%p = 연 4.25% (’26년 3/4분기, 2026-07-10 적용 · 분기별 변동금리)",
+      "term_months": 96,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2026-07-21",
+      "source_url": "https://ols.semas.or.kr"
     },
-    "review_note": "amount_max 결측 8건 中 1건. 융자공고 p.22 '대출한도: 연간 민간투자금 5배와 5억원 중 낮은 금액' → 상한 5억원 → amount_max=50000. '대출기간 8년(거치 3년)' → term_months=96. rate=4.25는 지원사업안내 금리표 '연 4.25%'(3.85%+0.4%p, 분기별 변동) 원문값 유지. (민간투자금에 연동되어 실제 한도는 5억 이하 가변임을 review에 명시.)",
+    "review_note": "amount_max 결측 8건 中 1건. 융자공고 p.22 '대출한도: 연간 민간투자금 5배와 5억원 중 낮은 금액' → 상한 5억원 → amount_max=50000. '대출기간 8년(거치 3년)' → term_months=96. rate=4.25는 지원사업안내 금리표 '연 4.25%'(3.85%+0.4%p, 분기별 변동) 원문값 유지. (민간투자금에 연동되어 실제 한도는 5억 이하 가변임을 review에 명시.) ※ [2026-07-25 #72 재검수] rate 값은 유지, rate_note 에 기준금리 실값·적용 분기 병기(’26년 3/4분기, 2026-07-10 적용).",
     "source_ref": "소진공_2026_소상공인정책자금_융자공고.pdf p.22"
   },
   {
@@ -378,12 +654,23 @@
     "name": "일시적 경영애로자금",
     "review_action": "수정",
     "confirmed": {
-      "name": "일시적 경영애로자금", "org": "소진공", "product_type": "loan",
-      "max_age": null, "industries": null, "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": 7000, "rate": 3.85,
-      "rate_note": null, "term_months": 60,
-      "exclusive_group": null, "status": "open",
-      "notice_date": "2026-07-21", "source_url": "https://ols.semas.or.kr"
+      "name": "일시적 경영애로자금",
+      "org": "소진공",
+      "product_type": "loan",
+      "max_age": null,
+      "industries": null,
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": 7000,
+      "rate": 3.85,
+      "rate_note": null,
+      "term_months": 60,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2026-07-21",
+      "source_url": "https://ols.semas.or.kr"
     },
     "review_note": "amount_max 결측 8건 中 1건. 이 자금은 융자공고의 긴급경영안정자금(일시적 경영애로)와 동일 자금(명칭만 상이). 융자공고 p.7·p.9 '대출한도 7천만원, 대출기간 5년(거치 2년)' → amount_max=7000, term_months=60. rate=3.85는 지원사업안내 금리표 '연 3.85%'(3.85%+0.0%p, 분기별 변동) 원문값 유지.",
     "source_ref": "소진공_2026_소상공인정책자금_융자공고.pdf p.7, p.9"
@@ -393,14 +680,25 @@
     "name": "상생성장 지원자금",
     "review_action": "수정",
     "confirmed": {
-      "name": "상생성장 지원자금", "org": "소진공", "product_type": "loan",
-      "max_age": null, "industries": null, "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": 7000, "rate": 4.25,
-      "rate_note": null, "term_months": 60,
-      "exclusive_group": null, "status": "open",
-      "notice_date": "2026-07-21", "source_url": "https://ols.semas.or.kr"
+      "name": "상생성장 지원자금",
+      "org": "소진공",
+      "product_type": "loan",
+      "max_age": null,
+      "industries": null,
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": 7000,
+      "rate": 4.25,
+      "rate_note": "정책자금 기준금리 3.85% + 0.4%p = 연 4.25% (’26년 3/4분기, 2026-07-10 적용 · 분기별 변동금리)",
+      "term_months": 60,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2026-07-21",
+      "source_url": "https://ols.semas.or.kr"
     },
-    "review_note": "amount_max 결측 8건 中 1건. 융자공고 p.23 '(일반형)연간 운전 7천만원 (성장형)운전 1억·시설 5억 (도약형)운전 2억·시설 10억'. 하향 안전 마진 원칙에 따라 일반형 운전자금 한도로 amount_max=7000 채움(상위 도약형 운전 2억=20000). '대출기간 운전 5년(거치 2년)' → term_months=60. rate=4.25는 지원사업안내 금리표 '연 4.25%'(3.85%+0.4%p, 분기별 변동) 원문값 유지.",
+    "review_note": "amount_max 결측 8건 中 1건. 융자공고 p.23 '(일반형)연간 운전 7천만원 (성장형)운전 1억·시설 5억 (도약형)운전 2억·시설 10억'. 하향 안전 마진 원칙에 따라 일반형 운전자금 한도로 amount_max=7000 채움(상위 도약형 운전 2억=20000). '대출기간 운전 5년(거치 2년)' → term_months=60. rate=4.25는 지원사업안내 금리표 '연 4.25%'(3.85%+0.4%p, 분기별 변동) 원문값 유지. ※ [2026-07-25 #72 재검수] rate 값은 유지, rate_note 에 기준금리 실값·적용 분기 병기(’26년 3/4분기, 2026-07-10 적용).",
     "source_ref": "소진공_2026_소상공인정책자금_융자공고.pdf p.23"
   },
   {
@@ -408,14 +706,27 @@
     "name": "소공인 특화자금(일반)",
     "review_action": "수정",
     "confirmed": {
-      "name": "소공인 특화자금(일반)", "org": "소진공", "product_type": "loan",
-      "max_age": null, "industries": ["제조업"], "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": 10000, "rate": 4.45,
-      "rate_note": null, "term_months": 60,
-      "exclusive_group": null, "status": "open",
-      "notice_date": "2026-07-21", "source_url": "https://ols.semas.or.kr"
+      "name": "소공인 특화자금(일반)",
+      "org": "소진공",
+      "product_type": "loan",
+      "max_age": null,
+      "industries": [
+        "제조업"
+      ],
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": 10000,
+      "rate": 4.45,
+      "rate_note": "정책자금 기준금리 3.85% + 0.6%p = 연 4.45% (’26년 3/4분기, 2026-07-10 적용 · 분기별 변동금리)",
+      "term_months": 60,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2026-07-21",
+      "source_url": "https://ols.semas.or.kr"
     },
-    "review_note": "amount_max 결측 8건 中 1건. 융자공고 p.18~19 소공인특화자금 '(일반)연간 운전자금 1억원, 시설자금 5억원'(초안명이 (일반) 지정) → 운전자금 한도로 amount_max=10000 채움(시설 5억=50000). '대출기간 운전 5년(거치 2년)' → term_months=60. industries=[제조업]은 원문 '소공인=제조업'과 일치(유지). rate=4.45는 지원사업안내 금리표 '연 4.45%'(3.85%+0.6%p, 분기별 변동) 원문값 유지.",
+    "review_note": "amount_max 결측 8건 中 1건. 융자공고 p.18~19 소공인특화자금 '(일반)연간 운전자금 1억원, 시설자금 5억원'(초안명이 (일반) 지정) → 운전자금 한도로 amount_max=10000 채움(시설 5억=50000). '대출기간 운전 5년(거치 2년)' → term_months=60. industries=[제조업]은 원문 '소공인=제조업'과 일치(유지). rate=4.45는 지원사업안내 금리표 '연 4.45%'(3.85%+0.6%p, 분기별 변동) 원문값 유지. ※ [2026-07-25 #72 재검수] rate 값은 유지, rate_note 에 기준금리 실값·적용 분기 병기(’26년 3/4분기, 2026-07-10 적용).",
     "source_ref": "소진공_2026_소상공인정책자금_융자공고.pdf p.18, p.19"
   },
   {
@@ -423,12 +734,23 @@
     "name": "긴급경영 안정자금(재해피해)",
     "review_action": "수정",
     "confirmed": {
-      "name": "긴급경영 안정자금(재해피해)", "org": "소진공", "product_type": "loan",
-      "max_age": null, "industries": null, "regions": ["서울"],
-      "pre_startup_only": false, "amount_max": 10000, "rate": 2.0,
-      "rate_note": null, "term_months": 60,
-      "exclusive_group": null, "status": "open",
-      "notice_date": "2026-07-21", "source_url": "https://ols.semas.or.kr"
+      "name": "긴급경영 안정자금(재해피해)",
+      "org": "소진공",
+      "product_type": "loan",
+      "max_age": null,
+      "industries": null,
+      "regions": [
+        "서울"
+      ],
+      "pre_startup_only": false,
+      "amount_max": 10000,
+      "rate": 2.0,
+      "rate_note": null,
+      "term_months": 60,
+      "exclusive_group": null,
+      "status": "open",
+      "notice_date": "2026-07-21",
+      "source_url": "https://ols.semas.or.kr"
     },
     "review_note": "amount_max 결측 8건 中 1건. 이 자금은 융자공고의 긴급경영안정자금(재해)와 동일 자금(명칭만 상이). 융자공고 p.7·p.9 재해 소상공인 '대출한도 1억원, 대출금리(고정) 연 2.0%, 대출기간 5년(거치 2년)' → amount_max=10000, term_months=60. rate=2.0(고정)은 초안 일치.",
     "source_ref": "소진공_2026_소상공인정책자금_융자공고.pdf p.7, p.9"
