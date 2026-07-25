@@ -93,6 +93,32 @@ def chunk_document(doc_name: str, text: str) -> list[dict]:
     return chunks
 
 
+_NAME_TOKEN = re.compile(r"[0-9A-Za-z가-힣]{2,}")
+
+
+def select_chunk(name: str, chunks: list[dict]) -> dict | None:
+    """상품명이 실제로 등장하는 청크를 고른다. 없으면 None (인용 비움).
+
+    '문서 첫 문단' 폴백을 쓰지 않는다 — 그 문단은 대개 표지·브로슈어 머리말이고 그 상품의
+    자격 근거가 아니다. 근거가 아닌 문단을 근거로 지목하는 것은 날조는 아니어도 **귀속
+    오류**이며, 이 서비스가 임베딩 검색 대신 id 직접 조회를 택한 논거(심사_QA 20)와 정면으로
+    어긋난다 (스펙 §5-4, 리뷰 #3).
+
+    점수 = 상품명 토큰 중 청크에 등장하는 개수. 동점이면 **더 짧은** 청크가 이긴다 —
+    통짜 첫 문단은 토큰을 많이 품지만 구체적인 근거는 짧은 문단에 있다.
+    """
+    tokens = _NAME_TOKEN.findall(name or "")
+    if not tokens or not chunks:
+        return None
+    required = max(1, (len(tokens) + 1) // 2)  # 토큰 과반이 등장해야 인정
+    best = min(
+        chunks,
+        key=lambda c: (-sum(1 for t in tokens if t in c["text"]), len(c["text"])),
+    )
+    hits = sum(1 for t in tokens if t in best["text"])
+    return best if hits >= required else None
+
+
 def _load_doc_chunks(doc: str, docs_dir: Path, cache: dict) -> list[dict]:
     if doc not in cache:
         path = Path(docs_dir) / f"{doc}.txt"
@@ -113,8 +139,7 @@ def build_finance(reviewed: list[dict], docs_dir: Path) -> dict[str, pd.DataFram
         rate, rate_type, rate_note = rate_fields(p)
         chunks = _load_doc_chunks(doc, docs_dir, doc_cache)
         name = p.get("name") or ""
-        ref = next((c for c in chunks if name and name in c["text"]),
-                   chunks[0] if chunks else None)
+        ref = select_chunk(name, chunks)
         chunk_ref = None
         if ref is not None:  # 클린 원문 청크가 있을 때만 링크 (없으면 source_quote 없음)
             used_chunks.setdefault(ref["chunk_id"], {
