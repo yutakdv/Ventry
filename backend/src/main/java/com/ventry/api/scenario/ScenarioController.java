@@ -1,6 +1,5 @@
 package com.ventry.api.scenario;
 
-import com.ventry.api.common.MockData;
 import com.ventry.api.common.SessionStore;
 import com.ventry.api.common.SseSupport;
 import com.ventry.api.scenario.ScenarioDtos.BudgetRequest;
@@ -8,6 +7,7 @@ import com.ventry.api.scenario.ScenarioDtos.BudgetResponse;
 import com.ventry.api.scenario.ScenarioDtos.ScenarioCard;
 import com.ventry.api.scenario.ScenarioDtos.ScenarioDone;
 import com.ventry.api.serving.LocationService;
+import com.ventry.api.serving.ScenarioBuilder;
 import com.ventry.api.serving.SessionMapper;
 import java.util.List;
 import org.springframework.http.MediaType;
@@ -25,18 +25,20 @@ public class ScenarioController {
     private final SessionStore sessions;
     private final SseSupport sse;
     private final LocationService locationService;
+    private final ScenarioBuilder scenarioBuilder;
 
     public ScenarioController(SessionStore sessions, SseSupport sse,
-                              LocationService locationService) {
+                              LocationService locationService, ScenarioBuilder scenarioBuilder) {
         this.sessions = sessions;
         this.sse = sse;
         this.locationService = locationService;
+        this.scenarioBuilder = scenarioBuilder;
     }
 
     @GetMapping(value = "/api/scenarios/{sid}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter scenarios(@PathVariable String sid) {
-        sessions.get(sid); // 세션 검증 — 없으면 404
-        List<ScenarioCard> cards = MockData.scenarios();
+        SessionStore.SessionState state = sessions.get(sid);   // 없으면 404
+        List<ScenarioCard> cards = scenarioBuilder.build(SessionMapper.profile(state));
         return sse.run(emitter -> {
             for (ScenarioCard card : cards) {
                 emitter.send(SseEmitter.event().name("scenario")
