@@ -1,0 +1,85 @@
+.surface {
+  padding: var(--space-24);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+/* 폼 세로 리듬 — 직계 자식 기본 16px, 개별 override */
+.surface > * {
+  margin: 0 0 var(--space-16);
+}
+.surface > *:last-child {
+  margin-bottom: 0;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-8);
+}
+.help {
+  color: var(--color-text-accent);
+  text-decoration: none;
+}
+.subtitle {
+  color: var(--color-text-secondary);
+}
+
+.demoHint {
+  color: var(--color-text-tertiary);
+}
+
+.section {
+  margin-top: var(--space-24);
+  color: var(--color-text-primary);
+}
+
+.row3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--space-16);
+}
+.row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-12);
+}
+
+.freeLabel {
+  display: block;
+  margin-bottom: var(--space-8);
+  color: var(--color-text-secondary);
+}
+.textarea {
+  display: block;
+  width: 100%;
+  min-height: 96px;
+  margin-bottom: var(--space-8);
+  padding: 12px 14px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-control);
+  color: var(--color-text-primary);
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+.textarea:focus {
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px var(--blue-50);
+}
+.textarea::placeholder {
+  color: var(--color-text-tertiary);
+}
+.freeHint {
+  color: var(--color-text-tertiary);
+}
+
+.submit {
+  margin-top: var(--space-24);
+}

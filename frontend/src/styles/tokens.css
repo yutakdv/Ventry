@@ -1,0 +1,112 @@
+/**
+ * 디자인 토큰 — Figma 01_Foundations (node 3:2, v1.0 2026.07)에서 추출.
+ * 값 임의 변경 금지. Figma Foundations가 바뀌면 여기만 갱신한다.
+ * 구조: Primitives(원시 팔레트) ← Semantic(화면에서 쓰는 의미 토큰).
+ */
+:root {
+  /* ═══════════ Colors · Primitives (직접 사용 금지, Semantic이 참조) ═══════════ */
+  --gray-0: #ffffff;
+  --gray-25: #fafaf8;
+  --gray-50: #f5f6f8;
+  --gray-100: #eef0f3;
+  --gray-200: #e8eaed;
+  --gray-300: #d5d8de;
+  --gray-400: #9ca1ab;
+  --gray-500: #666b75;
+  --gray-700: #3d4149;
+  --gray-900: #1a1a1a;
+
+  --yellow-25: #fdf9f0;
+  --yellow-50: #fff9e8;
+  --yellow-100: #fff3cc;
+  --yellow-500: #ffbc00;
+  --yellow-600: #f5a800;
+
+  --blue-50: #eef3fe;
+  --blue-100: #dce7fd;
+  --blue-500: #4c7cf5;
+  --blue-600: #2f63e8;
+
+  --green-50: #e9f7f0;
+  --green-500: #22a06b;
+  --green-600: #1b8759;
+
+  --purple-50: #f1eeff;
+  --purple-500: #7b61ff;
+  --orange-50: #fff3e8;
+  --orange-500: #ff9500;
+  --red-50: #fdeceb;
+  --red-500: #f0442e;
+
+  /* ═══════════ Colors · Semantic (화면 제작 시 사용) ═══════════ */
+  /* Brand — CTA 버튼·활성 스텝·Tip */
+  --color-brand-primary: var(--yellow-500);
+  --color-brand-primary-hover: var(--yellow-600);
+  --color-brand-subtle: var(--yellow-50);
+
+  /* Background — 페이지·카드·패널 */
+  --color-bg-page: var(--gray-25);
+  --color-bg-surface: var(--gray-0);
+  --color-bg-sidebar: var(--yellow-25);
+  --color-bg-info: var(--blue-50);
+  --color-bg-tip: var(--yellow-50);
+  --color-bg-success-subtle: var(--green-50);
+
+  /* Text — 타이포 컬러 위계 */
+  --color-text-primary: var(--gray-900);
+  --color-text-secondary: var(--gray-500);
+  --color-text-tertiary: var(--gray-400);
+  --color-text-accent: var(--blue-500);
+  --color-text-success: var(--green-500);
+  --color-text-on-brand: var(--gray-900);
+
+  /* Border — 카드·입력 필드 */
+  --color-border-default: var(--gray-200);
+  --color-border-strong: var(--gray-300);
+  --color-border-focus: var(--blue-500);
+
+  /* Feedback — Validation 에러 */
+  --color-text-error: var(--red-500);
+  --color-border-error: var(--red-500);
+  --color-bg-error-subtle: var(--red-50);
+
+  /* Accent & Data — 금액 강조·차트·등급 분포 */
+  --color-accent-primary: var(--blue-500);
+  --color-status-success: var(--green-500);
+  --color-data-blue: var(--blue-500);
+  --color-data-green: var(--green-500);
+  --color-data-purple: var(--purple-500);
+  --color-data-orange: var(--orange-500);
+
+  /* ═══════════ Spacing (4pt base) ═══════════ */
+  --space-4: 4px;    /* 아이콘-텍스트 */
+  --space-8: 8px;    /* 칩 내부·라벨-값 */
+  --space-12: 12px;  /* 카드 내 요소 */
+  --space-16: 16px;  /* 카드 간 */
+  --space-20: 20px;  /* 카드 내부 패딩(소) */
+  --space-24: 24px;  /* 카드 내부 패딩(기본) */
+  --space-32: 32px;  /* 섹션 간 */
+  --space-40: 40px;  /* 페이지 상하 여백 */
+  --space-48: 48px;  /* 대형 섹션 구분 */
+
+  /* ═══════════ Radius (요소가 클수록 크게 — concentric) ═══════════ */
+  --radius-sm: 6px;        /* 뱃지·작은 태그 */
+  --radius-md: 8px;        /* 버튼·입력·드롭다운(기본) */
+  --radius-control: 10px;  /* 폼 컨트롤(진단 화면 실측) */
+  --radius-lg: 12px;       /* 카드·배너 */
+  --radius-xl: 16px;       /* 대형 컨테이너·지도 */
+  --radius-full: 999px;    /* pill 칩·점수 뱃지 */
+
+  /* ═══════════ Elevation ═══════════ */
+  --shadow-card: 0 1px 3px 0 rgba(15, 18, 26, 0.06);   /* 기본 카드 */
+  --shadow-float: 0 4px 16px 0 rgba(15, 18, 26, 0.10); /* 드롭다운·플로팅 */
+
+  /* ═══════════ Typography ═══════════ */
+  --font-family: 'Noto Sans KR', system-ui, -apple-system, sans-serif;
+
+  /* ═══════════ Layout (Desktop 1440) ═══════════ */
+  --layout-max: 1440px;
+  --layout-sidebar: 232px;
+  --layout-rightrail: 256px;
+  --layout-gutter: 24px;
+}

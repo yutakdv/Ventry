@@ -1,32 +1,28 @@
-import { useEffect, useState } from 'react'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { SessionProvider } from './store/session'
+import Diagnose from './screens/Diagnose'
+import Scenario from './screens/Scenario'
+import Budget from './screens/Budget'
+import Recommend from './screens/Recommend'
 
 /**
- * 화면 골격 (스펙 §7)
- *  - 화면 1: 자금 진단 (폼 + 자연어 하이브리드) + "데모 프로필 불러오기" 버튼  → FE-02
- *  - 화면 2: 조달 시나리오 카드 2장 (보수/적극) + 출처 배지 + SSE            → FE-03
- *  - 화면 3: 카카오맵 마커 3종 + 근거 패널 + 예산 슬라이더 + 역방향 판정      → FE-03~05
+ * 화면 라우팅 (스펙 §7) — 진단 → 시나리오 → 예산 → 입지 흐름.
+ *  - /           1단계: 자금 진단 (FE-02)
+ *  - /scenarios  2단계: 조달 시나리오 (FE-03)
+ *  - /budget     3단계: 예산 선택 (FE-03)
+ *  - /map        4단계: 입지 추천 (FE-03 골격 · 탐색/검증 UI는 FE-04~05)
  */
 export default function App() {
-  const [apiStatus, setApiStatus] = useState<'checking' | 'ok' | 'down'>('checking')
-
-  useEffect(() => {
-    fetch('/api/health')
-      .then((r) => (r.ok ? setApiStatus('ok') : setApiStatus('down')))
-      .catch(() => setApiStatus('down'))
-  }, [])
-
   return (
-    <main style={{ fontFamily: 'sans-serif', maxWidth: 720, margin: '4rem auto', padding: '0 1rem' }}>
-      <h1>Ventry</h1>
-      <p>“어디가 좋은가”가 아니라 <strong>“내 한도로 어디까지 가능한가”</strong>.</p>
-      <p>
-        API 상태:{' '}
-        {apiStatus === 'checking' ? '확인 중…' : apiStatus === 'ok' ? '✅ 연결됨' : '❌ 미연결'}
-      </p>
-      <hr />
-      <p style={{ color: '#888' }}>
-        화면 1(진단) · 2(시나리오) · 3(지도 판정)은 docs/TASKS.md의 FE-02~05에서 구현됩니다.
-      </p>
-    </main>
+    <SessionProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Diagnose />} />
+          <Route path="/scenarios" element={<Scenario />} />
+          <Route path="/budget" element={<Budget />} />
+          <Route path="/map" element={<Recommend />} />
+        </Routes>
+      </BrowserRouter>
+    </SessionProvider>
   )
 }

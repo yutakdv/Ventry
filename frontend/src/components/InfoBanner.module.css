@@ -1,0 +1,31 @@
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-8);
+  padding: var(--space-12) var(--space-16);
+  border-radius: var(--radius-lg);
+}
+.dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-top: 8px;
+  border-radius: var(--radius-full);
+}
+.text {
+  color: var(--color-text-secondary);
+}
+
+.info {
+  background: var(--color-bg-info);
+}
+.info .dot {
+  background: var(--color-accent-primary);
+}
+
+.tip {
+  background: var(--color-bg-tip);
+}
+.tip .dot {
+  background: var(--color-brand-primary-hover);
+}

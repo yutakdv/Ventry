@@ -58,7 +58,7 @@ def load_source_text_clean(doc: str) -> str:
 
     청크는 `load/finance.py:strip_print_artifacts` 를 거친 텍스트를 자른 것이므로,
     raw txt 와 직접 비교하면 인쇄 장식 줄·NUL 이 빠진 만큼 부분문자열이 되지 않는다.
-    같은 정제를 적용한 텍스트가 올바른 대조 기준이다 (assumptions #43, 리뷰 #4·#5).
+    같은 정제를 적용한 텍스트가 올바른 대조 기준이다 (assumptions #50, 리뷰 #4·#5).
     """
     from batch.load.finance import strip_print_artifacts
 

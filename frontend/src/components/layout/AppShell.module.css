@@ -1,0 +1,42 @@
+.shell {
+  min-height: 100%;
+  background: var(--color-bg-page);
+}
+.container {
+  max-width: var(--layout-max);
+  margin: 0 auto;
+  padding: var(--space-24);
+  display: grid;
+  grid-template-columns: var(--layout-sidebar) minmax(0, 1fr) var(--layout-rightrail);
+  gap: var(--layout-gutter);
+  align-items: start;
+}
+/* 우측 레일이 없는 화면(화면 2 등)은 레일 칼럼을 예약하지 않는다. */
+.noRail {
+  grid-template-columns: var(--layout-sidebar) minmax(0, 1fr);
+}
+.main {
+  min-width: 0;
+}
+.rail {
+  position: sticky;
+  top: calc(64px + var(--space-24));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+}
+
+/* 좁은 화면: 레일·사이드바 접기 (데모는 데스크톱 기준이나 안전장치) */
+@media (max-width: 1200px) {
+  .container {
+    grid-template-columns: var(--layout-sidebar) minmax(0, 1fr);
+  }
+  .rail {
+    display: none;
+  }
+}
+@media (max-width: 900px) {
+  .container {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

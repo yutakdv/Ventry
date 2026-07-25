@@ -1,0 +1,11 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+.label {
+  color: var(--color-text-secondary);
+}
+.error {
+  color: var(--color-text-error);
+}

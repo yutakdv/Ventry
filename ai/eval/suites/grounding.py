@@ -21,7 +21,7 @@ def evaluate(gold: list[dict], docs: dict[str, str]) -> dict:
 
     - **적재 청크 verbatim**: `db/init/20_finance.sql` 에 실제로 실린 청크가 원문의
       부분문자열인가. 화면에 뜨는 인용문이 곧 이 텍스트이므로 이것이 본 지표다.
-      대조 기준은 인쇄 장식·NUL 을 뺀 정제 원문이다 (assumptions #43, 리뷰 #4).
+      대조 기준은 인쇄 장식·NUL 을 뺀 정제 원문이다 (assumptions #50, 리뷰 #4).
     - **골드 스팟체크**: 사람이 고른 인용의 원문 일치 — 회귀 감시용 보조 지표.
 
     `coverage` 는 **적재 상품 중 인용이 붙은 비율**이다. 예전 정의(골드 13 ÷ 초안 29)는

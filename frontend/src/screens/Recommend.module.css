@@ -1,0 +1,154 @@
+.surface {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  padding: var(--space-24);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+.surface > * {
+  margin: 0;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+}
+.titleRow h1 {
+  margin: 0;
+}
+.subtitle {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+/* 요약 4장은 한 줄 유지 (값이 짧아 좁은 폭에서도 들어간다) */
+.summaryBar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-12);
+}
+
+.loading {
+  padding: var(--space-40) 0;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: var(--space-16);
+  align-items: start;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+.listHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8);
+}
+.listHeader p {
+  margin: 0;
+}
+.sortLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  color: var(--color-text-secondary);
+}
+.sortSelect {
+  padding: 4px var(--space-8);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  font-family: inherit;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+.chip {
+  padding: 5px var(--space-12);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-full);
+  background: var(--color-bg-surface);
+  color: var(--color-text-secondary);
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+.chip:hover {
+  background: var(--color-bg-page);
+}
+.chip:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+.chipActive {
+  border-color: var(--color-accent-primary);
+  background: var(--color-bg-info);
+  color: var(--color-text-accent);
+}
+
+/* FE-05에서 반박 왕복을 붙일 자리 — 지금은 비활성 */
+.riskTrigger {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text-accent);
+  font-family: inherit;
+  text-align: left;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  max-height: 620px;
+  overflow-y: auto;
+  padding-right: var(--space-4);
+}
+
+.empty {
+  padding: var(--space-24) 0;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.disclaimer {
+  color: var(--color-text-tertiary);
+  word-break: keep-all;
+}
+
+@media (max-width: 1200px) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cards {
+    max-height: none;
+  }
+}
