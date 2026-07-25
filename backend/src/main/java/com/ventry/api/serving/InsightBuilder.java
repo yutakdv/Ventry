@@ -51,10 +51,10 @@ public class InsightBuilder {
                     + "현재 예산은 안정 구간입니다.";
 
     private final CandidateSource candidates;
-    private final DemoProducts products;
+    private final ProductSource products;
     private final FrontierService frontier;
 
-    public InsightBuilder(CandidateSource candidates, DemoProducts products,
+    public InsightBuilder(CandidateSource candidates, ProductSource products,
                           FrontierService frontier) {
         this.candidates = candidates;
         this.products = products;

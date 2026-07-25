@@ -5,6 +5,7 @@
 
 - **팀원별 세부 체크리스트(파일 단위·명령·PR 슬라이스)**: [tasks/FRONTEND.md](tasks/FRONTEND.md) ·
   [tasks/BACKEND.md](tasks/BACKEND.md) · [tasks/AI.md](tasks/AI.md) — 이 문서는 총괄(의존·마일스톤)용.
+- **FE 공지 (서버 측 변경 — 화면 조치 필요분 포함)**: [HANDOFF_FRONTEND.md](HANDOFF_FRONTEND.md)
 - **BE 인수인계 (담당 교대 시 필독)**: [HANDOFF_BACKEND.md](HANDOFF_BACKEND.md) — 엔드포인트별
   목/실 상태·도구 계층 결선 현황·다음 순서·함정 목록·동작 확인 명령.
 - **D0 확정 사항 (전 파트 필독)**: [DECISIONS.md](DECISIONS.md) — 판정 용어·금액 단위·계약 스키마

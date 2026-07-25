@@ -246,6 +246,10 @@ def _data_source_meta() -> pd.DataFrame:
          "환승역 정규명 합산", "2026-07-21"),
         ("interior", "2025", "공정위 가맹정보 2025 (가맹점 기준·상향, 만원)",
          "인테리어·시설 프록시", "2026-07-24"),
+        # BE ScenarioBuilder 가 상품 카드 기준일로 이 행을 조회한다 — 없으면 시나리오 화면이
+        # 500 이 된다(실데이터 결선에서 실측, 이슈 #87). 값은 검수본의 공고일 기준.
+        ("finance_product", "2026-07-21", "정책자금·보증·대출 상품 (공고 기준)",
+         "전건 사람 검수본", "2026-07-25"),
     ]
     return pd.DataFrame(rows, columns=["source", "as_of", "label", "note", "collected_on"])
 
