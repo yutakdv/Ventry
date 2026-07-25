@@ -1,0 +1,76 @@
+/**
+ * 전역 리셋 + 타입 램프 유틸리티 클래스.
+ * 타입 램프는 Figma 01_Foundations §03 (Noto Sans KR · 8단계 · 자간 큰 사이즈일수록 타이트).
+ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--color-text-primary);
+  background: var(--color-bg-page);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* ── Type ramp (Figma §03) — 8단계 ── */
+.t-display {
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 34px;
+  letter-spacing: -0.015em;
+}
+.t-title1 {
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 28px;
+  letter-spacing: -0.01em;
+}
+.t-title2 {
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: -0.005em;
+}
+.t-stat {
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 26px;
+}
+.t-body {
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 22px;
+}
+.t-body-strong {
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 22px;
+}
+.t-label {
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 18px;
+}
+.t-caption {
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 16px;
+}
