@@ -67,6 +67,43 @@ class EligibilityFilterTest {
         assertThat(EligibilityFilter.qualify(existing, List.of(p))).containsExactly(p);
     }
 
+    /**
+     * #76 — 계약상 region_hint 는 "시/도 + 구/군" 결합 문자열인데
+     * finance_product.regions 는 시/도 수준(['서울'])이라 문자열 동등 비교가 전부 어긋났다.
+     * 실적재 26건 중 20건이 ['서울'] 이므로 서울 신청자에게 지역제한 상품이 전건 배제됐다.
+     */
+    @Test
+    void sidoLevelProductRegion_matchesSiGunGuHint() {
+        FundingProduct p = product("서울 전용", new Eligibility(null, null, Set.of("서울"), false));
+        Profile seoulMapo = new Profile(32, 5000, false, "cafe", "서울 마포구");
+        assertThat(EligibilityFilter.qualify(seoulMapo, List.of(p))).containsExactly(p);
+    }
+
+    @Test
+    void fullSidoName_normalizedBeforeMatching() {
+        FundingProduct p = product("서울 전용", new Eligibility(null, null, Set.of("서울"), false));
+        Profile formal = new Profile(32, 5000, false, "cafe", "서울특별시 마포구");
+        assertThat(EligibilityFilter.qualify(formal, List.of(p))).containsExactly(p);
+    }
+
+    @Test
+    void otherSido_stillExcluded() {
+        FundingProduct p = product("서울 전용", new Eligibility(null, null, Set.of("서울"), false));
+        Profile gyeonggi = new Profile(32, 5000, false, "cafe", "경기도 성남시");
+        assertThat(EligibilityFilter.qualify(gyeonggi, List.of(p))).isEmpty();
+    }
+
+    /** 지역을 모르면 지역제한 상품을 통과시키지 않는다 — 확인 못 한 자격을 주장하지 않는다. */
+    @Test
+    void blankRegion_excludedFromRegionConstrainedProduct() {
+        FundingProduct constrained =
+                product("서울 전용", new Eligibility(null, null, Set.of("서울"), false));
+        FundingProduct free = product("무제약", new Eligibility(null, null, null, false));
+        Profile unknown = new Profile(32, 5000, false, "cafe", "  ");
+        assertThat(EligibilityFilter.qualify(unknown, List.of(constrained, free)))
+                .containsExactly(free);
+    }
+
     @Test
     void mixedList_returnsOnlyQualifyingPreservingOrder() {
         FundingProduct ok = product("적합", new Eligibility(39, Set.of("cafe"), Set.of("마포"), false));

@@ -27,11 +27,52 @@ public final class EligibilityFilter {
         if (constrains(e.industries()) && !e.industries().contains(profile.industry())) {
             return false;
         }
-        return !constrains(e.regions()) || e.regions().contains(profile.region());
+        return !constrains(e.regions()) || regionMatches(profile.region(), e.regions());
     }
 
     /** null·빈 집합은 "무제약" — 제약이 걸린 경우만 true. */
     private static boolean constrains(Set<String> allowed) {
         return allowed != null && !allowed.isEmpty();
+    }
+
+    /**
+     * 지역 판정 — 해상도가 서로 다르다.
+     *
+     * <p>계약상 {@code region_hint} 는 "시/도 + 구/군" 결합 문자열("서울 마포구")인데
+     * {@code finance_product.regions} 는 시/도 수준(['서울'])이다. 문자열 동등 비교로는
+     * 서울 신청자에게 지역제한 상품이 전건 배제된다 (이슈 #76 — 적재 26건 중 20건이 ['서울']).
+     *
+     * <p>그래서 프로필 지역의 <b>시/도</b>가 허용 목록에 있거나, 결합 문자열의 어느 토큰이
+     * 그대로 있으면 통과시킨다(자치구 해상도 상품 대비). 지역을 모르면 통과시키지 않는다 —
+     * 확인하지 못한 자격을 주장하지 않는 것이 하향 안전 마진에 정합한다.
+     */
+    private static boolean regionMatches(String region, Set<String> allowed) {
+        if (region == null || region.isBlank()) {
+            return false;
+        }
+        String[] tokens = region.trim().split("\\s+");
+        if (allowed.contains(sido(tokens[0]))) {
+            return true;
+        }
+        for (String token : tokens) {
+            if (allowed.contains(token)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** 광역단체 접미사 — 긴 것부터 봐야 '제주특별자치도'가 '도'로 먼저 잘리지 않는다. */
+    private static final List<String> SIDO_SUFFIXES =
+            List.of("특별자치도", "특별자치시", "광역시", "특별시", "도");
+
+    /** "서울특별시" · "경기도" → "서울" · "경기". 접미사가 없으면 입력 그대로. */
+    static String sido(String head) {
+        for (String suffix : SIDO_SUFFIXES) {
+            if (head.length() > suffix.length() && head.endsWith(suffix)) {
+                return head.substring(0, head.length() - suffix.length());
+            }
+        }
+        return head;
     }
 }
