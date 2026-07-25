@@ -16,7 +16,7 @@ PREMIUM_PER_M2_MANWON = 72.6
 PREMIUM_INDUSTRY_ADJ = {"cafe": 0.85, "food": 1.0}
 PREMIUM_LOW_RATIO, PREMIUM_HIGH_RATIO = 0.72, 1.15
 RENT_RATIO_CLIP = (0.5, 2.0)
-# 인테리어: FTC avrgJngEtcAmt 2025 만원 (assumptions #23), ±20%
+# 인테리어: FTC avrgJngEtcAmt 2025 만원 (assumptions #40), ±20%
 INTERIOR_MANWON = {"cafe": 2485, "food": 4595}
 INTERIOR_BAND = 0.20
 # 월고정비 가산형 (design 2-3)
