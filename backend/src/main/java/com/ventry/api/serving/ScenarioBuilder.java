@@ -30,6 +30,13 @@ import org.springframework.stereotype.Service;
  * 보수는 <b>권리금 제외</b>(권리금 없는 자리도 있다), 적극은 <b>권리금 포함</b> 중앙값이다.
  * 이 차이가 카드의 성격 차이 그 자체이며, 임의 배수 파라미터를 도입하지 않고도 두 카드가 갈린다.
  *
+ * <p><b>보수·적극은 금액의 대소가 아니라 '수단'이다</b> (이슈 #90, DECISIONS §13-3).
+ * 보수는 <b>보증형만</b>, 적극은 <b>전체 상품</b>을 후보로 본다. 두 카드의 후보 풀이 다르므로
+ * <b>적극의 예산이 보수보다 크다는 보장이 없다</b> — 실데이터에서 확정 이율이 있는 보증형의
+ * 최소 한도(1억)가 전체 최소(5천만)보다 커서 보수가 더 큰 예산을 갖는 경우가 나온다.
+ * 이것은 결함이 아니라 <b>가용 상품 구조가 그렇다는 사실</b>이며, 화면은 두 카드를 크기순으로
+ * 전제하지 말고 수단의 차이로 서술해야 한다.
+ *
  * <p>한도는 공고상 상한일 뿐 승인 금액이 아니다 — 화면은 "한도·승인은 기관 심사 사항" 고지를
  * 동반해야 하며, 이 클래스는 어떤 자문성 판단도 하지 않는다 (용어 컴플라이언스 §7).
  */
@@ -74,7 +81,8 @@ public class ScenarioBuilder {
                 conservativeNeed);
         Optional<FundingProduct> aggressive = smallestCovering(qualified, aggressiveNeed);
 
-        return List.of(card("보수", equity, conservative), card("적극", equity, aggressive));
+        return List.of(card("보수", equity, conservativeNeed, conservative),
+                card("적극", equity, aggressiveNeed, aggressive));
     }
 
     /**
@@ -110,7 +118,8 @@ public class ScenarioBuilder {
                 .or(() -> pool.stream().max(Comparator.comparingInt(FundingProduct::amountMax)));
     }
 
-    private ScenarioCard card(String label, int equity, Optional<FundingProduct> selected) {
+    private ScenarioCard card(String label, int equity, int need,
+                              Optional<FundingProduct> selected) {
         List<CompositionRange> composition = new ArrayList<>();
         composition.add(new CompositionRange(ProductType.EQUITY, equity, equity));  // 심사와 무관한 확정 재원
         List<Product> cardProducts = new ArrayList<>();
@@ -126,7 +135,11 @@ public class ScenarioBuilder {
             budgetMax += product.amountMax();
         }
         cardProducts.sort(PRODUCT_ORDER);   // 계약 D8 고정 정렬 (카드당 1종이라 실질 no-op, 규약 준수)
-        // 슬라이더 초기 선택값 = 상한(한도 전액 활용 가정) — 승인 금액이라는 뜻이 아니다
-        return new ScenarioCard(label, budgetMax, equity, budgetMax, composition, cardProducts);
+        // 슬라이더 초기 선택값 = 자기자본 + 필요분 (범위 안으로 클램프).
+        // 상한을 초기값으로 두면 "한도 전액을 쓰는 것"이 기본 선택이 된다 — 가용 상품의 최소
+        // 한도가 필요분보다 큰 경우(실데이터에서 흔하다) 과잉 조달이 기본값이 되어버린다.
+        // 상한은 여전히 budget_max 로 노출되므로 사용자가 올릴 수 있다 (DECISIONS §13-3).
+        int initial = Math.clamp((long) equity + need, equity, budgetMax);
+        return new ScenarioCard(label, initial, equity, budgetMax, composition, cardProducts);
     }
 }

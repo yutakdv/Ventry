@@ -70,7 +70,11 @@ class ScenarioBuilderTest {
         ScenarioCard card = builder.build(demo).get(0);
         assertThat(card.budgetMin()).isEqualTo(5000);
         assertThat(card.budgetMax()).isEqualTo(6500);
-        assertThat(card.budget()).isEqualTo(6500);      // 슬라이더 초기값 = 상한
+        // 슬라이더 초기값 = 자기자본 + 필요분 (DECISIONS §13-3). 추천 풀 3곳의 권리금 제외
+        // 진입 비용 중앙값 6,200(망원 6,200·합정 6,400·홍대 6,050) → 필요분 1,200 → 초기값 6,200.
+        // 상한 6,500 은 그대로 노출되므로 사용자가 한도 전액까지 올릴 수 있다.
+        assertThat(card.budget()).isEqualTo(6200);
+        assertThat(card.budget()).isBetween(card.budgetMin(), card.budgetMax());
         assertThat(card.composition()).extracting("type").containsExactly("equity", "guarantee");
         assertThat(card.products()).singleElement()
                 .satisfies(p -> assertThat(p.amountMax()).isEqualTo(1500));
