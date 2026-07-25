@@ -33,9 +33,20 @@ def test_no_burden_or_total_score_columns(tables):
 
 def test_initial_cost_matches_ddl_columns(tables):
     ic = tables["initial_cost"]
-    assert "monthly_rent" not in ic.columns  # 내부용 컬럼 제거됨
     assert "based_on_quarter" in ic.columns
     assert (ic["cost_incl_premium_high"] >= ic["cost_ex_premium_high"]).all()
+
+
+def test_initial_cost_carries_industry_aware_rent(tables):
+    """부담률 분자는 업종 대표면적 기준이어야 한다 (리뷰 #2).
+
+    같은 상권에서 카페 환산임대료 < 음식점 환산임대료 여야 한다 — 29.2㎡ < 55.2㎡.
+    """
+    ic = tables["initial_cost"]
+    assert "monthly_rent" in ic.columns
+    pivot = ic.pivot(index="area_code", columns="industry", values="monthly_rent").dropna()
+    assert len(pivot) > 100
+    assert (pivot["cafe"] < pivot["food"]).all()
 
 
 def test_fk_area_codes_subset_of_master(tables):

@@ -187,15 +187,20 @@ def load_model_features(sql_path: Path = DATA_CORE_SQL) -> tuple[list[dict], lis
 
 
 def load_serving_scores(sql_path: Path = DATA_CORE_SQL) -> list[dict]:
-    """서빙 점수 성분 로드 — 민감도 재계산 입력. burden_ratio = monthly_rent / est_sales."""
+    """서빙 점수 성분 로드 — 민감도 재계산 입력. burden_ratio = monthly_rent / est_sales.
+
+    분자는 `initial_cost.monthly_rent`(업종 대표면적 기준)다. `rent.monthly_rent` 는 상권
+    단위 표기값이라 업종별 부담률에 쓰면 카페가 1.89배 과대해진다 (리뷰 #2).
+    """
     text = sql_path.read_text(encoding="utf-8")
-    rent = {r[0]: int(r[2]) for r in _iter_sql_rows(text, "rent")}
+    # initial_cost: area_code, industry, monthly_rent, deposit_low, …
+    rent = {(r[0], r[1]): int(r[2]) for r in _iter_sql_rows(text, "initial_cost")}
     out: list[dict] = []
     for r in _iter_sql_rows(text, "location_score"):
         area, industry = r[0], r[1]
         w1, w2, w3, w4, w5 = (float(x) for x in r[2:7])
         est_sales = int(r[7])
-        mr = rent.get(area)
+        mr = rent.get((area, industry))
         out.append({
             "area_code": area, "industry": industry,
             "w1": w1, "w2": w2, "w3": w3, "w4": w4, "w5": w5,

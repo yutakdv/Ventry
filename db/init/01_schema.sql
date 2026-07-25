@@ -173,6 +173,7 @@ COMMENT ON COLUMN location_score.daily_floating IS
 CREATE TABLE initial_cost (
     area_code             TEXT NOT NULL REFERENCES commercial_area (area_code),
     industry              TEXT NOT NULL CHECK (industry IN ('cafe', 'food')),
+    monthly_rent          INTEGER NOT NULL,   -- 업종 대표면적 기준 환산임대료 만원/월 (부담률 분자)
     deposit_low           INTEGER NOT NULL,
     deposit_high          INTEGER NOT NULL,
     premium_low           INTEGER NOT NULL,
@@ -193,6 +194,9 @@ CREATE TABLE initial_cost (
         AND cost_incl_premium_low <= cost_incl_premium_high
     )
 );
+
+COMMENT ON COLUMN initial_cost.monthly_rent IS
+    '업종 대표면적(카페 29.2㎡ · 음식점 55.2㎡) 기준 환산임대료. rent.monthly_rent 는 상권 단위 표기값(음식점 55.2㎡ 기준)이라 업종별 부담률 분자로 쓰면 카페가 1.89배 과대해진다 (리뷰 #2).';
 
 -- BE 프론티어 사전 정렬 인덱스 — 예산 경계 탐색이 정렬 배열 위 이분 탐색이다 (expl §2-1)
 CREATE INDEX idx_initial_cost_sort_incl
@@ -268,7 +272,7 @@ SELECT
     c.cost_ex_premium_low, c.cost_ex_premium_high,
     c.cost_incl_premium_low, c.cost_incl_premium_high,
     s.w1, s.w2, s.w3, s.w4, s.w5,
-    r.monthly_rent,
+    c.monthly_rent,
     s.est_sales,
     s.daily_floating,
     r.source_org        AS rent_org,

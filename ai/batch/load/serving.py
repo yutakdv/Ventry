@@ -289,8 +289,9 @@ def assemble() -> dict[str, pd.DataFrame]:
     metrics["distance_m"] = metrics["distance_m"].fillna(10**9)
     location_score = score.build_location_score(metrics)
 
-    # initial_cost: DDL 정합 — 내부용 monthly_rent 제거, based_on_quarter 추가
-    initial_cost = initial_cost.drop(columns=["monthly_rent"]).assign(based_on_quarter="20261")
+    # initial_cost: monthly_rent 는 업종별 부담률 분자로 유지한다 (리뷰 #2).
+    # rent.monthly_rent 는 상권 단위 표기값(음식점 55.2㎡ 기준)이라 업종 부담률에 못 쓴다.
+    initial_cost = initial_cost.assign(based_on_quarter="20261")
 
     tables = {
         "data_source_meta": _data_source_meta(),
