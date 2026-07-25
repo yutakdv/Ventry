@@ -240,11 +240,11 @@ def _derive(
     rent, est, floating, resident, worker, density, change
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """초기비용(area×industry) + 점수 metrics(교통 유입 제외)."""
-    seoul_median_rent = int(rent["monthly_rent"].median())
+    seoul_median_unit_price = float(rent["unit_price"].median())
     rent_df = pd.concat(
         [rent[["area_code", "unit_price"]].assign(industry=ind) for ind in INDUSTRIES],
         ignore_index=True)
-    initial_cost = cost.build_initial_cost(rent_df, seoul_median_rent)
+    initial_cost = cost.build_initial_cost(rent_df, seoul_median_unit_price)
 
     rent_by_area = rent.set_index("area_code")["monthly_rent"].to_dict()
     flo = floating.set_index("area_code")["daily_floating"].to_dict()

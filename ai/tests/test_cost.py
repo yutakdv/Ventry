@@ -12,19 +12,44 @@ def test_deposit_interval_multiples():
     assert cost.deposit_interval(200) == (1600, 2400)  # ×8, ×12
 
 
-def test_premium_interval_scales_with_rent_and_industry():
-    lo, hi = cost.premium_interval(monthly_rent=300, seoul_median_rent=300, industry="cafe")
-    center = 72.6 * 29.2 * 1.0 * 0.85  # ratio=1, 업종보정 0.85
+def test_premium_interval_scales_with_unit_price_and_industry():
+    # 단가가 서울 중위와 같으면 ratio=1 — 대표면적·업종보정만 남는다
+    lo, hi = cost.premium_interval(unit_price_1000won_m2=50.0,
+                                   seoul_median_unit_price=50.0, industry="cafe")
+    center = 72.6 * 29.2 * 1.0 * 0.85
     assert lo == round(center * 0.72)
     assert hi == round(center * 1.15)
     assert lo <= hi
 
 
 def test_premium_ratio_clipped():
-    # 임대료가 서울 중위의 10배여도 비례계수는 2.0 상한
-    clipped = cost.premium_interval(3000, 300, "food")
-    at_cap = cost.premium_interval(600, 300, "food")  # ratio=2.0 동일 상한
+    # 단가가 중위의 10배여도 비례계수는 2.0 상한
+    clipped = cost.premium_interval(500.0, 50.0, "food")
+    at_cap = cost.premium_interval(100.0, 50.0, "food")  # ratio=2.0 동일 상한
     assert clipped == at_cap
+
+
+def test_premium_ratio_is_industry_neutral():
+    """같은 상권(같은 단가)이면 비례계수는 업종과 무관해야 한다 (리뷰 #1).
+
+    구 구현은 ratio 분자에 대표면적이 들어가고 분모는 음식점 55.2㎡ 기준 단일값이라,
+    카페가 항상 0.53배 작게 나왔다 — 그 결과 카페 상권 25.4%가 하한 클립(0.5)에 걸려
+    권리금이 649만원 상수로 붕괴했다. 버그는 대표면적이 곱해지는 호출 경로에서 드러나므로
+    산출 함수 전체로 검증한다.
+    """
+    import pandas as pd
+
+    px = 50.0
+    rent = pd.DataFrame([
+        {"area_code": "A1", "industry": "cafe", "unit_price": px},
+        {"area_code": "A1", "industry": "food", "unit_price": px},
+    ])
+    # 서울 중위 단가 = 자기 단가 → 두 업종 모두 ratio=1 이어야 한다
+    df = cost.build_initial_cost(rent, seoul_median_unit_price=px).set_index("industry")
+    cafe_lo = df.loc["cafe", "premium_low"]
+    food_lo = df.loc["food", "premium_low"]
+    # ratio 가 둘 다 1 이면 면적·업종보정 비만 남는다: (29.2×0.85) / (55.2×1.0)
+    assert abs(cafe_lo / food_lo - (29.2 * 0.85) / 55.2) < 0.01
 
 
 def test_interior_interval_band():
