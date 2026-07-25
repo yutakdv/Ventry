@@ -159,7 +159,7 @@ def _sales_and_stores() -> tuple[pd.DataFrame, pd.DataFrame, dict]:
 
     sales, store, est = [], [], {}
     for (area, ind), s in sales_acc.items():
-        monthly_won = s["amt"] / 3.0  # 분기합 → 월 (THSMON=요일합=분기합, assumptions #24)
+        monthly_won = s["amt"] / 3.0  # 분기합 → 월 (THSMON=요일합=분기합, assumptions #41)
         sales.append({"area_code": area, "quarter": sq, "industry": ind,
                       "industry_code": None, "monthly_sales": round(monthly_won / 10000),
                       "monthly_sales_cnt": int(s["cnt"] / 3)})
