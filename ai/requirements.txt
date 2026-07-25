@@ -12,6 +12,7 @@ python-dotenv>=1.0
 
 # --- 평가 하네스 (eval/, 스펙 §12 — 서빙 경로 아님, 오프라인 전용) ---
 scikit-learn>=1.5
+scipy>=1.13          # spearmanr — sklearn 전이 의존에 기대지 않고 명시한다
 lightgbm>=4.4
 shap>=0.46
 matplotlib>=3.9

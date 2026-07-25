@@ -196,9 +196,12 @@ def load_model_features(sql_path: Path = DATA_CORE_SQL) -> tuple[list[dict], lis
     resident = _latest_by_area(_iter_sql_rows_lines(text, "resident_pop"), 1, lambda r: float(r[2]))
     worker = _latest_by_area(_iter_sql_rows_lines(text, "worker_pop"), 1, lambda r: float(r[2]))
     change = _latest_by_area(_iter_sql_rows_lines(text, "change_index"), 1, lambda r: float(r[4]))
+    # distance_m·daily_riders 는 역 미매칭 상권에서 NULL 이 될 수 있다 — float('NULL') 로
+    # 터지지 않게 걸러낸다. 그 상권은 피처 결측이라 아래에서 자연 제외된다 (리뷰 #11).
     transit = {
         r[0]: float(r[4]) * math.exp(-float(r[3]) / _TRANSIT_DECAY_M)
         for r in _iter_sql_rows_lines(text, "transit")
+        if "NULL" not in (r[3], r[4])
     }
 
     density, sales = {}, {}

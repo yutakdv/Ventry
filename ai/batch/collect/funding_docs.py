@@ -54,6 +54,12 @@ def looks_garbled(text: str, *, sample: int = 4000) -> bool:
     return common / len(hangul) < 0.20
 
 
+# 웹 1차 출처(funding_web)가 정본인 문서 — PDF 프린트본은 모지바케라 덮어쓰면 안 된다.
+# 이 가드가 없으면 `make collect` 도중 funding_web 이 네트워크 실패로 건너뛸 때, 앞서 돈
+# funding_docs 가 이미 좋은 텍스트를 깨진 것으로 갈아엎은 뒤다 (assumptions #32, 리뷰 #9).
+WEB_CANONICAL_PREFIX = "서울신보_"
+
+
 def run(env: dict[str, str], session: object | None = None) -> None:
     out_dir = INTERIM_DIR / "funding_docs"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -63,8 +69,12 @@ def run(env: dict[str, str], session: object | None = None) -> None:
         return
     garbled_count = 0
     for pdf in pdfs:
+        target = out_dir / f"{pdf.stem}.txt"
+        if pdf.stem.startswith(WEB_CANONICAL_PREFIX) and target.exists():
+            logger.info("%s: 웹 정본 유지 — PDF 추출본으로 덮지 않음", pdf.name)
+            continue
         text = extract_text(pdf)
-        (out_dir / f"{pdf.stem}.txt").write_text(text, encoding="utf-8")
+        target.write_text(text, encoding="utf-8")
         garbled = looks_garbled(text)
         garbled_count += garbled
         logger.info("%s: %d자%s", pdf.name, len(text), " ⚠️ 깨짐(OCR 필요)" if garbled else "")
