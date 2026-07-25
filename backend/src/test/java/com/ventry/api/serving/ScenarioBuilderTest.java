@@ -80,4 +80,15 @@ class ScenarioBuilderTest {
         List<ScenarioCard> cards = builder.build(existing);
         assertThat(cards.get(1).budgetMax()).isEqualTo(6500);   // 정책자금 제외 → 보증만
     }
+
+    /** 계약 D8: 카드 상품에 rate_type("fixed")이 실리고 rate_note는 fixed라 null이다. */
+    @Test
+    void cardProducts_carryRateTypeFromFundingProduct() {
+        for (ScenarioCard card : builder.build(demo)) {
+            assertThat(card.products()).allSatisfy(p -> {
+                assertThat(p.rateType()).isEqualTo("fixed");   // 데모 상품은 전부 확정 이율
+                assertThat(p.rateNote()).isNull();             // fixed → 원문 메모 없음
+            });
+        }
+    }
 }

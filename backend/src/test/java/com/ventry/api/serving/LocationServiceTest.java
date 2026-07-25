@@ -115,6 +115,21 @@ class LocationServiceTest {
         assertThat(res.matchingProducts().get(0).sourceQuote()).isNull();  // RAG=P1, 구현 전 null
     }
 
+    /** 계약 D8: matching_products는 amount_max 내림차순 고정 정렬 + rate_type passthrough. */
+    @Test
+    void checkArea_matchingProductsSortedByLimitDesc_withRateType() {
+        CheckAreaResponse res = svc.checkArea(demo, 8000, "A-9999");
+        assertThat(res.matchingProducts())
+                .isSortedAccordingTo(Comparator.comparingInt(
+                        (com.ventry.api.common.FinanceDtos.Product p) -> p.amountMax()).reversed());
+        assertThat(res.matchingProducts().get(0).amountMax()).isEqualTo(3000);   // 소진공 먼저
+        assertThat(res.matchingProducts().get(1).amountMax()).isEqualTo(1500);   // 서울보증 다음
+        assertThat(res.matchingProducts()).allSatisfy(p -> {
+            assertThat(p.rateType()).isEqualTo("fixed");   // 데모 상품 전부 확정 이율
+            assertThat(p.rateNote()).isNull();
+        });
+    }
+
     @Test
     void checkArea_lowerBudget_dropsToOutOfScope() {
         CheckAreaResponse res = svc.checkArea(demo, 6000, "A-9999");

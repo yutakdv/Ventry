@@ -24,8 +24,13 @@ public final class ExploreDtos {
     public record Delta(int nEntryBefore, int nEntryAfter, Integer nSustainAfter,
                         Double scoreDelta) {}
 
-    public record Funding(String name, int amountMax, double rate, int termAssumed,
-                          String status, String noticeDate, String exclusiveGroup,
+    /**
+     * rate는 확정 이율이 없으면 null → 응답에서 필드 생략(계약 공통 규약). rate_type은 항상 존재
+     * (계약 D8 FE 분기 키), rate_note는 변동 시에만 실린다. 현 T1 lead는 fixed만 될 수 있다
+     * (변동 상품은 커버에서 제외 — assumptions #28·#32).
+     */
+    public record Funding(String name, int amountMax, Double rate, String rateType, String rateNote,
+                          int termAssumed, String status, String noticeDate, String exclusiveGroup,
                           Source source, SourceQuote sourceQuote) {}
 
     public record RefineEvent(String insightId, String headline) {}

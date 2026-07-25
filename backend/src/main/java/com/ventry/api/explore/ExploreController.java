@@ -1,11 +1,10 @@
 package com.ventry.api.explore;
 
-import com.ventry.api.common.MockData;
 import com.ventry.api.common.SessionStore;
 import com.ventry.api.common.SseSupport;
-import com.ventry.api.explore.ExploreDtos.DoneEvent;
-import com.ventry.api.serving.FrontierService;
-import com.ventry.api.serving.SessionMapper;
+import com.ventry.api.explore.ExploreDtos.InsightEvent;
+import com.ventry.api.serving.ExploreService;
+import com.ventry.api.serving.ExploreService.ExplorePayload;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,20 +14,23 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /**
  * GET /api/explore/{sid}?v= — 이벤트 순서: plan → insight(1건씩) → refine(선택) → done.
- * BE-01 목: 데모 시나리오(expl §8) 고정 송출. version 취소 규약(expl §5): 이벤트 송출 직전
- * 세션 최신 version과 비교해 구 버전이면 폐기 — LLM plan/refine 실구현은 BE-05.
+ * 수치는 전부 결정적 계산({@link ExploreService})이며 LLM은 plan·refine 언어화에만 개입한다.
+ *
+ * <p>version 취소 규약(expl §5): 이벤트 송출 직전마다 세션 최신 version과 비교해 구 버전이면
+ * 폐기한다 — 슬라이더 연타 시 구 응답이 새 응답을 덮어쓰지 못하게 한다. refine은 무LLM 모드에서
+ * 미송출이 정상이며 계약상 "(선택적)"이라 규격을 준수한다 ([6]단계에서 LLM 교체로 붙는다).
  */
 @RestController
 public class ExploreController {
 
     private final SessionStore sessions;
     private final SseSupport sse;
-    private final FrontierService frontier;
+    private final ExploreService explore;
 
-    public ExploreController(SessionStore sessions, SseSupport sse, FrontierService frontier) {
+    public ExploreController(SessionStore sessions, SseSupport sse, ExploreService explore) {
         this.sessions = sessions;
         this.sse = sse;
-        this.frontier = frontier;
+        this.explore = explore;
     }
 
     @GetMapping(value = "/api/explore/{sid}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -36,28 +38,25 @@ public class ExploreController {
                               @RequestParam(name = "v", defaultValue = "0") long version) {
         SessionStore.SessionState state = sessions.get(sid);
         state.acceptVersion(version);
+        ExplorePayload payload = explore.explore(state);   // 결정적 계산 (송출 밖에서 1회)
         return sse.run(emitter -> {
             if (stale(state, version)) {
-                return; // 구 버전 요청 — 아무 이벤트도 보내지 않고 종료
+                return;   // 구 버전 요청 — 아무 이벤트도 보내지 않고 종료
             }
             emitter.send(SseEmitter.event().name("plan")
-                    .data(MockData.explorePlan(), MediaType.APPLICATION_JSON));
-            emitter.send(SseEmitter.event().name("insight")
-                    .data(MockData.insightT1(), MediaType.APPLICATION_JSON));
-            emitter.send(SseEmitter.event().name("insight")
-                    .data(MockData.insightT2(), MediaType.APPLICATION_JSON));
-            if (!stale(state, version)) {
-                emitter.send(SseEmitter.event().name("refine")
-                        .data(MockData.refineT1(), MediaType.APPLICATION_JSON));
+                    .data(payload.plan(), MediaType.APPLICATION_JSON));
+            for (InsightEvent insight : payload.insights()) {
+                if (stale(state, version)) {
+                    return;
+                }
+                emitter.send(SseEmitter.event().name("insight")
+                        .data(insight, MediaType.APPLICATION_JSON));
             }
-            // done의 frontier_points·current_budget은 실계산(결정적) — 나머지 이벤트와
-            // scenarios_explored(실 탐색 수)는 BE-05에서 교체될 때까지 목을 유지한다.
-            int budget = SessionMapper.budget(state);
-            String industry = SessionMapper.profile(state).industry();
-            emitter.send(SseEmitter.event().name("done")
-                    .data(new DoneEvent(MockData.exploreDone(budget).scenariosExplored(),
-                                    frontier.frontierPoints(industry), budget),
-                            MediaType.APPLICATION_JSON));
+            // refine(LLM 언어화 교체)은 [6]단계에서 붙는다 — 무LLM 모드에서는 미송출이 규격 준수.
+            if (!stale(state, version)) {
+                emitter.send(SseEmitter.event().name("done")
+                        .data(payload.done(), MediaType.APPLICATION_JSON));
+            }
         });
     }
 
