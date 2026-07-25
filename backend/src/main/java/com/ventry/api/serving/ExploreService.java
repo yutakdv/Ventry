@@ -7,6 +7,9 @@ import com.ventry.api.explore.ExploreAxis;
 import com.ventry.api.explore.ExploreDtos.DoneEvent;
 import com.ventry.api.explore.ExploreDtos.InsightEvent;
 import com.ventry.api.explore.ExploreDtos.PlanEvent;
+import com.ventry.api.llm.LlmClient;
+import com.ventry.api.llm.PlanPrompt;
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Service;
 
@@ -28,10 +31,12 @@ public class ExploreService {
 
     private final InsightBuilder insights;
     private final FrontierService frontier;
+    private final LlmClient llm;
 
-    public ExploreService(InsightBuilder insights, FrontierService frontier) {
+    public ExploreService(InsightBuilder insights, FrontierService frontier, LlmClient llm) {
         this.insights = insights;
         this.frontier = frontier;
+        this.llm = llm;
     }
 
     /** 한 번의 탐색 결과 — 컨트롤러가 순서대로 송출한다. refine은 무LLM에서 비어 있다. */
@@ -45,22 +50,32 @@ public class ExploreService {
 
         InsightBuilder.Result result = insights.build(profile, budget, funding, state.composition());
 
-        PlanEvent plan = plan(industry, budget, result);
+        PlanEvent plan = plan(profile, budget, state.profile().concerns(), result);
         DoneEvent done = new DoneEvent(result.scenariosExplored(),
                 frontier.frontierPoints(industry), budget);
         return new ExplorePayload(plan, result.insights(), done);
     }
 
     /**
-     * 탐색 계획: 실행한 축과 라벨. 무권리 경계가 있으면 A4를 함께 노출한다 (A1의 부산물, expl §1).
-     * 0건 보고일 때는 사유 문장을 rationale로 실어, 화면이 "왜 인사이트가 없는지"를 말하게 한다
-     * (계약에 별도 필드가 없으므로 rationale이 그 자리를 맡는다 — assumptions #30).
+     * 탐색 계획: LLM이 대화 맥락으로 축 우선순위를 정하고(결정 ① C안), 서버는 <b>실제 계산 가능한
+     * 축만</b> 남긴다. LLM이 A4를 요청해도 무권리 경계가 없으면 빼고, A2·A3는 미구현이라 요청돼도
+     * 뺀다(assumptions #30). LLM 부재·실패 시 폴백 축으로 떨어지므로 plan 이벤트는 항상 송출된다.
+     *
+     * <p>0건 보고일 때는 사유 문장을 rationale로 싣는다 — 계약에 별도 필드가 없어 rationale이
+     * "왜 인사이트가 없는지"를 화면에 전한다 (assumptions #30).
      */
-    private PlanEvent plan(String industry, int budget, InsightBuilder.Result result) {
+    private PlanEvent plan(Profile profile, int budget, List<String> concerns,
+                           InsightBuilder.Result result) {
+        String industry = profile.industry();
+        List<String> requested = PlanPrompt.parseAxes(
+                llm.complete(PlanPrompt.build(industry, concerns)));   // 실패는 폴백 축으로 수렴
+
         boolean hasPremiumBoundary = !frontier.boundariesExPremium(industry, budget).isEmpty();
-        List<String> axes = hasPremiumBoundary
-                ? List.of(AXIS_BUDGET, AXIS_PREMIUM)
-                : List.of(AXIS_BUDGET);
+        List<String> axes = new ArrayList<>();
+        axes.add(AXIS_BUDGET);                                          // A1은 항상 실행 (expl §1)
+        if (requested.contains(AXIS_PREMIUM) && hasPremiumBoundary) {
+            axes.add(AXIS_PREMIUM);                                     // 계산 가능한 축만 노출
+        }
         String rationale = result.emptyReason() != null
                 ? result.emptyReason()
                 : "예산 축을 기준으로 인접 시나리오의 진입·지속 경계를 검토했습니다.";
