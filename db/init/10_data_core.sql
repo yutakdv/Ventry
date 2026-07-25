@@ -1,5 +1,5 @@
 -- Ventry 서빙 실데이터 (AI-05, 스펙 §3-1·§4)
--- 생성: 2026-07-25 (batch.load) — 재실행 시 전체 교체
+-- 생성: 2026-07-24 (batch.load) — 재실행 시 전체 교체
 BEGIN;
 TRUNCATE initial_cost, location_score, transit, rent, change_index, store_density, worker_pop, resident_pop, floating_pop, sales, commercial_area, data_source_meta RESTART IDENTITY CASCADE;
 
