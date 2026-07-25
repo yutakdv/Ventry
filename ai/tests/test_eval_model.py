@@ -70,6 +70,21 @@ def test_design_signs_cover_all_features():
     assert set(feature_names) <= set(common.DESIGN_AXIS)
 
 
+def test_transit_null_distance_does_not_crash(tmp_path):
+    """transit.distance_m 이 NULL 이어도 로더가 죽지 않고 그 상권을 건너뛴다 (리뷰 #11)."""
+    sql = tmp_path / "core.sql"
+    sql.write_text(
+        "INSERT INTO commercial_area (area_code, name, a, b, sigungu_code) VALUES\n"
+        "('A1', 'x', 'A', 'B', '11110');\n"
+        "INSERT INTO transit (area_code, nearest_station, line, distance_m, daily_riders, fb) "
+        "VALUES\n"
+        "('A1', '역', '1', NULL, NULL, FALSE);\n",
+        encoding="utf-8",
+    )
+    rows, _ = common.load_model_features(sql)
+    assert rows == []
+
+
 def test_hyperparameters_are_frozen():
     """튜닝 금지(assumptions #35 ⑥) — 값이 바뀌면 프로토콜 재등록이 선행돼야 한다."""
     assert model.PARAMS["n_estimators"] == 400

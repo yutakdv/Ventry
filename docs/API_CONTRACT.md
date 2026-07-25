@@ -142,7 +142,7 @@ FE 검토 의견 6건은 2026-07-21 반영됨 (5건 수용 · 1건 스코프 외
                // 변동금리(rate 생략·"rate_type":"variable")면 "rate_note" 동반, 상위 marginal_payment 생략
                "status": "open", "notice_date": "…", "exclusive_group": "…",
                "source": { "org": "…", "url": "…", "collected": "…" },
-               "source_quote": null },        // RAG 구현 전 null 허용 (P1-①)
+               "source_quote": null },        // 원문 인용 구현 전 null 허용 (P1-①)
   "disclaimer": true }
 // refine
 { "insight_id": "…", "headline": "…" }

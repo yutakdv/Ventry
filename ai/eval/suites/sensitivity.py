@@ -29,7 +29,11 @@ def evaluate(rows: list[dict]) -> dict:
     for r in rows:
         by_ind[r["industry"]].append(r)
     out: dict[str, dict] = {}
-    for ind, irows in by_ind.items():
+    for ind, all_rows in by_ind.items():
+        # 부담률을 못 구한 행(임대료 미매칭·추정매출 0)은 θ 필터에 태울 수 없다.
+        # 조용히 빼면 n_areas 가 실제 평가 대상과 어긋나므로 따로 센다 (리뷰 #12).
+        irows = [r for r in all_rows if r["burden_ratio"] is not None]
+        unavailable = len(all_rows) - len(irows)
         base = top3(irows, WEIGHTS, THETA)
         retentions = []
         for k in WEIGHTS:                       # 가중치 단일축 ±20% (10회)
@@ -43,6 +47,7 @@ def evaluate(rows: list[dict]) -> dict:
             "mean_retention": sum(retentions) / len(retentions) if retentions else 0.0,
             "n_perturbations": len(retentions),
             "n_areas": len(irows),
+            "n_burden_unavailable": unavailable,
         }
     return out
 

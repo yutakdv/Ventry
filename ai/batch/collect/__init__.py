@@ -6,7 +6,7 @@
 - reb_rent         : 부동산원 임대료·전환율(R-ONE OpenAPI) + 상권구획도 SHP + 권리금 연간치
 - permits          : 인허가 CSV(CP949) 영업중 필터 + 카페·음식점 재분류
 - startup_cost      : 공정위 가맹정보(창업비용 분해) + KOSIS 소상공인실태(총액) — AI-05 상수
-- funding_docs     : 정책자금·보증·대출 PDF 텍스트 추출(AI-06 RAG 입력)
+- funding_docs     : 정책자금·보증·대출 PDF 텍스트 추출(AI-06 원문 청크 입력)
 - funding_web      : PDF로 확보 불가한 웹 1차 출처 — 서울신보 6종(프린트본 폰트 깨짐) +
                      소진공 「금리안내」 분기 기준금리표(융자공고가 홈페이지로 넘긴 값)
 

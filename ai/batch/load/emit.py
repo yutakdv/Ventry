@@ -26,7 +26,12 @@ def _lit(v) -> str:
         return f"ARRAY[{inner}]"
     if isinstance(v, _dt.date):
         return f"'{v.isoformat()}'"
-    return "'" + str(v).replace("'", "''") + "'"
+    literal = str(v)
+    if "\x00" in literal:
+        raise ValueError(
+            f"NUL 바이트가 값에 있다 — psql 이 주변 문자를 삼킨다 (리뷰 #4): {literal[:40]!r}"
+        )
+    return "'" + literal.replace("'", "''") + "'"
 
 
 def to_insert_sql(table: str, df: pd.DataFrame) -> str:

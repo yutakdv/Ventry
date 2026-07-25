@@ -69,13 +69,60 @@ def _is_clean(text: str) -> bool:
     return sum(text.count(k) for k in _KEYWORDS) / len(text) * 1000 >= _CLEAN_DENSITY
 
 
+# PDF 인쇄 머리말/꼬리말 — 브라우저 인쇄 시 주입되는 페이지 장식이지 공고문 문장이 아니다.
+# 한글 폰트 CID 가 깨져 모지바케로 남으므로("2026. 7. 21. য়੹ 1:03…", "1ಕ੉૑/6ಕ੉૑https://…")
+# 인용문에 섞이면 화면에 깨진 글자가 노출된다. 문장을 고쳐 쓰는 것이 아니라 장식 줄만 버린다
+# — 남는 문장은 여전히 원문 그대로이고 verbatim 대조도 통과한다 (assumptions #50).
+_PRINT_HEADER = re.compile(r"^\d{4}\.\s*\d{1,2}\.\s*\d{1,2}\.")   # 인쇄 날짜·시각 머리말
+_PRINT_FOOTER = re.compile(r"^\d+\S{0,6}/\d+\S{0,6}https?://")     # N/M 페이지 + 원본 URL 꼬리말
+
+
+def strip_print_artifacts(text: str) -> str:
+    """인쇄 머리말/꼬리말 줄 + NUL 제거. 본문 문장은 한 글자도 건드리지 않는다.
+
+    NUL(`\\x00`)은 pypdf 텍스트 추출이 남기는 제어문자이지 공고문의 글자가 아니다.
+    그대로 덤프에 실으면 psql 이 NUL 주변 구간을 조용히 삼켜 DB 저장본이 원문보다
+    짧아진다(실측 411자 소실) — 「인용은 검색이지 생성이 아니다」가 깨지는 지점이라,
+    지우는 쪽이 오히려 verbatim 을 복원한다 (스펙 §5-4, 리뷰 #4).
+    """
+    kept = [ln for ln in text.replace("\x00", "").splitlines()
+            if not (_PRINT_HEADER.match(ln) or _PRINT_FOOTER.match(ln))]
+    return "\n".join(kept)
+
+
 def chunk_document(doc_name: str, text: str) -> list[dict]:
-    """원문을 문단/페이지 단위로 분할. text 는 원문 그대로 보존."""
+    """원문을 문단/페이지 단위로 분할. text 는 인쇄 장식 줄을 뺀 원문 그대로 보존."""
     chunks = []
-    for part in (p.strip() for p in _SPLIT.split(text)):
+    for part in (p.strip() for p in _SPLIT.split(strip_print_artifacts(text))):
         if part:
             chunks.append({"chunk_id": f"{doc_name}#{len(chunks)}", "text": part})
     return chunks
+
+
+_NAME_TOKEN = re.compile(r"[0-9A-Za-z가-힣]{2,}")
+
+
+def select_chunk(name: str, chunks: list[dict]) -> dict | None:
+    """상품명이 실제로 등장하는 청크를 고른다. 없으면 None (인용 비움).
+
+    '문서 첫 문단' 폴백을 쓰지 않는다 — 그 문단은 대개 표지·브로슈어 머리말이고 그 상품의
+    자격 근거가 아니다. 근거가 아닌 문단을 근거로 지목하는 것은 날조는 아니어도 **귀속
+    오류**이며, 이 서비스가 임베딩 검색 대신 id 직접 조회를 택한 논거(심사_QA 20)와 정면으로
+    어긋난다 (스펙 §5-4, 리뷰 #3).
+
+    점수 = 상품명 토큰 중 청크에 등장하는 개수. 동점이면 **더 짧은** 청크가 이긴다 —
+    통짜 첫 문단은 토큰을 많이 품지만 구체적인 근거는 짧은 문단에 있다.
+    """
+    tokens = _NAME_TOKEN.findall(name or "")
+    if not tokens or not chunks:
+        return None
+    required = max(1, (len(tokens) + 1) // 2)  # 토큰 과반이 등장해야 인정
+    best = min(
+        chunks,
+        key=lambda c: (-sum(1 for t in tokens if t in c["text"]), len(c["text"])),
+    )
+    hits = sum(1 for t in tokens if t in best["text"])
+    return best if hits >= required else None
 
 
 def _load_doc_chunks(doc: str, docs_dir: Path, cache: dict) -> list[dict]:
@@ -98,8 +145,7 @@ def build_finance(reviewed: list[dict], docs_dir: Path) -> dict[str, pd.DataFram
         rate, rate_type, rate_note = rate_fields(p)
         chunks = _load_doc_chunks(doc, docs_dir, doc_cache)
         name = p.get("name") or ""
-        ref = next((c for c in chunks if name and name in c["text"]),
-                   chunks[0] if chunks else None)
+        ref = select_chunk(name, chunks)
         chunk_ref = None
         if ref is not None:  # 클린 원문 청크가 있을 때만 링크 (없으면 source_quote 없음)
             used_chunks.setdefault(ref["chunk_id"], {
