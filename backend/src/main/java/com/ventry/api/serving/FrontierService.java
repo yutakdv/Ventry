@@ -1,8 +1,8 @@
 package com.ventry.api.serving;
 
-import com.ventry.api.engine.CostCalculator;
 import com.ventry.api.engine.Frontier;
 import com.ventry.api.engine.FrontierPoint;
+import java.util.Arrays;
 import java.util.List;
 import java.util.OptionalInt;
 import org.springframework.stereotype.Service;
@@ -58,29 +58,38 @@ public class FrontierService {
         return Frontier.bSafe(inclusiveCosts(industry), budget);
     }
 
+    /**
+     * B₀ 위쪽 <b>모든</b> 경계값을 오름차순으로. {@code nextBoundary}가 첫 경계 하나만 주는 데 비해
+     * 이쪽은 계단 함수의 남은 점프 지점 전부를 준다 — 인사이트 스코어링이 경계들을 비교해야 하기 때문이다.
+     * 같은 비용의 후보가 여럿이면 경계는 하나다(중복 제거).
+     */
+    public List<Integer> boundaries(String industry, int budget) {
+        return above(inclusiveCosts(industry), budget);
+    }
+
+    /** 무권리(c'_a) 기준 경계 — A4 축(권리금 조건)의 부산물 (expl §1). */
+    public List<Integer> boundariesExPremium(String industry, int budget) {
+        return above(exPremiumCosts(industry), budget);
+    }
+
+    private static List<Integer> above(int[] costs, int budget) {
+        return Arrays.stream(costs).filter(c -> c > budget).distinct().sorted().boxed().toList();
+    }
+
     // ── 비용 배열 (탐색당 쿼리 1회로 받은 후보를 인메모리 변환) ──────────────
 
     /** 권리금 포함 비용 중앙값 배열 c_a. */
     int[] inclusiveCosts(String industry) {
         return candidates.findCandidates(industry).stream()
-                .mapToInt(FrontierService::inclMedian)
+                .mapToInt(CandidateArea::inclusiveCostMedian)
                 .toArray();
     }
 
     /** 무권리 비용 중앙값 배열 c'_a. */
     int[] exPremiumCosts(String industry) {
         return candidates.findCandidates(industry).stream()
-                .mapToInt(FrontierService::exMedian)
+                .mapToInt(CandidateArea::exPremiumCostMedian)
                 .toArray();
-    }
-
-    /** 진입 비교 기준 = 권리금 포함 비용 중앙값 (LocationService.recommend 와 동일 기준). */
-    private static int inclMedian(CandidateArea c) {
-        return (int) Math.ceil(CostCalculator.estimate(c.costBlocks()).inclPremium().median());
-    }
-
-    private static int exMedian(CandidateArea c) {
-        return (int) Math.ceil(CostCalculator.estimate(c.costBlocks()).exPremium().median());
     }
 
     /** FrontierPoint → 계약형 [예산, 후보 수] 쌍. */
