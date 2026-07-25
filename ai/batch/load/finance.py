@@ -69,10 +69,25 @@ def _is_clean(text: str) -> bool:
     return sum(text.count(k) for k in _KEYWORDS) / len(text) * 1000 >= _CLEAN_DENSITY
 
 
+# PDF 인쇄 머리말/꼬리말 — 브라우저 인쇄 시 주입되는 페이지 장식이지 공고문 문장이 아니다.
+# 한글 폰트 CID 가 깨져 모지바케로 남으므로("2026. 7. 21. য়੹ 1:03…", "1ಕ੉૑/6ಕ੉૑https://…")
+# 인용문에 섞이면 화면에 깨진 글자가 노출된다. 문장을 고쳐 쓰는 것이 아니라 장식 줄만 버린다
+# — 남는 문장은 여전히 원문 그대로이고 verbatim 대조도 통과한다 (assumptions #43).
+_PRINT_HEADER = re.compile(r"^\d{4}\.\s*\d{1,2}\.\s*\d{1,2}\.")   # 인쇄 날짜·시각 머리말
+_PRINT_FOOTER = re.compile(r"^\d+\S{0,6}/\d+\S{0,6}https?://")     # N/M 페이지 + 원본 URL 꼬리말
+
+
+def strip_print_artifacts(text: str) -> str:
+    """인쇄 머리말/꼬리말 줄 제거. 본문 문장은 한 글자도 건드리지 않는다."""
+    kept = [ln for ln in text.splitlines()
+            if not (_PRINT_HEADER.match(ln) or _PRINT_FOOTER.match(ln))]
+    return "\n".join(kept)
+
+
 def chunk_document(doc_name: str, text: str) -> list[dict]:
-    """원문을 문단/페이지 단위로 분할. text 는 원문 그대로 보존."""
+    """원문을 문단/페이지 단위로 분할. text 는 인쇄 장식 줄을 뺀 원문 그대로 보존."""
     chunks = []
-    for part in (p.strip() for p in _SPLIT.split(text)):
+    for part in (p.strip() for p in _SPLIT.split(strip_print_artifacts(text))):
         if part:
             chunks.append({"chunk_id": f"{doc_name}#{len(chunks)}", "text": part})
     return chunks
