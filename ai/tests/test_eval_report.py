@@ -16,5 +16,8 @@ def test_report_writes_metrics_json(tmp_path: Path):
     assert set(data) >= {"generated_at", "extraction", "grounding",
                          "sensitivity", "matching", "model"}
     assert data["matching"]["status"] == "BE 소관"
-    assert data["model"]["status"] == "AI-08 소관"
     assert result["extraction"]["total_products"] >= 29
+    # model 은 AI-08(#21)에서 스텁 → 실측으로 교체됐다. 게이트 판정이 성적표에 들어와야 한다.
+    assert data["model"]["gate"] in {"A", "B", "C"}
+    assert data["model"]["target"] == "log(월 점포당 추정매출)"
+    assert (tmp_path / "shap_summary.png").exists()

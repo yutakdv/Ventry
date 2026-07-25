@@ -24,6 +24,23 @@ def test_rate_fields_pure_variable_null():
     assert rate_fields({"rate": None, "rate_note": note}) == (None, "variable", note)
 
 
+def test_rate_fields_confirmed_quarter_rate_stays_variable():
+    """검수로 해당 분기 실값을 확정해도 성격은 여전히 분기 변동이다 (#72, assumptions #34).
+
+    값이 있다고 fixed 로 표기하면 사용자가 재확인 시점을 알 수 없다.
+    """
+    note = ("정책자금 기준금리 3.85% + 0.6%p = 연 4.45% "
+            "(’26년 3/4분기, 2026-07-10 적용 · 분기별 변동금리)")
+    assert rate_fields({"rate": 4.45, "rate_note": note}) == (4.45, "variable", note)
+
+
+def test_rate_fields_guarantee_fee_never_becomes_rate():
+    """보증상품의 추출 rate 는 보증료율일 수 있다 — note 에 고정 대출금리가 없으면 NULL."""
+    note = "보증료 연 0.7%. 대출금리 서울시자금 이용 시 은행금리에서 1.8% 차감"
+    rate, rtype, _ = rate_fields({"rate": 0.7, "product_type": "guarantee", "rate_note": note})
+    assert rate is None and rtype == "variable"
+
+
 def test_chunk_document_keeps_original_text():
     chunks = chunk_document("소진공_x", "문단1 원문.\n\n문단2 원문.")
     assert chunks[0]["text"] == "문단1 원문."  # 재작성 없이 원문 그대로
