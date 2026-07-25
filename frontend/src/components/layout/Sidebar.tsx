@@ -1,3 +1,4 @@
+import { Check } from 'lucide-react'
 import styles from './Sidebar.module.css'
 
 const STEPS = [
@@ -24,8 +25,15 @@ export default function Sidebar({ activeStep = 1 }: { activeStep?: number }) {
         {STEPS.map((s) => {
           const state = s.n === activeStep ? 'active' : s.n < activeStep ? 'done' : 'todo'
           return (
-            <li key={s.n} className={`${styles.step} ${styles[state]}`}>
-              <span className={styles.num}>{s.n}</span>
+            <li
+              key={s.n}
+              className={`${styles.step} ${styles[state]}`}
+              aria-current={state === 'active' ? 'step' : undefined}
+            >
+              <span className={styles.num}>
+                {state === 'done' ? <Check size={14} strokeWidth={3} aria-hidden /> : s.n}
+              </span>
+              {state === 'done' && <span className={styles.srOnly}>완료</span>}
               <span className={styles.stepText}>
                 <span className={`t-body-strong ${styles.stepTitle}`}>{s.title}</span>
                 <span className={`t-caption ${styles.stepDesc}`}>{s.desc}</span>

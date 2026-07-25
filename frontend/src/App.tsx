@@ -1,13 +1,16 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { SessionProvider } from './store/session'
 import Diagnose from './screens/Diagnose'
-import Placeholder from './screens/Placeholder'
+import Scenario from './screens/Scenario'
+import Budget from './screens/Budget'
+import Recommend from './screens/Recommend'
 
 /**
- * 화면 라우팅 (스펙 §7) — 화면 1→2→3 흐름.
- *  - /           화면 1: 자금 진단 (FE-02)
- *  - /scenarios  화면 2: 조달 시나리오 (FE-03, 현재 골격)
- *  - /map        화면 3: 입지 추천 (FE-03~05, 현재 골격)
+ * 화면 라우팅 (스펙 §7) — 진단 → 시나리오 → 예산 → 입지 흐름.
+ *  - /           1단계: 자금 진단 (FE-02)
+ *  - /scenarios  2단계: 조달 시나리오 (FE-03)
+ *  - /budget     3단계: 예산 선택 (FE-03)
+ *  - /map        4단계: 입지 추천 (FE-03 골격 · 탐색/검증 UI는 FE-04~05)
  */
 export default function App() {
   return (
@@ -15,8 +18,9 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Diagnose />} />
-          <Route path="/scenarios" element={<Placeholder step={2} title="2단계. 조달 시나리오" />} />
-          <Route path="/map" element={<Placeholder step={4} title="4단계. 입지 추천" />} />
+          <Route path="/scenarios" element={<Scenario />} />
+          <Route path="/budget" element={<Budget />} />
+          <Route path="/map" element={<Recommend />} />
         </Routes>
       </BrowserRouter>
     </SessionProvider>

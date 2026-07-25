@@ -1,0 +1,177 @@
+.surface {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  padding: var(--space-24);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+/* 세로 리듬은 전부 gap이 만든다 — 기본 마진이 끼어들면 간격이 어긋난다. */
+.surface > * {
+  margin: 0;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+/* 제목과 액션 버튼은 같은 가로 라인에 둔다 — 설명문은 그 아래 전체 폭. */
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+}
+/* h1 기본 마진(0.67em)이 남아 있으면 버튼과 한 줄에 서지 않는다. */
+.titleRow h1 {
+  margin: 0;
+}
+.subtitle {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.tabs {
+  display: flex;
+  gap: var(--space-16);
+}
+
+.loading {
+  padding: var(--space-32) 0;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: var(--space-16);
+  align-items: start;
+  animation: fadeIn 180ms ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.budgetCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  padding: var(--space-20);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+}
+.budgetCard > * {
+  margin: 0;
+}
+/* 라벨과 금액은 한 덩어리로 붙이고, 그 아래부터 카드 gap이 벌린다. */
+.budgetHead {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.budgetHead p {
+  margin: 0;
+}
+
+/* 라벨 → 금액 순으로 위계를 세운다. 이 화면이 답하는 질문이 "얼마까지 가능한가"이므로
+   금액이 화면에서 가장 큰 텍스트가 된다(타입 램프 Display 24 — 램프 밖 크기는 쓰지 않는다). */
+.budgetTitle {
+  color: var(--color-text-secondary);
+}
+
+.budgetAmount {
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 34px;
+  letter-spacing: -0.015em;
+  color: var(--color-text-accent);
+}
+
+.gauge {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+.gaugeSeg {
+  flex-shrink: 0;
+  height: 100%;
+}
+
+.legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+.legendRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.legendLhs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+.legendDot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+}
+
+.footnote {
+  color: var(--color-text-tertiary);
+  word-break: keep-all; /* 한국어 어절 단위 줄바꿈 */
+}
+
+.breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+.breakdown > * {
+  margin: 0;
+}
+.breakdownHint {
+  color: var(--color-text-secondary);
+}
+
+.itemList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  margin-top: var(--space-8);
+}
+
+.disclaimer {
+  color: var(--color-text-tertiary);
+}
+
+.ctaBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+  padding: var(--space-16) var(--space-20);
+  background: var(--color-bg-tip);
+  border-radius: var(--radius-lg);
+}
+.ctaBar p {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
