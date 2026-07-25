@@ -5,7 +5,7 @@ import datetime as _dt
 import json
 from pathlib import Path
 
-from eval.suites import extraction, grounding, sensitivity
+from eval.suites import extraction, grounding, model, sensitivity
 
 
 def _pyplot():
@@ -23,13 +23,14 @@ def run(out_dir: Path) -> dict:
     ext = extraction.run(out_dir)
     grd = grounding.run(out_dir)
     sens = sensitivity.run(out_dir)
+    mdl = model.run(out_dir)
     metrics = {
         "generated_at": _dt.datetime.now().isoformat(timespec="seconds"),
         "extraction": ext,
         "grounding": grd,
         "sensitivity": sens,
         "matching": {"status": "BE 소관", "note": "EligibilityFilterTest + 통합 테스트"},
-        "model": {"status": "AI-08 소관", "note": "§12-2 LightGBM+SHAP"},
+        "model": mdl,
     }
     (out_dir / "metrics.json").write_text(
         json.dumps(metrics, ensure_ascii=False, indent=2), encoding="utf-8")
