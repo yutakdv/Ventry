@@ -104,6 +104,43 @@ class EligibilityFilterTest {
                 .containsExactly(free);
     }
 
+    /**
+     * #82 — 확정 이율이 없는 상품(적재 26건 중 7건, 전부 "은행금리 대비 차감폭")의 정책.
+     *
+     * <p>결정(2026-07-26): <b>조달 조합에서는 제외</b>(월 상환액을 못 구해 상환 여력을 검증할 수
+     * 없다 — {@code FundingCheck} 의 {@code hasKnownRate} 게이트)하되, <b>자격 부합 목록에는
+     * 남긴다</b>. 자격 축은 연령·업종·지역·예비창업이지 금리가 아니므로, 금리를 모른다는 이유로
+     * 자격 자체를 부정하면 실재하는 제도를 화면에서 지우게 된다.
+     */
+    @Test
+    void unknownRateProduct_stillQualifies_soItCanBeListed() {
+        FundingProduct unknownRate = new FundingProduct(
+                "ESG 실천기업 보증", new Eligibility(null, null, Set.of("서울"), false),
+                80000, null, FundingProduct.RATE_VARIABLE,
+                "서울시자금 이용 시 은행금리에서 2.5% 차감(서울시 부담)",
+                null, null, "open", "2026-07-21", SRC);
+        Profile seoul = new Profile(32, 5000, false, "cafe", "서울 마포구");
+
+        assertThat(EligibilityFilter.qualify(seoul, List.of(unknownRate)))
+                .containsExactly(unknownRate);
+        assertThat(unknownRate.hasKnownRate()).isFalse();   // 조달 조합에서는 제외된다
+    }
+
+    /** 목록 투영에 금리 미공시 사유가 그대로 실려야 화면이 "금리 미공시"를 표기할 수 있다. */
+    @Test
+    void unknownRateProduct_projectionCarriesRateTypeAndNote() {
+        String note = "은행금리에서 1.8% 차감(서울시 부담)";
+        FundingProduct p = new FundingProduct(
+                "장애인 기업 특별보증", new Eligibility(null, null, null, false),
+                10000, null, FundingProduct.RATE_VARIABLE, note,
+                84, null, "open", "2026-07-21", SRC);
+
+        var dto = p.toProduct(null);
+        assertThat(dto.rate()).isNull();
+        assertThat(dto.rateType()).isEqualTo(FundingProduct.RATE_VARIABLE);
+        assertThat(dto.rateNote()).isEqualTo(note);
+    }
+
     @Test
     void mixedList_returnsOnlyQualifyingPreservingOrder() {
         FundingProduct ok = product("적합", new Eligibility(39, Set.of("cafe"), Set.of("마포"), false));
