@@ -16,7 +16,7 @@ export default function AppShell({
   return (
     <div className={styles.shell}>
       <GNBHeader />
-      <div className={styles.container}>
+      <div className={`${styles.container} ${aside ? '' : styles.noRail}`}>
         <Sidebar activeStep={activeStep} />
         <main className={styles.main}>{children}</main>
         {aside && <div className={styles.rail}>{aside}</div>}

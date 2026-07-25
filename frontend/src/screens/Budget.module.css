@@ -1,0 +1,180 @@
+.surface {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  padding: var(--space-24);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+.surface > * {
+  margin: 0;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+}
+.titleRow h1 {
+  margin: 0;
+}
+.subtitle {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+/* ── 시나리오 요약 바 ── */
+/*
+ * 좁은 폭에서 카드를 찌그러뜨리는 대신 줄바꿈시킨다.
+ * flex:1만 주면 1,300px 이하에서 카드가 140px까지 눌려 금액이 "5,000 ~ 8," 로 잘렸다.
+ * 기준 폭(250px)은 "5,000 ~ 8,000만원"(t-stat 18px)이 한 줄에 들어가는 최소치다.
+ */
+.summaryBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: var(--space-12);
+  padding: var(--space-16);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-page);
+}
+.summaryBar > * {
+  flex: 1 1 250px;
+  min-width: 0;
+}
+.summaryBar > button {
+  flex: 0 0 auto;
+  align-self: center;
+}
+
+/* Figma 폭 기준 — 시나리오 카드는 고정, 남는 폭을 스탯 3장이 나눠 갖는다. */
+.scenarioCard {
+  flex: 0 0 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-height: 88px;
+  padding: 0 var(--space-16);
+  border: 1px solid var(--color-accent-primary);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-info);
+}
+.scenarioCard p {
+  margin: 0;
+}
+.scenarioTitle {
+  color: var(--color-text-primary);
+}
+.scenarioDesc {
+  color: var(--color-text-secondary);
+}
+
+/* ── 슬라이더 + 안내 패널 ── */
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: var(--space-16);
+  align-items: start;
+}
+
+.selectCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  padding: var(--space-20);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+}
+.selectCard > * {
+  margin: 0;
+}
+.hint {
+  color: var(--color-text-secondary);
+}
+
+.presets {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  flex-wrap: wrap;
+}
+.presetLabel {
+  color: var(--color-text-secondary);
+  margin-right: var(--space-4);
+}
+.chip {
+  padding: 7px var(--space-12);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-control);
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+.chip:hover {
+  background: var(--color-bg-page);
+}
+.chip:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+.chipActive {
+  border-color: var(--color-accent-primary);
+  background: var(--color-bg-info);
+  color: var(--color-text-accent);
+}
+
+.infoColumn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+}
+
+/* ── 예산 요약 ── */
+.summaryTitle {
+  margin-top: var(--space-8);
+}
+/* 4장이 안 들어가면 자동으로 2장씩 접힌다 — 미디어쿼리 없이 폭에 반응. */
+.summaryStats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-12);
+}
+
+.disclaimer {
+  color: var(--color-text-tertiary);
+}
+
+.ctaBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+  padding: var(--space-16) var(--space-20);
+  background: var(--color-bg-tip);
+  border-radius: var(--radius-lg);
+}
+.ctaBar p {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 1200px) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

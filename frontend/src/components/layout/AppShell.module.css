@@ -11,6 +11,10 @@
   gap: var(--layout-gutter);
   align-items: start;
 }
+/* 우측 레일이 없는 화면(화면 2 등)은 레일 칼럼을 예약하지 않는다. */
+.noRail {
+  grid-template-columns: var(--layout-sidebar) minmax(0, 1fr);
+}
 .main {
   min-width: 0;
 }
