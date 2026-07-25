@@ -1,0 +1,227 @@
+import { useEffect, useRef } from 'react'
+import { useKakaoLoader } from '../lib/useKakaoLoader'
+import { MAP_LEGEND, VERDICT_LABEL, VERDICT_MARKER_COLOR } from '../lib/verdict'
+import { formatTransit } from '../lib/format'
+import type { Area } from '../api/types'
+import styles from './KakaoMap.module.css'
+
+/** 후보 전체를 담을 때 위쪽에 남길 여백(px) — 말풍선이 잘리지 않을 만큼. */
+const FIT_PADDING = 190
+
+/**
+ * 선택된 상권의 말풍선.
+ * 문자열 HTML 대신 DOM으로 만들어 textContent만 쓴다 — 상권명이 그대로 마크업이 되지 않도록.
+ */
+function buildOverlay(area: Area): HTMLElement {
+  const box = document.createElement('div')
+  box.className = styles.overlay
+
+  const head = document.createElement('div')
+  head.className = styles.overlayHead
+  const title = document.createElement('span')
+  title.className = styles.overlayTitle
+  title.textContent = area.name
+  const badge = document.createElement('span')
+  badge.className = `${styles.overlayBadge} ${styles[area.verdict]}`
+  badge.textContent = VERDICT_LABEL[area.verdict]
+  head.append(title, badge)
+
+  const rows = document.createElement('dl')
+  rows.className = styles.overlayRows
+  const add = (label: string, value: string) => {
+    const dt = document.createElement('dt')
+    dt.textContent = label
+    const dd = document.createElement('dd')
+    dd.textContent = value
+    rows.append(dt, dd)
+  }
+  add('추천 점수', `${area.score}점`)
+  add('환산 임대료', `${area.monthly_rent.toLocaleString('ko-KR')}만원/월`)
+  add('부담률', `${Math.round(area.burden_ratio * 100)}%`)
+
+  const transit = document.createElement('p')
+  transit.className = styles.overlayTransit
+  transit.textContent = formatTransit(area.transit)
+
+  const hint = document.createElement('p')
+  hint.className = styles.overlayHint
+  hint.textContent = '자세한 근거는 오른쪽 목록에서 확인할 수 있습니다.'
+
+  box.append(head, rows, transit, hint)
+  return box
+}
+
+/**
+ * 판정 색 원 + 점수 마커 (SVG data URI — 외부 이미지 의존 없음).
+ * 선택 시에는 캔버스째 키운다. 반지름만 몇 px 늘리면 클릭됐다는 느낌이 나지 않는다.
+ */
+function buildMarkerImage(color: string, score: number, selected: boolean): kakao.maps.MarkerImage {
+  const canvas = selected ? 52 : 36
+  const c = canvas / 2
+  const r = selected ? 19 : 13
+  const font = selected ? 16 : 13
+  // 선택 마커는 같은 색 반투명 링을 둘러 주변에서 확실히 도드라지게 한다.
+  const halo = selected ? `<circle cx="${c}" cy="${c}" r="${r + 6}" fill="${color}" opacity="0.2"/>` : ''
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${canvas}" height="${canvas}" viewBox="0 0 ${canvas} ${canvas}">
+${halo}<circle cx="${c}" cy="${c}" r="${r}" fill="${color}" stroke="#ffffff" stroke-width="${selected ? 3 : 2}"/>
+<text x="${c}" y="${c + font * 0.35}" text-anchor="middle" font-family="'Noto Sans KR',sans-serif" font-size="${font}" font-weight="700" fill="#ffffff">${score}</text>
+</svg>`
+  return new kakao.maps.MarkerImage(
+    `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,
+    new kakao.maps.Size(canvas, canvas),
+    { offset: new kakao.maps.Point(c, c) },
+  )
+}
+
+/**
+ * 카카오맵 + 판정 마커 3종 (스펙 §7 · §1-1).
+ * SDK를 못 불러오면(앱키 미설정·도메인 미등록) 지도 대신 안내를 보여준다 —
+ * 지도가 없어도 우측 상권 목록으로 동선이 이어져야 한다.
+ */
+export default function KakaoMap({
+  areas,
+  selectedCode,
+  onSelect,
+  dataAsOf,
+}: {
+  areas: Area[]
+  selectedCode: string | null
+  onSelect: (areaCode: string) => void
+  dataAsOf: string
+}) {
+  const status = useKakaoLoader()
+  const boxRef = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<kakao.maps.Map | null>(null)
+  const markersRef = useRef<Map<string, kakao.maps.Marker>>(new Map())
+  const boundsRef = useRef<kakao.maps.LatLngBounds | null>(null)
+  const overlayRef = useRef<kakao.maps.CustomOverlay | null>(null)
+  // 최신 onSelect를 유지해, 마커를 다시 만들지 않고도 콜백이 갱신되게 한다.
+  const onSelectRef = useRef(onSelect)
+  onSelectRef.current = onSelect
+
+  // 지도 1회 생성
+  useEffect(() => {
+    if (status !== 'ready' || !boxRef.current || mapRef.current) return
+    mapRef.current = new kakao.maps.Map(boxRef.current, {
+      center: new kakao.maps.LatLng(37.5556, 126.9106),
+      level: 6,
+    })
+  }, [status])
+
+  // 후보가 바뀌면 마커를 다시 그리고 전체가 보이도록 범위를 맞춘다
+  useEffect(() => {
+    const map = mapRef.current
+    if (status !== 'ready' || !map) return
+
+    markersRef.current.forEach((m) => m.setMap(null))
+    markersRef.current.clear()
+
+    const bounds = new kakao.maps.LatLngBounds()
+    areas.forEach((a) => {
+      const pos = new kakao.maps.LatLng(a.lat, a.lng)
+      const marker = new kakao.maps.Marker({
+        position: pos,
+        map,
+        title: `${a.name} · ${VERDICT_LABEL[a.verdict]} · ${a.score}점`,
+        // 선택 강조는 바로 아래 selectedCode 효과가 적용한다 (여기서 참조하면 매 선택마다 마커를 다시 만든다).
+        image: buildMarkerImage(VERDICT_MARKER_COLOR[a.verdict], a.score, false),
+      })
+      kakao.maps.event.addListener(marker, 'click', () => onSelectRef.current(a.area_code))
+      markersRef.current.set(a.area_code, marker)
+      bounds.extend(pos)
+    })
+
+    boundsRef.current = bounds
+    // 위쪽 여백을 크게 잡아 말풍선(≈150px)이 들어갈 자리를 미리 비워 둔다 —
+    // 그래야 마커를 눌렀을 때 지도를 옮기지 않고도 말풍선이 다 보인다.
+    if (areas.length > 0 && !bounds.isEmpty()) map.setBounds(bounds, FIT_PADDING, 70, 70, 70)
+  }, [status, areas])
+
+  /**
+   * 컨테이너 크기가 확정되기 전에 지도가 생성되면 뷰포트를 좁게 잡아 타일이 일부만 그려진다.
+   * 크기가 바뀔 때마다 relayout 후 범위를 다시 맞춘다 (ResizeObserver는 관찰 즉시 1회 발화).
+   */
+  useEffect(() => {
+    const map = mapRef.current
+    const box = boxRef.current
+    if (status !== 'ready' || !map || !box) return
+    const ro = new ResizeObserver(() => {
+      map.relayout()
+      const b = boundsRef.current
+      if (b && !b.isEmpty()) map.setBounds(b, FIT_PADDING, 70, 70, 70)
+    })
+    ro.observe(box)
+    return () => ro.disconnect()
+  }, [status])
+
+  // 선택된 마커 강조 + 말풍선 표시 + 해당 위치로 지도 이동
+  useEffect(() => {
+    if (status !== 'ready') return
+    const map = mapRef.current
+
+    areas.forEach((a) => {
+      const marker = markersRef.current.get(a.area_code)
+      if (!marker) return
+      const selected = a.area_code === selectedCode
+      marker.setImage(buildMarkerImage(VERDICT_MARKER_COLOR[a.verdict], a.score, selected))
+      marker.setZIndex(selected ? 10 : 1)
+    })
+
+    const area = areas.find((a) => a.area_code === selectedCode)
+    if (!map || !area) {
+      overlayRef.current?.setMap(null)
+      return
+    }
+
+    const pos = new kakao.maps.LatLng(area.lat, area.lng)
+    if (!overlayRef.current) {
+      overlayRef.current = new kakao.maps.CustomOverlay({
+        position: pos,
+        content: buildOverlay(area),
+        yAnchor: 1.35, // 마커 위로 띄운다
+        zIndex: 20,
+      })
+    } else {
+      overlayRef.current.setPosition(pos)
+      overlayRef.current.setContent(buildOverlay(area))
+    }
+    overlayRef.current.setMap(map)
+
+    /*
+     * 이미 보이는 마커를 눌렀는데 지도가 움직이면 나머지 후보가 시야에서 밀려나 비교가 끊긴다.
+     * 그래서 이동은 두 경우로 한정한다 — 화면 밖이거나, 상단에 너무 붙어 말풍선이 잘릴 때.
+     */
+    const b = map.getBounds()
+    const latSpan = b.getNorthEast().getLat() - b.getSouthWest().getLat()
+    const overlayClipped = area.lat > b.getNorthEast().getLat() - latSpan * 0.28
+    if (!b.contain(pos) || overlayClipped) map.panTo(pos)
+  }, [status, areas, selectedCode])
+
+  return (
+    <div className={styles.panel}>
+      {status === 'error' ? (
+        <div className={styles.fallback}>
+          <p className="t-body-strong">지도를 불러오지 못했습니다</p>
+          <p className={`t-caption ${styles.fallbackHint}`}>
+            카카오맵 앱키·도메인 등록을 확인해 주세요. 오른쪽 목록에서 추천 상권을 그대로 확인할 수 있습니다.
+          </p>
+        </div>
+      ) : (
+        <div ref={boxRef} className={styles.map} role="application" aria-label="추천 상권 지도" />
+      )}
+
+      <div className={styles.legend}>
+        {MAP_LEGEND.map((v) => (
+          <span key={v} className={`t-caption ${styles.legendItem}`}>
+            <span className={styles.legendDot} style={{ background: VERDICT_MARKER_COLOR[v] }} />
+            {VERDICT_LABEL[v]}
+          </span>
+        ))}
+      </div>
+
+      <p className={`t-caption ${styles.note}`}>
+        마커나 오른쪽 목록을 선택하면 서로 연동됩니다. · 데이터 기준일 {dataAsOf}
+      </p>
+    </div>
+  )
+}
