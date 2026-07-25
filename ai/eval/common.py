@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import csv
+import io
 import json
+import math
 import re
 from pathlib import Path
 
@@ -28,6 +30,11 @@ def load_extraction_draft() -> list[dict]:
     return json.loads((FINANCE_DIR / "extracted.json").read_text(encoding="utf-8"))
 
 
+def load_reviewed_products() -> list[dict]:
+    """전건 검수본(적재 원천). `doc` 필드로 상품↔문서를 잇는다."""
+    return json.loads((FINANCE_DIR / "reviewed.json").read_text(encoding="utf-8"))
+
+
 def load_confirmed_gold() -> list[dict]:
     return json.loads((GOLD_DIR / "extraction_confirmed.json").read_text(encoding="utf-8"))
 
@@ -44,6 +51,54 @@ def is_clean_source(doc: str) -> bool:
         return False
     keywords = ("대출", "융자", "한도", "금리", "보증", "지원", "소상공인", "상환", "기업")
     return sum(text.count(k) for k in keywords) / len(text) * 1000 >= 3.0
+
+
+def load_source_text_clean(doc: str) -> str:
+    """청크 대조용 정제 원문.
+
+    청크는 `load/finance.py:strip_print_artifacts` 를 거친 텍스트를 자른 것이므로,
+    raw txt 와 직접 비교하면 인쇄 장식 줄·NUL 이 빠진 만큼 부분문자열이 되지 않는다.
+    같은 정제를 적용한 텍스트가 올바른 대조 기준이다 (assumptions #43, 리뷰 #4·#5).
+    """
+    from batch.load.finance import strip_print_artifacts
+
+    return strip_print_artifacts(load_source_text(doc))
+
+
+def load_finance_chunks(sql_path: Path = FINANCE_SQL) -> dict[str, str]:
+    """적재 덤프의 원문 청크 {chunk_id: text}. text 가 개행을 품어 블록째 파싱한다."""
+    text = sql_path.read_text(encoding="utf-8")
+    block = re.search(
+        r"INSERT INTO finance_doc_chunk\b[^;]*?VALUES\s*(.*?);\s*\n", text, re.DOTALL
+    )
+    if not block:
+        return {}
+    body = block.group(1).strip()
+    # 레코드는 줄머리 `('<chunk_id>', '<product_id>', ` 로 시작한다. 이 경계를 먼저 잡아야
+    # 바깥 괄호를 벗길 수 있고, 그래야 csv 가 첫 필드를 인용문으로 인식해 text 안의 개행을
+    # 제대로 흡수한다.
+    starts = [m.start() for m in re.finditer(r"(?m)^\('[^']*#\d+', 'F-\d+', ", body)]
+    out: dict[str, str] = {}
+    for i, start in enumerate(starts):
+        end = starts[i + 1] if i + 1 < len(starts) else len(body)
+        record = body[start:end].strip().rstrip(";").rstrip(",").strip()
+        record = record[1:-1] if record.startswith("(") and record.endswith(")") else record
+        fields: list[str] = []
+        for part in csv.reader(io.StringIO(record), quotechar="'", skipinitialspace=True):
+            fields.extend(part)
+        if len(fields) >= 4:  # (chunk_id, product_id, doc_meta, text)
+            out[fields[0]] = "\n".join(fields[3:])
+    return out
+
+
+def load_finance_products(sql_path: Path = FINANCE_SQL) -> list[tuple[str, str | None]]:
+    """적재 덤프의 (product_id, doc_chunk_ref). 인용 없으면 None."""
+    text = sql_path.read_text(encoding="utf-8")
+    rows = []
+    for r in _iter_sql_rows_lines(text, "finance_product"):
+        ref = r[-1].rstrip(")").strip()
+        rows.append((r[0].lstrip("("), None if ref in ("NULL", "") else ref))
+    return rows
 
 
 def norm_field(key: str, value):
@@ -134,8 +189,6 @@ def load_model_features(sql_path: Path = DATA_CORE_SQL) -> tuple[list[dict], lis
     타깃 = log(월 점포당 추정매출). 총매출은 점포수와 준항등이라 검증력이 없고,
     "한 점포가 버틸 수 있는가"라는 서비스 의미론과도 점포당 매출이 정합한다.
     """
-    import math
-
     text = sql_path.read_text(encoding="utf-8")
     # commercial_area: area_code, name, area_type_code, area_type_name, sigungu_code, …
     sigungu = {r[0]: r[4] for r in _iter_sql_rows_lines(text, "commercial_area")}
