@@ -53,6 +53,7 @@ def test_feature_rows_have_target_and_group():
 
 def test_group_split_keeps_sigungu_whole():
     """같은 자치구가 train/test 에 동시에 등장하면 공간 CV 가 무의미하다."""
+    pytest.importorskip("sklearn", reason="배치 전용 의존 — 경량 CI(pytest+pandas)에선 skip")
     rows, _ = common.load_model_features()
     folds = model.group_folds(rows, n_splits=5)
     assert len(folds) == 5

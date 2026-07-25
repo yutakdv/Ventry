@@ -10,7 +10,11 @@ import json
 import re
 from pathlib import Path
 
-from batch.collect import funding_web
+import pytest
+
+# `batch.collect` 패키지 __init__ 이 전 수집기를 eager import 하며 requests 를 끌어온다.
+# ai-ci 는 pytest+pandas 만 설치하는 경량 환경이라 모듈 최상위에서 import 하면 수집이 깨진다.
+# 파일만 읽는 테스트는 의존이 없으므로, 수집기 헬퍼가 필요한 테스트에서만 지연 import 한다.
 
 AI_ROOT = Path(__file__).resolve().parents[1]
 DOCS = AI_ROOT / "data" / "interim" / "funding_docs"
@@ -70,6 +74,9 @@ def test_gold_rates_are_traceable_to_source_text():
 
 def test_nav_noise_is_stripped():
     """본문 앵커 뒤에 남는 전역 내비게이션 잔재를 제거한다."""
+    pytest.importorskip("requests", reason="batch.collect 패키지가 requests 를 eager import 한다")
+    from batch.collect import funding_web
+
     raw = "<div>메뉴</div><div>금리안내</div><div>Quick Link</div><div>기준금리 3.85%</div>"
     text = funding_web.to_text(raw, "금리안내")
     assert "Quick Link" not in text
