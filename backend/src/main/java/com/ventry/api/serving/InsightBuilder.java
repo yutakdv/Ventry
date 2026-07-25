@@ -158,9 +158,11 @@ public class InsightBuilder {
                 + QUALIFICATION_TAIL;
         Delta delta = new Delta(eval.nEntryBefore(), eval.nEntryAfter(), eval.nSustainAfter(),
                 round2(InsightScore.score(eval, medianSales)));
+        // rate_type은 항상, rate_note는 변동 시에만 실린다. 현 lead는 fixed만 될 수 있다
+        // (변동 상품은 커버에서 제외 — assumptions #28·#32). notice_date·source_quote는 미보유 → 생략
         Funding funding = new Funding(product.name(), product.amountMax(), product.rate(),
-                lead.termMonths(), product.status(), null, product.exclusiveGroup(),
-                product.source(), null);   // notice_date·source_quote는 미보유 → 응답에서 생략
+                product.rateType(), product.rateNote(), lead.termMonths(), product.status(),
+                null, product.exclusiveGroup(), product.source(), null);
         return new InsightEvent(id, "T1", headline, delta, eval.gap(), payment, funding, true);
     }
 

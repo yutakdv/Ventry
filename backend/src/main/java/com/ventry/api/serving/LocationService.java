@@ -82,8 +82,12 @@ public class LocationService {
         CostEstimate cost = CostCalculator.estimate(area.costBlocks());
         ReverseResult result = ReverseCheck.evaluate(budget, cost, area.burdenRatio(),
                 ReverseCheck.DEFAULT_THETA);
+        // 계약 D8: matching_products는 amount_max 내림차순(동점 시 이름 오름차순) 고정 정렬.
+        // 금리 정렬은 하지 않는다 — rate 생략(변동) 상품의 순위를 임의로 정하지 않기 위함이다.
         List<Product> matching = EligibilityFilter.qualify(profile, products.all()).stream()
-                .map(fp -> fp.toProduct(null))   // source_quote=RAG(P1), 구현 전 null
+                .map(fp -> fp.toProduct(null))   // source_quote=RAG(P1), 구현 전 null. rate_type은 항상 실림
+                .sorted(Comparator.comparingInt(Product::amountMax).reversed()
+                        .thenComparing(Product::name))
                 .toList();
         return new CheckAreaResponse(result.verdict(), result.gapAmount(), matching,
                 ReasonTemplate.checkAreaReview());

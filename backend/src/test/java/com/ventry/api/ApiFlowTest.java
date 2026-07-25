@@ -148,8 +148,14 @@ class ApiFlowTest {
                 .andExpect(jsonPath("$.verdict").value("CONDITIONAL"))
                 .andExpect(jsonPath("$.gap_amount").value(1320))
                 .andExpect(jsonPath("$.matching_products[0].name").isNotEmpty())
+                // 계약 D8: rate_type은 항상 존재(FE 분기 키), 데모 상품은 전부 fixed
+                .andExpect(jsonPath("$.matching_products[0].rate_type").value("fixed"))
+                // 계약 D8 고정 정렬: amount_max 내림차순 (소진공 3000 → 서울보증 1500)
+                .andExpect(jsonPath("$.matching_products[0].amount_max").value(3000))
+                .andExpect(jsonPath("$.matching_products[1].amount_max").value(1500))
                 // source_quote(RAG)는 P1(BE-06)까지 미구현 → non_null 정책상 필드 생략
                 .andExpect(jsonPath("$.matching_products[0].source_quote").doesNotExist())
+                .andExpect(jsonPath("$.matching_products[0].rate_note").doesNotExist())  // fixed → 생략
                 .andExpect(jsonPath("$.risk_review.applied").value(true));
     }
 
@@ -169,6 +175,8 @@ class ApiFlowTest {
         assertThat(content).contains("\"budget_max\":8000");
         assertThat(content).contains("\"amount_min\":0");
         assertThat(content).contains("\"data_as_of\":\"2026-Q1\"");
+        // 계약 D8: 상품 카드에도 rate_type 항상 존재(데모 fixed)
+        assertThat(content).contains("\"rate_type\":\"fixed\"");
     }
 
     /**
@@ -197,6 +205,8 @@ class ApiFlowTest {
         assertThat(content).contains("\"n_entry_after\":3");    // + 합정 7,950
         assertThat(content).contains("\"n_sustain_after\":3");  // 상환 부담 반영 후 지속 3곳 병기
         assertThat(content).contains("\"gap_amount\":150");
+        // 계약 D8: T1 funding 블록에 rate_type 항상 존재(lead 상품은 fixed만 될 수 있다)
+        assertThat(content).contains("\"rate_type\":\"fixed\"");
         assertThat(content).contains("frontier_points");
         // 축 라벨은 서버가 송출(프론트 하드코딩 사전 제거). 무권리 경계가 없어 A1만 실린다
         assertThat(content).contains("\"axis_labels\":{\"A1\":\"예산\"}");

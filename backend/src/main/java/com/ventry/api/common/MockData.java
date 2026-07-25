@@ -26,13 +26,14 @@ public final class MockData {
     /** 자기자본 — 심사와 무관한 확정 재원이므로 두 카드의 예산 하한을 이룬다. */
     private static final int EQUITY = 5000;
 
+    // rate_type="fixed"(항상 존재), rate_note=null(fixed라 응답에서 생략) — 계약 D8
     private static final Product GUARANTEE_PRODUCT = new Product(
-            "서울신용보증재단 창업보증", 1500, 2.5, DATA_AS_OF,
+            "서울신용보증재단 창업보증", 1500, 2.5, "fixed", null, DATA_AS_OF,
             new Source("서울신용보증재단", "https://www.seoulshinbo.co.kr", "2026-07-19"),
             null);
 
     private static final Product POLICY_LOAN_PRODUCT = new Product(
-            "소진공 청년 전용 창업자금", 3000, 2.5, DATA_AS_OF,
+            "소진공 청년 전용 창업자금", 3000, 2.5, "fixed", null, DATA_AS_OF,
             new Source("소상공인시장진흥공단", "https://www.semas.or.kr", "2026-07-19"),
             null);
 

@@ -28,6 +28,10 @@ public class ScenarioBuilder {
     /** 상품 카드의 기준일은 상품 데이터 기준일을 쓴다 (data_source_meta.finance_product). */
     private static final String META_SOURCE_PRODUCT = "finance_product";
 
+    /** 계약 D8 고정 정렬: 한도(amount_max) 내림차순, 동점 시 이름 오름차순. 금리 정렬 금지. */
+    private static final Comparator<Product> PRODUCT_ORDER =
+            Comparator.comparingInt(Product::amountMax).reversed().thenComparing(Product::name);
+
     private final DemoProducts products;
     private final DataMetaSource meta;
 
@@ -59,10 +63,13 @@ public class ScenarioBuilder {
         if (selected.isPresent()) {
             FundingProduct product = selected.get();
             composition.add(new CompositionRange(ProductType.of(product), 0, product.amountMax()));
+            // 기준일은 상품 데이터 기준일로 덮어쓰되, rate_type·rate_note는 상품 값을 그대로 싣는다
             cardProducts.add(new Product(product.name(), product.amountMax(), product.rate(),
-                    meta.asOf(META_SOURCE_PRODUCT), product.source(), null));   // source_quote=RAG(P1)
+                    product.rateType(), product.rateNote(), meta.asOf(META_SOURCE_PRODUCT),
+                    product.source(), null));   // source_quote=RAG(P1)
             budgetMax += product.amountMax();
         }
+        cardProducts.sort(PRODUCT_ORDER);   // 계약 D8 고정 정렬 (카드당 1종이라 실질 no-op, 규약 준수)
         // 슬라이더 초기 선택값 = 상한(한도 전액 활용 가정) — 승인 금액이라는 뜻이 아니다
         return new ScenarioCard(label, budgetMax, equity, budgetMax, composition, cardProducts);
     }

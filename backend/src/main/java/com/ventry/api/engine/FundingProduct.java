@@ -48,8 +48,8 @@ public record FundingProduct(String name, Eligibility eligibility, int amountMax
         return rate != null;
     }
 
-    /** 화면 노출용 DTO 투영. source_quote(RAG)는 BE-06까지 null. */
+    /** 화면 노출용 DTO 투영. rate_type은 항상, rate_note는 변동 시에만 실린다. source_quote(RAG)는 BE-06까지 null. */
     public Product toProduct(SourceQuote sourceQuote) {
-        return new Product(name, amountMax, rate, dataAsOf, source, sourceQuote);
+        return new Product(name, amountMax, rate, rateType, rateNote, dataAsOf, source, sourceQuote);
     }
 }
