@@ -134,7 +134,7 @@ com.ventry.api
 
 ### BE-06 (D9~10) P1 · [#18](https://github.com/yutakdv/Ventry/issues/18) → BE-07 (D11~12) QA · [#23](https://github.com/yutakdv/Ventry/issues/23)
 
-BE-06은 여유 시에만 (RAG → 근거문 캐시 → 개인화 순). 미구현 시 D10에 **문서 이월 처리**.
+BE-06은 여유 시에만 (원문 인용 → 근거문 캐시 → 개인화 순). 미구현 시 D10에 **문서 이월 처리**.
 BE-07은 시나리오 10종 + **LLM 전면 차단 QA**(템플릿 폴백 경로 확인).
 
 ---
