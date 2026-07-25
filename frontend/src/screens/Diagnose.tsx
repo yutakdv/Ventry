@@ -71,8 +71,9 @@ function buildRequest(f: FormState): DiagnoseRequest {
 
 export default function Diagnose() {
   const navigate = useNavigate()
-  const { setSession } = useSession()
-  const [f, setF] = useState<FormState>(EMPTY_FORM)
+  const { setSession, diagnoseForm, setDiagnoseForm } = useSession()
+  // 화면 2에서 "입력 정보 수정"으로 돌아오면 직전 입력값이 그대로 복원된다.
+  const [f, setF] = useState<FormState>(diagnoseForm ?? EMPTY_FORM)
   const [submitted, setSubmitted] = useState(false) // "조달 시나리오 보기" 누른 뒤 에러 노출
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<DiagnoseResponse | null>(null)
@@ -101,6 +102,7 @@ export default function Diagnose() {
     setLoading(true)
     try {
       const res = await postDiagnose(buildRequest(f))
+      setDiagnoseForm(f) // 다시 돌아왔을 때 복원할 원본 입력값
       setSession(res.session_id, res.parsed_profile)
       setResult(res)
       window.scrollTo({ top: 0, behavior: 'smooth' })
