@@ -8,7 +8,8 @@ INSERT INTO data_source_meta (source, as_of, label, note, collected_on) VALUES
 ('rent', '2026-Q1', '한국부동산원 ○○상권 분기 평균 (추정)', '환산임대료 음식점 55㎡ 기준', '2026-07-21'),
 ('premium', '2025년(전년 기준)', '한국부동산원 권리금 연간 조사(전년 기준)', '서울 숙박·음식점업', '2026-07-21'),
 ('transit', '2026-07', '서울 지하철 승하차 (일평균)', '환승역 정규명 합산', '2026-07-21'),
-('interior', '2025', '공정위 가맹정보 2025 (가맹점 기준·상향, 만원)', '인테리어·시설 프록시', '2026-07-24');
+('interior', '2025', '공정위 가맹정보 2025 (가맹점 기준·상향, 만원)', '인테리어·시설 프록시', '2026-07-24'),
+('finance_product', '2026-07-21', '정책자금·보증·대출 상품 (공고 기준)', '전건 사람 검수본', '2026-07-25');
 
 INSERT INTO commercial_area (area_code, name, area_type_code, area_type_name, sigungu_code, sigungu_name, adstrd_code, adstrd_name, lat, lng, area_m2) VALUES
 ('3110055', '황학동벼룩시장', 'A', '골목상권', '11140', '중구', '11140670', '황학동', 37.569879, 127.0185867, 27575),

@@ -35,10 +35,10 @@ public class LocationService {
     static final Weights DEFAULT_WEIGHTS = new Weights(0.30, 0.20, 0.20, 0.15, 0.15);
 
     private final CandidateSource candidates;
-    private final DemoProducts products;
+    private final ProductSource products;
     private final DataMetaSource meta;
 
-    public LocationService(CandidateSource candidates, DemoProducts products, DataMetaSource meta) {
+    public LocationService(CandidateSource candidates, ProductSource products, DataMetaSource meta) {
         this.candidates = candidates;
         this.products = products;
         this.meta = meta;

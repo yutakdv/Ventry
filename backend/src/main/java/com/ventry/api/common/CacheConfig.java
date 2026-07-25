@@ -18,10 +18,14 @@ import org.springframework.context.annotation.Profile;
 @Profile("db")
 public class CacheConfig {
 
-    /** 후보 상권 조회 캐시. 이름은 {@code @Cacheable("candidates")} 와 일치해야 한다. */
+    /**
+     * 조회 캐시 — 이름은 {@code @Cacheable} 어노테이션과 일치해야 한다.
+     * {@code candidates} = 후보 상권(업종별) · {@code products} = 금융상품 전량(BE-03g).
+     * 둘 다 배치 산출이라 런타임 중 불변이다.
+     */
     @Bean
     public CacheManager cacheManager() {
-        CaffeineCacheManager manager = new CaffeineCacheManager("candidates");
+        CaffeineCacheManager manager = new CaffeineCacheManager("candidates", "products");
         manager.setCaffeine(Caffeine.newBuilder().expireAfterWrite(Duration.ofHours(1)));
         return manager;
     }
