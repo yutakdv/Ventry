@@ -1,0 +1,180 @@
+.item {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  width: 100%;
+  padding: var(--space-16);
+  text-align: left;
+}
+/* 브라우저 기본 p/여백이 행 높이를 부풀리지 않도록 — 간격은 flex gap으로만 준다. */
+.row p {
+  margin: 0;
+}
+
+/* 펼칠 수 있는 행만 버튼이 된다. */
+.rowButton {
+  background: none;
+  border: 0;
+  border-radius: var(--radius-lg);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+.rowButton:hover {
+  background: var(--color-bg-page);
+}
+.rowButton:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: -2px;
+}
+
+.iconWrap {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-control);
+  background: var(--color-bg-info);
+}
+
+.icon {
+  color: var(--color-accent-primary);
+}
+
+.left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.title {
+  color: var(--color-text-primary);
+}
+
+.subtitle {
+  color: var(--color-text-secondary);
+}
+
+.title,
+.subtitle {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.source {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+  padding: 2px var(--space-8);
+  max-width: 100%;
+  white-space: nowrap;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-info);
+  color: var(--color-text-accent);
+}
+
+.right {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.value {
+  color: var(--color-text-primary);
+}
+
+.note {
+  color: var(--color-text-tertiary);
+}
+
+.chevron {
+  flex: none;
+  color: var(--color-text-tertiary);
+  transition: transform 180ms ease;
+}
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+/* 0fr → 1fr 로 두면 내용 높이를 몰라도 자연스럽게 펼쳐진다. */
+.panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 180ms ease;
+}
+.panelOpen {
+  grid-template-rows: 1fr;
+}
+.panelInner {
+  overflow: hidden;
+}
+.panelOpen .panelInner {
+  /* 펼친 뒤에는 잘림 없이 보이도록 (포커스 링 등) */
+  overflow: visible;
+}
+
+.detailList {
+  margin: 0;
+  padding: 0 var(--space-16) var(--space-16) 68px; /* 아이콘(40) + gap(12) + 좌패딩(16) 만큼 들여쓰기 */
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  border-top: 1px solid var(--color-border-default);
+  padding-top: var(--space-12);
+  margin-top: var(--space-4);
+}
+
+.detailRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-12);
+}
+
+.detailLabel {
+  flex: none;
+  width: 92px;
+  color: var(--color-text-tertiary);
+}
+
+.detailValue {
+  margin: 0;
+  min-width: 0;
+  color: var(--color-text-primary);
+}
+
+.detailValue a {
+  color: var(--color-text-accent);
+}
+
+.quote {
+  margin: 0 var(--space-16) var(--space-16) 68px;
+  padding: var(--space-12);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-page);
+  color: var(--color-text-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .chevron,
+  .rowButton {
+    transition: none;
+  }
+}
