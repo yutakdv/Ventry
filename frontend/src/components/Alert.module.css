@@ -1,0 +1,27 @@
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-8);
+  padding: var(--space-12) var(--space-16);
+  background: var(--color-bg-error-subtle);
+  border: 1px solid var(--color-border-error);
+  border-radius: var(--radius-lg);
+}
+.icon {
+  flex: none;
+  margin-top: 2px;
+  color: var(--color-text-error);
+}
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.title {
+  margin: 0;
+  color: var(--color-text-error);
+}
+.desc {
+  margin: 0;
+  color: var(--color-text-secondary);
+}

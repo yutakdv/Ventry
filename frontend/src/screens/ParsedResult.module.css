@@ -1,0 +1,72 @@
+.card {
+  padding: var(--space-24);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+}
+.badge {
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+}
+.llm {
+  background: var(--color-bg-success-subtle);
+  color: var(--color-text-success);
+}
+.fallback {
+  background: var(--gray-100);
+  color: var(--color-text-secondary);
+}
+.sub {
+  margin: var(--space-8) 0 var(--space-16);
+  color: var(--color-text-secondary);
+}
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-16);
+  margin: var(--space-16) 0;
+}
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.key {
+  color: var(--color-text-tertiary);
+  margin: 0;
+}
+.val {
+  color: var(--color-text-primary);
+  margin: 0;
+}
+.concerns {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  margin-bottom: var(--space-24);
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+.chip {
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-brand-subtle);
+  color: var(--color-brand-primary-hover);
+}
+.actions {
+  display: flex;
+  gap: var(--space-12);
+}
+.sid {
+  margin: var(--space-16) 0 0;
+  color: var(--color-text-tertiary);
+}
