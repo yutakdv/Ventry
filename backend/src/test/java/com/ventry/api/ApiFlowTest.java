@@ -59,6 +59,17 @@ class ApiFlowTest {
                 .andExpect(status().isOk());
     }
 
+    /** 임의 예산 확정 — 구성은 자기자본만(상품 잔여 한도를 소비하지 않는다). */
+    private void confirmBudget(String sid, int budget) throws Exception {
+        String body = """
+                { "confirmed_budget": %d,
+                  "composition": [ { "type": "equity", "amount": %d } ] }
+                """.formatted(budget, budget);
+        mockMvc.perform(post("/api/budget/" + sid)
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk());
+    }
+
     @Test
     void diagnose_withoutFreeText_marksFormOnly() throws Exception {
         String body = """
@@ -160,28 +171,36 @@ class ApiFlowTest {
         assertThat(content).contains("\"data_as_of\":\"2026-Q1\"");
     }
 
+    /**
+     * BE-05: /explore 실계산 — plan → insight(1건씩) → done. refine은 무LLM 모드에서 미송출이
+     * 정상이라(계약상 "(선택적)") 순서 단언에서 제외한다. LLM 교체는 [6]단계 몫이다.
+     *
+     * <p>이 테스트는 <b>픽스처 경로(CI는 DB 없음)</b>라 데모 화면과 수치가 다르다 — 여기선
+     * B₀=7,800에서 진입 2→3·지속 3·갭 150이다. 실제 데모는 db 프로파일의 후보 10곳 경로이며
+     * B₀=8,000에서 진입 3→9·지속 8이 나온다 (5-A 실측). 두 경로의 수치가 다른 것이 정상이다.
+     */
     @Test
-    void explore_streamsPlanInsightRefineDoneInOrder() throws Exception {
+    void explore_streamsPlanInsightDoneInOrder_refineOptional() throws Exception {
         String sid = createSession();
-        confirmBudget(sid);   // done.current_budget = 확정 예산 B₀
+        confirmBudget(sid, 7800);   // 픽스처 상향 경계 7,950이 생기는 예산 (done.current_budget)
         MvcResult result = mockMvc.perform(get("/api/explore/" + sid).param("v", "1"))
                 .andExpect(request().asyncStarted())
                 .andReturn();
         String content = awaitSse(result, "event:done");
         int plan = content.indexOf("event:plan");
         int insight = content.indexOf("event:insight");
-        int refine = content.indexOf("event:refine");
         int done = content.indexOf("event:done");
         assertThat(plan).isNotNegative();
         assertThat(insight).isGreaterThan(plan);
-        assertThat(refine).isGreaterThan(insight);
-        assertThat(done).isGreaterThan(refine);
-        assertThat(content).contains("\"n_entry_after\":11");   // T1: 진입 3→11
-        assertThat(content).contains("\"n_sustain_after\":7");  // 지속 안정 7 병기
+        assertThat(done).isGreaterThan(insight);
+        assertThat(content).contains("\"n_entry_before\":2");   // 홍대 7,500 · 망원 7,750
+        assertThat(content).contains("\"n_entry_after\":3");    // + 합정 7,950
+        assertThat(content).contains("\"n_sustain_after\":3");  // 상환 부담 반영 후 지속 3곳 병기
+        assertThat(content).contains("\"gap_amount\":150");
         assertThat(content).contains("frontier_points");
-        // BE-01a: 축 라벨은 서버가 송출(프론트 하드코딩 사전 제거), 차트 마커용 현재 예산
-        assertThat(content).contains("\"axis_labels\":{\"A1\":\"예산\",\"A4\":\"권리금 조건\"}");
-        assertThat(content).contains("\"current_budget\":8000");
+        // 축 라벨은 서버가 송출(프론트 하드코딩 사전 제거). 무권리 경계가 없어 A1만 실린다
+        assertThat(content).contains("\"axis_labels\":{\"A1\":\"예산\"}");
+        assertThat(content).contains("\"current_budget\":7800");
     }
 
     @Test
@@ -192,15 +211,22 @@ class ApiFlowTest {
                 .andExpect(jsonPath("$.error.message").isNotEmpty());
     }
 
-    /** SSE는 전용 executor에서 송출되므로 완료 마커가 나타날 때까지 짧게 폴링한다. */
+    /**
+     * SSE는 전용 executor에서 송출되므로 완료 마커가 나타날 때까지 짧게 폴링한다.
+     * 마커 줄만 플러시된 순간 반환하면 뒤따르는 {@code data:} 줄을 놓치므로,
+     * <b>마커가 속한 이벤트 프레임이 빈 줄(\n\n)로 끝날 때까지</b> 기다린다. 시간 내
+     * 완결되지 않으면 조용히 반환하지 않고 명시적으로 실패시켜 원인을 드러낸다.
+     */
     private String awaitSse(MvcResult result, String marker) throws Exception {
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 300; i++) {
             String content = result.getResponse().getContentAsString(StandardCharsets.UTF_8);
-            if (content.contains(marker)) {
-                return content;
+            int at = content.indexOf(marker);
+            if (at >= 0 && content.indexOf("\n\n", at) >= 0) {
+                return content;   // 프레임 완결(data 줄까지 flush) 확인
             }
             Thread.sleep(20);
         }
-        return result.getResponse().getContentAsString(StandardCharsets.UTF_8);
+        throw new AssertionError("SSE 프레임이 6초 내 완결되지 않음 (marker=" + marker + "):\n"
+                + result.getResponse().getContentAsString(StandardCharsets.UTF_8));
     }
 }
