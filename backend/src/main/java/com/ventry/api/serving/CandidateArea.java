@@ -2,6 +2,7 @@ package com.ventry.api.serving;
 
 import com.ventry.api.engine.AxisScores;
 import com.ventry.api.engine.CostBlocks;
+import com.ventry.api.engine.CostCalculator;
 import com.ventry.api.engine.ReverseCheck;
 
 /**
@@ -24,5 +25,15 @@ public record CandidateArea(
     /** 부담률 = 환산임대료 ÷ 추정매출 (스펙 §4-2) — 픽스처 상수가 아닌 파생값. */
     public double burdenRatio() {
         return ReverseCheck.burdenRatio(monthlyRent, estSales);
+    }
+
+    /** 진입 비교 기준 c_a = 권리금 포함 비용 중앙값 (스펙 §4-1 · expl §2-1). */
+    public int inclusiveCostMedian() {
+        return (int) Math.ceil(CostCalculator.estimate(costBlocks).inclPremium().median());
+    }
+
+    /** 무권리 기준 c'_a = 권리금 제외 비용 중앙값 — A4 축·T5 인사이트의 기준선. */
+    public int exPremiumCostMedian() {
+        return (int) Math.ceil(CostCalculator.estimate(costBlocks).exPremium().median());
     }
 }

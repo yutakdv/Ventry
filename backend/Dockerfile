@@ -13,5 +13,9 @@ RUN ./gradlew build --no-daemon
 FROM eclipse-temurin:25-jre
 WORKDIR /app
 COPY --from=build /app/build/libs/*.jar app.jar
+# 컨테이너 실행 시에만 DB 프로파일 활성화 — 사전 적재 테이블(v_candidate_area) 조회 경로.
+# 빌드 단계의 테스트는 이 ENV 없이 돌아 기본 프로파일(픽스처)로 실행된다 (BE-05 5-B).
+# 로컬 개발/CI의 gradlew test 도 이 값을 주입받지 않으므로 영향이 없다.
+ENV SPRING_PROFILES_ACTIVE=db
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
