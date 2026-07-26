@@ -13,6 +13,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from batch.collect import collected
 from batch.extract.funding_llm import OUT_DIR, validate_product
 from batch.paths import INTERIM_DIR, REPO_ROOT, logger
 
@@ -173,7 +174,8 @@ def build_finance(reviewed: list[dict], docs_dir: Path) -> dict[str, pd.DataFram
             "term_months": p.get("term_months"), "exclusive_group": p.get("exclusive_group"),
             "status": p.get("status") or "open", "notice_date": p.get("notice_date"),
             "data_as_of": p.get("notice_date") or "2026", "source_org": p.get("org"),
-            "source_url": p.get("source_url") or "", "source_collected": today,
+            "source_url": p.get("source_url") or "",
+            "source_collected": collected.for_doc(doc, today),
             "doc_chunk_ref": chunk_ref,
         })
     chunk_rows = [{"chunk_id": c["chunk_id"], "product_id": c["product_id"],
