@@ -114,21 +114,26 @@
 
 ## BE-06 (D9~10) — P1 (여유 시, 순서 고정: ①→②→③)
 
-- [ ] ① 원문 근거 인용: `doc_chunk_ref` → `finance_doc_chunk` **id 직접 조회** → `source_quote`
+- [x] ① 원문 근거 인용: `doc_chunk_ref` → `finance_doc_chunk` **id 직접 조회** → `source_quote`
       **원문 그대로** (LLM 재작성 금지 — "인용은 검색이지 생성이 아니다", 스펙 §5-4)
-      미구현 확정 시: D10에 계약의 `source_quote: null` 유지 + 스펙 §5-4 이월 문서 처리 (CM-03)
+      → **2026-07-26 결선 (#18)**. `FinanceRepository` LEFT JOIN 1회로 상품과 함께 읽어
+      `FundingProduct.sourceQuote` 에 싣는다. 세 경로(`check-area`·`scenarios`·`explore`)
+      모두 반영. 실적재 검증: 26/26 인용 보유, 서버 측 가공 0 (요약·자르기 없음)
 - [ ] ② 근거문 캐시: 상권×업종 근거문 사전 생성, 탐색 인사이트는 템플릿 즉시+LLM 교체
 - [ ] ③ 개인화 언어화: 근거문 프롬프트에 사용자 발화 요약 주입
 - **DoD**: 구현분 계약 반영 or 이월 문서화 완료
 
 ## BE-07 (D11~12) — 통합 QA·하드닝
 
-- [ ] QA 시나리오 10종 실행 (정상 5 + 경계 3 + 장애 2)
-- [ ] **LLM 전면 차단 QA**: 키 제거 상태로 전 동선 — 템플릿 폴백이 최종본으로 자연스러운지
+- [x] QA 시나리오 10종 실행 (정상 5 + 경계 3 + 장애 2) → `scripts/qa_integration.py`,
+      전건 통과. 발견·수정: 깨진 본문 500 → 400, `parse_source` 허위 보고, recommend 769 KB
+- [x] **LLM 전면 차단 QA**: 키 제거 상태로 전 동선 — 템플릿 폴백이 최종본으로 자연스러운지
       (심사위원이 직접 실행하므로 폴백 화면 품질이 채점 대상, 리스크 #9)
-- [ ] SSE 부하: 슬라이더 연타 시 version 취소 동작 확인
-- [ ] Docker 정리: 이미지 크기·기동 시간, compose 스모크 재확인
-- **DoD**: QA 리포트 작성, 미해결 이슈 명시
+      → 동선은 정상, 다만 **LLM 3역할 중 2개 미결선인데 API 가 수행 보고**(이슈 #96, P0)
+- [x] SSE 부하: 슬라이더 연타 시 version 취소 동작 확인 → 구 version 이벤트 0건
+- [x] Docker 정리: 이미지 크기·기동 시간, compose 스모크 재확인 → api 138 MB · web 21.9 MB ·
+      콜드 스타트 8초
+- **DoD**: [QA_REPORT_BE07.md](../QA_REPORT_BE07.md) 작성 완료, 미해결 4건 명시(#96·#90·#93·FE 렌더링)
 
 ## PR 슬라이스 권장
 

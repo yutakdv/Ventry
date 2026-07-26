@@ -3,6 +3,7 @@ package com.ventry.api.engine;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.ventry.api.common.FinanceDtos.Source;
+import com.ventry.api.common.FinanceDtos.SourceQuote;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -135,10 +136,24 @@ class EligibilityFilterTest {
                 10000, null, FundingProduct.RATE_VARIABLE, note,
                 84, null, "open", "2026-07-21", SRC);
 
-        var dto = p.toProduct(null);
+        var dto = p.toProduct();
         assertThat(dto.rate()).isNull();
         assertThat(dto.rateType()).isEqualTo(FundingProduct.RATE_VARIABLE);
         assertThat(dto.rateNote()).isEqualTo(note);
+        assertThat(dto.sourceQuote()).isNull();   // 청크 없는 상품 — 인용을 지어내지 않는다
+    }
+
+    /** 청크가 붙은 상품은 투영에 원문 인용이 <b>그대로</b> 실린다 (BE-06 ①, 스펙 §5-4). */
+    @Test
+    void productWithChunk_projectionCarriesVerbatimQuote() {
+        SourceQuote quote = new SourceQuote("만 39세 이하 예비창업자로서…",
+                "소진공", "2026_소상공인정책자금_융자공고", "2026-07-21");
+        FundingProduct p = new FundingProduct(
+                "청년고용연계자금", new Eligibility(39, null, Set.of("서울"), false),
+                7000, 3.0, FundingProduct.RATE_FIXED, null,
+                60, null, "open", "2026-07-21", SRC, quote);
+
+        assertThat(p.toProduct().sourceQuote()).isSameAs(quote);
     }
 
     @Test
