@@ -44,6 +44,13 @@ jobs:
       - name: Smoke — web 200
         run: curl -fsS -o /dev/null http://localhost:3000
 
+      # 실데이터 계약 게이트 (G1~G9). 단위·통합 176건이 그린인 상태에서 P0 결함 7건이 살아
+      # 있었던 이유는 그 테스트가 전부 픽스처 프로파일(!db)에서 돌았기 때문이다 — 변동금리
+      # 13건·매출 결측·상권 1,000곳 이상·경계 91개를 한 번도 지나지 않았다.
+      # 표준 라이브러리만 쓰므로 추가 설치가 없다.
+      - name: Smoke — 실데이터 계약 게이트
+        run: python3 scripts/qa_integration.py --contract-gate
+
       - name: Compose down
         if: always()
         run: docker compose down -v

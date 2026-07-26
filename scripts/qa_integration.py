@@ -32,6 +32,13 @@ PROFILE_CAFE = {
 }
 VERDICTS = {"FIT", "CONDITIONAL", "CAUTION", "OUT_OF_SCOPE"}
 
+# 인용 불가 문서(브라우저 인쇄된 KB 웹 페이지 4종)에서 온 상품 — 원문에 자격 요건 문단이
+# 없어 인용을 비웠다. 이 4건 외에 인용이 비면 적재 연결이 끊긴 것이다 (가정 #73).
+NON_QUOTABLE_PRODUCTS = {
+    "KB소상공인 보증서대출", "KB소상공인 신용대출",
+    "이자지원 보증서 대출", "소상공인 정책자금대출",
+}
+
 # 용어 컴플라이언스 (CLAUDE.md 절대 불변 원칙 3) — 화면에 나가는 문자열에 있으면 안 되는 말.
 # "승인" 계열과 자금 권유형 술어. 심사 감점 직결이라 QA 가 매번 훑는다.
 BANNED_WORDS = ["승인", "권장", "추천드립", "조달 가능", "심사역", "대출을 받으세요"]
@@ -200,9 +207,14 @@ def n5_check_area_quote() -> None:
     check("N5", len(products) > 2, f"자격 부합 상품 {len(products)}건 — 실테이블 결선 의심")
     limits = [p["amount_max"] for p in products]
     check("N5", limits == sorted(limits, reverse=True), "amount_max 내림차순 정렬 아님")
+    # 인용이 빈 상품은 **인용 불가 문서**(브라우저 인쇄된 KB 웹 페이지 4종)뿐이어야 한다.
+    # 그 문서에는 자격 요건 문단이 원문에 없어 인용을 비웠다 — 전건 보유를 기대하던 구 단언은
+    # 「내비게이션을 자격 근거로 실어야 통과」하는 잘못된 게이트였다 (AI 리뷰 #4 · 가정 #73).
     quoted = [p for p in products if p.get("source_quote")]
-    check("N5", len(quoted) == len(products),
-          f"인용 {len(quoted)}/{len(products)} — 적재본은 전건 보유가 기대값")
+    unquoted = [p["name"] for p in products if not p.get("source_quote")]
+    check("N5", set(unquoted) <= NON_QUOTABLE_PRODUCTS,
+          f"인용 없는 상품에 인쇄본 4종 외가 섞였다: {sorted(set(unquoted) - NON_QUOTABLE_PRODUCTS)}")
+    check("N5", len(quoted) > 0, "인용이 하나도 없다 — 적재 연결 의심")
     for product in quoted:
         quote = product["source_quote"]
         for field in ("text", "org", "doc", "date"):
@@ -318,6 +330,185 @@ def s1_stale_version() -> None:
     notes.append(f"S1 v=5 {len(fresh)}건 · v=3(구 버전) {len(stale)}건")
 
 
+
+# ── 실데이터 계약 게이트 (G1~G9) ─────────────────────────────────────────────
+# 왜 별도인가: 위 시나리오는 **정상 동작 확인**에 최적화돼 있고(11건 전부 통과 상태에서도
+# P0 결함 7건이 살아 있었다), 아래는 **계약 위반 탐지**가 목적이다. 성격이 다르므로 둘 다 둔다.
+# 근인은 하나였다 — 자동 게이트가 전부 픽스처 프로파일(!db)에서 돌아 실데이터의 어려운 경우
+# (변동금리 13건·매출 결측·상권 1,000곳 이상·경계 91개)를 한 번도 지나지 않았다.
+def _insights_at(sid: str, budget: int) -> tuple[list[dict], dict]:
+    request("POST", f"/api/budget/{sid}", {"confirmed_budget": budget,
+                                           "composition": [{"type": "equity", "amount": budget}]})
+    events = sse(f"/api/explore/{sid}?v=1")
+    insights = [payload for name, payload in events if name == "insight"]
+    plan = next((payload for name, payload in events if name == "plan"), {})
+    return insights, plan
+
+
+def g1_no_non_finite_tokens() -> None:
+    """비유한 토큰은 계약 타입을 깬다 — number 자리에 문자열 "Infinity" 가 실렸다 (D-04)."""
+    sid = new_session()
+    request("POST", f"/api/budget/{sid}", {"confirmed_budget": 8000,
+                                           "composition": [{"type": "equity", "amount": 5000}]})
+    for path in (f"/api/recommend/{sid}", f"/api/scenarios/{sid}"):
+        if path.endswith("scenarios/" + sid):
+            raw = json.dumps([p for _, p in sse(path)], ensure_ascii=False)
+        else:
+            raw = json.dumps(request("GET", path)[1], ensure_ascii=False)
+        for token in ("Infinity", "-Infinity", "NaN"):
+            check("G1", f'"{token}"' not in raw and f": {token}" not in raw,
+                  f"{path} 응답에 비유한 토큰 {token}")
+    _, body = request("GET", f"/api/recommend/{sid}")
+    bad = [a["area_code"] for a in body["areas"]
+           if "burden_ratio" in a and not isinstance(a["burden_ratio"], (int, float))]
+    check("G1", not bad, f"burden_ratio 가 number 가 아닌 상권 {bad[:3]}")
+    omitted = [a for a in body["areas"] if "burden_ratio" not in a]
+    notes.append(f"G1 burden_ratio 생략(매출 결측) {len(omitted)}건 / 후보 {len(body['areas'])}건")
+
+
+def g2_delta_matches_entry_count() -> None:
+    """delta 는 도구 계층 계산값이어야 한다 — 풀 크기를 넣던 자리 (D-01)."""
+    sid = new_session()
+    _, budget_body = request("POST", f"/api/budget/{sid}",
+                             {"confirmed_budget": 8000,
+                              "composition": [{"type": "equity", "amount": 5000}]})
+    entry_count = budget_body["preview"]["area_count"]
+    insights, _ = _insights_at(sid, 8000)
+    for insight in insights:
+        delta = insight.get("delta") or {}
+        if insight["type"] in ("T1", "T5"):
+            check("G2", delta.get("n_entry_before") == entry_count,
+                  f"{insight['type']} n_entry_before {delta.get('n_entry_before')} != 진입 후보 {entry_count}")
+            check("G2", delta.get("n_entry_after", 0) >= delta.get("n_entry_before", 0),
+                  f"{insight['type']} after < before")
+
+
+def g3_sustain_is_a_sustain_count() -> None:
+    """지속 자리에 진입 수를 넣던 것을 막는다 (D-02).
+
+    T1 과 T2 의 지속 수는 **다른 양이라 같을 필요가 없다** — T1 은 경계 예산에서 월 상환액 m 을
+    반영한 값이고, T2 는 B₀ 에서 m=0 인 값이다. 대신 정의상 반드시 성립하는 두 가지를 잰다:
+    ① 지속 ⊆ 진입 ② 같은 기준(B₀·m=0)을 쓰는 T2 와 T5 는 서로 일치.
+    """
+    sid = new_session()
+    insights, _ = _insights_at(sid, 8000)
+    by_type = {}
+    for insight in insights:
+        delta = insight.get("delta") or {}
+        sustain, entry = delta.get("n_sustain_after"), delta.get("n_entry_after")
+        by_type[insight["type"]] = sustain
+        if sustain is not None and entry is not None:
+            check("G3", sustain <= entry,
+                  f"{insight['type']} 지속 {sustain} > 진입 {entry} (지속은 진입의 부분집합이다)")
+        if delta.get("score_delta") is not None:
+            check("G3", -10 <= delta["score_delta"] <= 10,
+                  f"score_delta 가 등급 구간 범위를 벗어난다: {delta['score_delta']}")
+    if by_type.get("T2") is not None and by_type.get("T5") is not None:
+        check("G3", by_type["T2"] == by_type["T5"],
+              f"같은 기준(B₀·m=0)인데 T2 {by_type['T2']} != T5 {by_type['T5']}")
+    notes.append(f"G3 지속 후보 수: {by_type}")
+
+
+def g4_variable_rate_branch() -> None:
+    """변동금리 근거는 금액 대신 문구다 (계약 D8 · D-03)."""
+    sid = new_session()
+    insights, _ = _insights_at(sid, 8000)
+    seen_variable = False
+    for insight in insights:
+        funding = insight.get("funding")
+        if not funding:
+            continue
+        if funding.get("rate_type") == "variable":
+            seen_variable = True
+            check("G4", "marginal_payment" not in insight,
+                  f"변동금리 근거에 marginal_payment 가 실렸다: {funding.get('name')}")
+            check("G4", insight.get("marginal_payment_note"),
+                  f"변동금리 근거에 marginal_payment_note 가 없다: {funding.get('name')}")
+        else:
+            check("G4", "marginal_payment_note" not in insight,
+                  f"고정금리 근거에 note 가 실렸다: {funding.get('name')}")
+        check("G4", funding.get("rate_type") in ("fixed", "variable"),
+              "rate_type 은 항상 존재해야 한다 (FE 분기 키)")
+    notes.append(f"G4 변동금리 근거 관측: {seen_variable}")
+
+
+def g5_upside_never_alone() -> None:
+    """상향 단독 노출 금지의 기계적 확인 (원칙 3 · D-01·D-05)."""
+    sid = new_session()
+    for budget in (6000, 8000, 8398, 9000):
+        insights, plan = _insights_at(sid, budget)
+        types = {i["type"] for i in insights}
+        if types & {"T1", "T5"}:
+            check("G5", "T2" in types,
+                  f"예산 {budget}: 상향 {sorted(types)} 이 T2 없이 나갔다")
+            for insight in insights:
+                if insight["type"] in ("T1", "T5"):
+                    check("G5", (insight.get("delta") or {}).get("n_sustain_after") is not None,
+                          f"예산 {budget}: {insight['type']} 에 지속 후보 수가 없다")
+        if not insights:
+            check("G5", bool(plan.get("rationale")), f"예산 {budget}: 0건인데 사유 문장이 없다")
+        notes.append(f"G5 예산 {budget}: 인사이트 {sorted(types) or '0건'}")
+
+
+def g6_input_validation() -> None:
+    """입력 오류는 발생 지점에서 400 이어야 한다 — 200 + 세션은 이후 전 경로를 500으로 만든다."""
+    status, body = request("POST", "/api/diagnose", {})
+    check("G6", status == 400, f"/diagnose {{}} → {status} (400 이어야 한다)")
+    check("G6", (body.get("error") or {}).get("code") == "INVALID_REQUEST",
+          f"오류 코드 규격 위반: {body}")
+    bad_industry = {"form": {"age": 32, "capital": 5000, "industry": "cafee"}}
+    status, _ = request("POST", "/api/diagnose", bad_industry)
+    check("G6", status == 400, f"업종 오타 → {status} (400 이어야 한다)")
+    sid = new_session()
+    status, _ = request("POST", f"/api/budget/{sid}",
+                        {"confirmed_budget": -9999, "composition": []})
+    check("G6", status == 400, f"음수 예산 → {status} (400 이어야 한다)")
+
+
+def g7_terminology() -> None:
+    """용어 컴플라이언스 — 응답 전문 스캔 (심사 감점 직결)."""
+    sid = new_session()
+    request("POST", f"/api/budget/{sid}", {"confirmed_budget": 8000,
+                                           "composition": [{"type": "equity", "amount": 5000}]})
+    payloads = [request("GET", f"/api/recommend/{sid}")[1],
+                [p for _, p in sse(f"/api/scenarios/{sid}")],
+                [p for _, p in sse(f"/api/explore/{sid}?v=1")]]
+    for payload in payloads:
+        scan_terms("G7", payload)
+
+
+def g8_objection_scope() -> None:
+    """반박은 화면이 제시한 결과만 다룬다 — 범위 외 상권·없는 판정을 말하면 안 된다 (D-23·D-24)."""
+    sid = new_session()
+    request("POST", f"/api/budget/{sid}", {"confirmed_budget": 6000,
+                                           "composition": [{"type": "equity", "amount": 5000}]})
+    _, body = request("GET", f"/api/recommend/{sid}")
+    review = body.get("risk_review") or {}
+    text = review.get("objection_text", "")
+    counts = {}
+    for area in body["areas"]:
+        counts[area["verdict"]] = counts.get(area["verdict"], 0) + 1
+    check("G8", "OUT_OF_SCOPE" not in text, "반박문에 영문 판정 enum 이 노출됐다")
+    for word in ("재검토", "분류된 이유"):
+        check("G8", word not in text, f"반박이 판정을 다툰다: '{word}'")
+    if counts.get("CAUTION", 0) == 0:
+        check("G8", "유의 판정 유지" not in text,
+              f"유의 0곳인데 유의 판정 유지를 말한다 (분포 {counts})")
+    notes.append(f"G8 예산 6,000 판정 분포 {counts}")
+
+
+def g9_data_as_of() -> None:
+    """모든 화면이 데이터 기준일을 표기할 수 있어야 한다 (불변 원칙 4 · D-25)."""
+    sid = new_session()
+    _, budget = request("POST", f"/api/budget/{sid}",
+                        {"confirmed_budget": 8000,
+                         "composition": [{"type": "equity", "amount": 5000}]})
+    _, recommend = request("GET", f"/api/recommend/{sid}")
+    check("G9", budget.get("data_as_of"), "/budget 응답에 data_as_of 가 없다")
+    check("G9", budget.get("data_as_of") == recommend.get("data_as_of"),
+          f"기준일 불일치: budget={budget.get('data_as_of')} recommend={recommend.get('data_as_of')}")
+
+
 SCENARIOS = {
     "N1": ("정상 · 진단 폼 + 자연어 파싱", n1_diagnose),
     "N2": ("정상 · 조달 시나리오 SSE 2장", n2_scenarios),
@@ -330,7 +521,18 @@ SCENARIOS = {
     "F1": ("장애 · 오류 응답 규격 (4xx·code)", f1_error_contract),
     "F2": ("장애 · LLM 전면 차단 폴백", f2_no_llm),
     "S1": ("SSE · 구 version 취소", s1_stale_version),
+    "G1": ("게이트 · 비유한값 0건 (타입)", g1_no_non_finite_tokens),
+    "G2": ("게이트 · delta 가 도구 계층 계산값", g2_delta_matches_entry_count),
+    "G3": ("게이트 · 지속 후보 수 정합·score_delta 범위", g3_sustain_is_a_sustain_count),
+    "G4": ("게이트 · 변동금리 금액 대신 문구", g4_variable_rate_branch),
+    "G5": ("게이트 · 상향 단독 노출 금지", g5_upside_never_alone),
+    "G6": ("게이트 · 입력 검증 400", g6_input_validation),
+    "G7": ("게이트 · 용어 컴플라이언스", g7_terminology),
+    "G8": ("게이트 · 반박 사정거리", g8_objection_scope),
+    "G9": ("게이트 · 데이터 기준일 표기", g9_data_as_of),
 }
+
+CONTRACT_GATE = ["G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9"]
 
 
 def main() -> int:
@@ -338,9 +540,14 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--only", nargs="*", default=None, help="실행할 시나리오 코드")
     parser.add_argument("--base", default=BASE)
+    parser.add_argument("--contract-gate", action="store_true",
+                        help="실데이터 계약 게이트(G1~G9)만 실행 — CI 용")
     args = parser.parse_args()
     BASE = args.base
-    selected = args.only or [c for c in SCENARIOS if c != "F2"]
+    if args.contract_gate:
+        selected = CONTRACT_GATE
+    else:
+        selected = args.only or [c for c in SCENARIOS if c != "F2"]
 
     print(f"BE-07 통합 QA — {BASE}\n")
     for code in selected:
