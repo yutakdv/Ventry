@@ -18,6 +18,21 @@
 .main {
   min-width: 0;
 }
+
+/*
+ * 목 폴백 고지 — GNB 바로 아래 전폭. 화면 안 배너로 두면 스크롤에 밀려 사라지는데,
+ * 이 고지는 「지금 보고 있는 수치가 실데이터가 아니다」라는 전제라 놓치면 안 된다.
+ */
+.fallbackNotice {
+  padding: var(--space-8) var(--space-24);
+  border-bottom: 1px solid var(--color-border-error);
+  background: var(--color-bg-error-subtle);
+  text-align: center;
+}
+
+.fallbackText {
+  color: var(--color-text-error);
+}
 .rail {
   position: sticky;
   top: calc(64px + var(--space-24));
