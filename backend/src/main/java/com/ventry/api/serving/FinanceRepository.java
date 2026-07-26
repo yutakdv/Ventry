@@ -26,7 +26,8 @@ public class FinanceRepository {
     private static final FundingProductRowMapper ROW_MAPPER = new FundingProductRowMapper();
 
     private static final String SELECT_ALL = """
-            SELECT p.name, p.max_age, p.industries, p.regions, p.pre_startup_only,
+            SELECT p.name, p.max_age, p.industries, p.regions,
+                   p.pre_startup_only, p.existing_business_only,
                    p.amount_max, p.rate, p.rate_type, p.rate_note, p.term_months,
                    p.exclusive_group, p.status, p.data_as_of,
                    p.source_org, p.source_url, p.source_collected,
