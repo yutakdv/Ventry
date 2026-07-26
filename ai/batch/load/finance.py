@@ -111,6 +111,9 @@ def chunk_document(doc_name: str, text: str) -> list[dict]:
 
 
 _NAME_TOKEN = re.compile(r"[0-9A-Za-z가-힣]{2,}")
+# 공고문에서 자격 요건 문단을 여는 표제어. 같은 상품명이 여러 문단(사업목적·융자조건·금리표)에
+# 등장할 때 **자격 문단 쪽을 고르기 위한** 판별자다 (스펙 §5-4 「자격 요건 문단 인용」).
+_ELIGIBILITY_HEAD = re.compile("대상기업|신청대상|융자대상|지원자격|공통지원자격|지원대상")
 
 
 def select_chunk(name: str, chunks: list[dict]) -> dict | None:
@@ -121,8 +124,12 @@ def select_chunk(name: str, chunks: list[dict]) -> dict | None:
     오류**이며, 이 서비스가 임베딩 검색 대신 id 직접 조회를 택한 논거(심사_QA 20)와 정면으로
     어긋난다 (스펙 §5-4, 리뷰 #3).
 
-    점수 = 상품명 토큰 중 청크에 등장하는 개수. 동점이면 **더 짧은** 청크가 이긴다 —
-    통짜 첫 문단은 토큰을 많이 품지만 구체적인 근거는 짧은 문단에 있다.
+    점수 = ① 상품명 토큰 중 청크에 등장하는 개수 → ② **자격 표제어 보유 여부** → ③ 더 짧은 청크.
+
+    ②가 없던 동안 같은 상품명이 여러 문단에 나오면 **가장 짧은** 문단이 이겨서, 자격 문단 대신
+    금리표·융자조건·내비게이션이 인용으로 뽑혔다(실측 22건 중 7건). ②를 ③보다 먼저 보면
+    같은 문서 안에서 자격 문단이 우선되고, 짧은 문단 선호는 자격 문단들 사이에서만 작동해
+    "구체적인 근거는 짧은 문단에 있다"는 원래 의도가 그대로 유지된다 (리뷰 #4).
     """
     tokens = _NAME_TOKEN.findall(name or "")
     if not tokens or not chunks:
@@ -130,13 +137,31 @@ def select_chunk(name: str, chunks: list[dict]) -> dict | None:
     required = max(1, (len(tokens) + 1) // 2)  # 토큰 과반이 등장해야 인정
     best = min(
         chunks,
-        key=lambda c: (-sum(1 for t in tokens if t in c["text"]), len(c["text"])),
+        key=lambda c: (-sum(1 for t in tokens if t in c["text"]),
+                       0 if _ELIGIBILITY_HEAD.search(c["text"].replace(" ", "")) else 1,
+                       len(c["text"])),
     )
     hits = sum(1 for t in tokens if t in best["text"])
     return best if hits >= required else None
 
 
+# 브라우저로 인쇄된 웹 페이지라 **자격 요건 문단이 문서 안에 존재하지 않는** 원문.
+# 어떤 청크를 골라도 내비게이션·FAQ·표지 배너가 되므로 인용 자체를 비운다
+# (스펙 §5-4 「연결된 청크가 없는 상품은 인용 필드를 생략」 경로).
+#
+# 청크 단위 필터(최소 길이 + 자격 어휘)로는 부족함을 실측으로 확인했다 — 규칙을 통과하는
+# 청크가 FAQ 배너로 **이동**할 뿐이었다. 문서 단위로 끊는 것이 정직한 처리다 (리뷰 #4).
+NON_QUOTABLE_DOCS = frozenset({
+    "KB_소상공인_보증서대출_지역재단",            # 표지 마케팅 (`최대 1억원최대 1억원…`)
+    "KB_소상공인_신용대출_상품안내",              # 표지 마케팅
+    "KB_소상공인정책자금_이자지원보증서대출_안내",  # 상품 소개 배너
+    "KB_소상공인정책자금대출_상품목록",            # 브레드크럼 내비게이션 (전문 19자)
+})
+
+
 def _load_doc_chunks(doc: str, docs_dir: Path, cache: dict) -> list[dict]:
+    if doc in NON_QUOTABLE_DOCS:
+        return []
     if doc not in cache:
         path = Path(docs_dir) / f"{doc}.txt"
         text = path.read_text(encoding="utf-8") if path.exists() else ""
@@ -152,7 +177,13 @@ def build_finance(reviewed: list[dict], docs_dir: Path) -> dict[str, pd.DataFram
     products = []
     for idx, p in enumerate(reviewed):
         doc = p.get("doc", "")
-        pid = p.get("product_id") or f"F-{idx:03d}"
+        # 위치 기반 ID 금지 — 배열 인덱스로 채번하면 검수본에 상품을 끼워 넣는 순간 이후 전
+        # 상품의 ID가 한 칸씩 밀리고, 골드셋(grounding_quotes·matching_gold)은 다른 상품에
+        # 붙은 채 테스트가 계속 통과한다. BE 의 matching_products 동점 정렬(계약 §6)도
+        # 이 ID의 안정성을 전제로 한다 (리뷰 #5).
+        pid = p.get("product_id")
+        if not pid:
+            raise SystemExit(f"reviewed.json[{idx}] 에 product_id 없음 — 위치 기반 ID 금지")
         rate, rate_type, rate_note = rate_fields(p)
         chunks = _load_doc_chunks(doc, docs_dir, doc_cache)
         name = p.get("name") or ""
@@ -169,6 +200,7 @@ def build_finance(reviewed: list[dict], docs_dir: Path) -> dict[str, pd.DataFram
             "max_age": p.get("max_age"), "industries": p.get("industries"),
             "regions": p.get("regions"), "pre_startup_only": bool(p.get("pre_startup_only")),
             "existing_business_only": bool(p.get("existing_business_only")),
+            "target_group": p.get("target_group"),
             "amount_max": p.get("amount_max"),
             "rate": rate, "rate_type": rate_type, "rate_note": rate_note,
             "term_months": p.get("term_months"), "exclusive_group": p.get("exclusive_group"),
