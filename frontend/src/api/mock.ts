@@ -1,8 +1,12 @@
 import type {
   BudgetRequest,
   BudgetResponse,
+  CheckAreaResponse,
   DiagnoseRequest,
   DiagnoseResponse,
+  ExploreDoneEvent,
+  ExploreInsightEvent,
+  ExplorePlanEvent,
   RecommendResponse,
   Scenario,
 } from './types'
@@ -207,5 +211,167 @@ export async function mockScenarios(onScenario: (s: Scenario) => void, signal?: 
     await new Promise((r) => setTimeout(r, 350))
     if (signal?.aborted) return
     onScenario(s)
+  }
+}
+
+/* ─────────────────────────── 탐색·역방향 (FE-04) ─────────────────────────── */
+
+/**
+ * 목 explore — 데모 프로필(만 32세·자기자본 5,000만·서울 카페, 확정 예산 8,000만) 기준
+ * 실제 백엔드 응답을 그대로 옮긴 값이다. 심사 동선과 수치가 어긋나지 않게 하려면
+ * 목을 임의 값으로 두면 안 된다 (LLM 장애·BE 미기동 시 이게 최종 화면이 된다).
+ */
+const MOCK_PLAN: ExplorePlanEvent = {
+  axes: ['A1', 'A4'],
+  axis_labels: { A1: '예산', A4: '권리금 조건' },
+  rationale: '예산 축을 기준으로 인접 시나리오의 진입·지속 경계를 검토했습니다.',
+}
+
+const MOCK_FUNDING = {
+  name: '민간투자연계형 매칭융자',
+  amount_max: 50000,
+  rate: 4.25,
+  rate_type: 'variable' as const,
+  rate_note:
+    '정책자금 기준금리 3.85% + 0.4%p = 연 4.25% (’26년 3/4분기, 2026-07-10 적용 · 분기별 변동금리)',
+  term_assumed: 96,
+  status: 'open',
+  source: { org: '소진공', url: 'https://ols.semas.or.kr', collected: '2026-07-25' },
+  source_quote: null,
+}
+
+const MOCK_INSIGHTS: ExploreInsightEvent[] = [
+  {
+    insight_id: 'i-1',
+    type: 'T1',
+    headline:
+      '2,770만 원을 추가 확보하면 진입 가능 후보는 342곳에서 1,020곳으로 늘어납니다. 다만 해당 금액을 민간투자연계형 매칭융자(연 4.25%, 96개월 상환)으로 조달할 경우 월 상환 부담 34만 원을 반영하면 지속 안정 후보는 354곳입니다. 자격 요건 부합 여부만 확인된 것이며, 실제 한도와 심사 결과는 해당 기관이 정합니다.',
+    delta: { n_entry_before: 342, n_entry_after: 1020, n_sustain_after: 354, score_delta: 644.35 },
+    gap_amount: 2770,
+    marginal_payment: 34,
+    funding: MOCK_FUNDING,
+    disclaimer: true,
+  },
+  {
+    insight_id: 'i-2',
+    type: 'T1',
+    headline:
+      '3,030만 원을 추가 확보하면 진입 가능 후보는 342곳에서 1,036곳으로 늘어납니다. 다만 해당 금액을 민간투자연계형 매칭융자(연 4.25%, 96개월 상환)으로 조달할 경우 월 상환 부담 37만 원을 반영하면 지속 안정 후보는 354곳입니다. 자격 요건 부합 여부만 확인된 것이며, 실제 한도와 심사 결과는 해당 기관이 정합니다.',
+    delta: { n_entry_before: 342, n_entry_after: 1036, n_sustain_after: 354, score_delta: 643.68 },
+    gap_amount: 3030,
+    marginal_payment: 37,
+    funding: MOCK_FUNDING,
+    disclaimer: true,
+  },
+  {
+    insight_id: 'i-3',
+    type: 'T2',
+    headline:
+      '7,931만 원까지 낮춰도 현재 후보 342곳이 전부 유지됩니다. 차액을 예비 운영자금으로 두면 지속 여력 지표가 개선됩니다.',
+    delta: { n_entry_before: 342, n_entry_after: 342, n_sustain_after: 342, score_delta: 0 },
+    disclaimer: true,
+  },
+]
+
+/** 계단 함수 — 실측 91점을 그대로 쓴다 (프론티어 차트 형태가 목에서도 같아야 한다). */
+const MOCK_FRONTIER: [number, number][] = [
+  [6531, 6], [6981, 25], [7004, 30], [7089, 42], [7099, 61], [7128, 70], [7329, 82], [7333, 92],
+  [7358, 107], [7430, 114], [7477, 131], [7504, 150], [7533, 163], [7683, 178], [7774, 188],
+  [7776, 199], [7778, 212], [7803, 225], [7806, 237], [7830, 247], [7831, 259], [7863, 271],
+  [7870, 290], [7892, 305], [7896, 320], [7922, 329], [7931, 342], [8011, 360], [8043, 370],
+  [8068, 371], [8077, 382], [8160, 389], [8165, 399], [8166, 403], [8225, 405], [8226, 425],
+  [8249, 434], [8274, 449], [8314, 487], [8347, 492], [8370, 497], [8372, 507], [8398, 533],
+  [8428, 536], [8483, 548], [8514, 562], [8549, 569], [8575, 595], [8635, 614], [8723, 624],
+  [8815, 638], [8819, 665], [8842, 673], [8898, 681], [8962, 708], [9056, 716], [9167, 749],
+  [9170, 754], [9197, 766], [9198, 775], [9256, 783], [9314, 810], [9370, 815], [9407, 836],
+  [9408, 839], [9547, 852], [9580, 860], [9673, 861], [9815, 872], [9854, 884], [9879, 899],
+  [9967, 923], [10235, 936], [10298, 948], [10316, 951], [10343, 962], [10436, 968], [10437, 976],
+  [10500, 983], [10533, 989], [10679, 1016], [10770, 1020], [10851, 1024], [11030, 1036],
+  [11418, 1037], [11683, 1040], [11824, 1041], [12338, 1045], [12615, 1053], [12733, 1057],
+  [15157, 1061],
+]
+
+export interface ExploreHandlers {
+  onPlan: (e: ExplorePlanEvent) => void
+  onInsight: (e: ExploreInsightEvent) => void
+  onDone: (e: ExploreDoneEvent) => void
+}
+
+/** 목 explore — plan → insight(1건씩) → done. refine은 무LLM 모드와 동일하게 보내지 않는다. */
+export async function mockExplore(
+  handlers: ExploreHandlers,
+  currentBudget: number,
+  signal?: AbortSignal,
+): Promise<void> {
+  await new Promise((r) => setTimeout(r, 200))
+  if (signal?.aborted) return
+  handlers.onPlan(MOCK_PLAN)
+
+  for (const insight of MOCK_INSIGHTS) {
+    await new Promise((r) => setTimeout(r, 320))
+    if (signal?.aborted) return
+    handlers.onInsight(insight)
+  }
+
+  await new Promise((r) => setTimeout(r, 200))
+  if (signal?.aborted) return
+  handlers.onDone({
+    scenarios_explored: 75,
+    frontier_points: MOCK_FRONTIER,
+    current_budget: currentBudget,
+  })
+}
+
+/**
+ * 목 check-area — 판정·부족분은 area_code로 결정적으로 갈라 준다.
+ * 상품 목록은 실측처럼 `amount_max` 내림차순 고정이며 프론트는 재정렬하지 않는다.
+ */
+export async function mockCheckArea(areaCode: string): Promise<CheckAreaResponse> {
+  await new Promise((r) => setTimeout(r, 220))
+
+  const sum = [...areaCode].reduce((acc, ch) => acc + ch.charCodeAt(0), 0)
+  const inBudget = sum % 3 === 0
+
+  return {
+    verdict: inBudget ? 'FIT' : 'CONDITIONAL',
+    gap_amount: inBudget ? 0 : 962 + (sum % 13) * 100,
+    matching_products: [
+      {
+        name: 'ESG 실천기업 보증',
+        amount_max: 80000,
+        rate_type: 'variable',
+        rate_note:
+          '서울시자금(ESG 자금) 이용 시 은행금리에서 2.5% 차감(서울시 부담), 그 외의 경우 자금에 따라 상이',
+        data_as_of: '2026-07-21',
+        source: { org: '서울신용보증재단', url: 'https://www.seoulshinbo.co.kr', collected: '2026-07-25' },
+        source_quote: null,
+      },
+      {
+        name: '미래 유망기업 성장지원 보증',
+        amount_max: 80000,
+        rate: 3.0,
+        rate_type: 'fixed',
+        rate_note: '서울시자금(혁신형기업도약자금) 이용 시 연 3.0% 고정금리, 그 외의 경우 자금에 따라 상이',
+        data_as_of: '2026-07-21',
+        source: { org: '서울신용보증재단', url: 'https://www.seoulshinbo.co.kr', collected: '2026-07-25' },
+        source_quote: null,
+      },
+      {
+        name: '민간투자연계형 매칭융자',
+        amount_max: 50000,
+        rate: 4.25,
+        rate_type: 'variable',
+        rate_note: '정책자금 기준금리 3.85% + 0.4%p = 연 4.25% (’26년 3/4분기, 2026-07-10 적용)',
+        data_as_of: '2026-07-21',
+        source: { org: '소진공', url: 'https://ols.semas.or.kr', collected: '2026-07-25' },
+        source_quote: null,
+      },
+    ],
+    risk_review: {
+      objection_text:
+        '권리금 포함 비용 구간 상단을 기준으로 하면 부족분이 더 커질 수 있어, 구간 하단 기준 판정임을 함께 표기해야 합니다.',
+      applied: true,
+      skipped: false,
+    },
   }
 }
