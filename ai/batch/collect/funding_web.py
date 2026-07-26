@@ -21,6 +21,7 @@ import html
 import re
 import subprocess
 
+from batch import collected
 from batch.collect._common import INTERIM_DIR, logger, setup_logging
 
 OUT_DIR = INTERIM_DIR / "funding_docs"
@@ -97,6 +98,8 @@ def run(env: dict[str, str] | None = None, session: object | None = None) -> dic
         (OUT_DIR / f"{name}.txt").write_text(text, encoding="utf-8")
         written[name] = len(text)
         logger.info("%s: %d자", name, len(text))
+    # 수집일은 수집한 지금만 알 수 있다 — 실패해 건너뛴 문서는 옛 날짜가 보존된다 (#93)
+    collected.record(list(written))
     return written
 
 
