@@ -1,5 +1,6 @@
 package com.ventry.api.diagnose;
 
+import com.ventry.api.common.ApiException;
 import com.ventry.api.common.SessionStore;
 import com.ventry.api.diagnose.DiagnoseDtos.DiagnoseRequest;
 import com.ventry.api.diagnose.DiagnoseDtos.DiagnoseResponse;
@@ -27,10 +28,14 @@ public class DiagnoseController {
         this.sessions = sessions;
     }
 
+    /** 후보 조회 그레인이 area_code × industry 라 업종 없이는 어떤 계산도 성립하지 않는다. */
+    private static final List<String> INDUSTRIES = List.of("cafe", "food");
+
     @PostMapping("/api/diagnose")
     public DiagnoseResponse diagnose(@RequestBody DiagnoseRequest request) {
         Form form = request.form() != null ? request.form()
                 : new Form(null, null, null, null, null, null, null);
+        validate(form);
         String freeText = request.freeText() != null ? request.freeText() : "";
 
         List<String> concerns = new ArrayList<>();
@@ -54,5 +59,31 @@ public class DiagnoseController {
                 form.industry(), form.regionHint(), concerns, parseSource);
         SessionStore.SessionState state = sessions.create(profile);
         return new DiagnoseResponse(state.id(), profile);
+    }
+
+    /**
+     * 입력 규격 검증 — <b>세션을 만들기 전에</b> 막는다 (BE 리뷰 D-09).
+     *
+     * <p>본문 {@code {}} 로도 200 + 세션이 발급됐고, 그 세션은 이후 {@code /recommend}·
+     * {@code /scenarios}·{@code /explore} 를 전부 500으로 만들었다
+     * ({@code Null key returned for cache operation}). 오류를 늦게 드러내면 원인이 먼 곳에서 난다.
+     *
+     * <p>업종은 <b>화이트리스트</b>로 검증한다 — 오타(`cafee`)가 조용히 빈 후보 목록이 되면
+     * 사용자는 "우리 동네엔 후보가 없구나"로 읽는다.
+     */
+    private static void validate(Form form) {
+        if (form.industry() == null || form.industry().isBlank()) {
+            throw ApiException.invalidRequest("industry 는 필수입니다 (cafe | food).");
+        }
+        if (!INDUSTRIES.contains(form.industry())) {
+            throw ApiException.invalidRequest(
+                    "지원하지 않는 industry 입니다: " + form.industry() + " (cafe | food)");
+        }
+        if (form.capital() == null) {
+            throw ApiException.invalidRequest("capital 은 필수입니다 (만원 단위 정수).");
+        }
+        if (form.capital() < 0) {
+            throw ApiException.invalidRequest("capital 은 음수일 수 없습니다.");
+        }
     }
 }

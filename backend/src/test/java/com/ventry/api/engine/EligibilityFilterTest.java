@@ -143,13 +143,33 @@ class EligibilityFilterTest {
         assertThat(dto.sourceQuote()).isNull();   // 청크 없는 상품 — 인용을 지어내지 않는다
     }
 
+    /**
+     * D-06 ② — 대상 한정 요건(장애인기업·사회적경제기업 등)은 프로필로 확인할 수 없다.
+     *
+     * <p>진단 폼에 대응 필드가 없으므로 「미기재 = 해당 없음」으로 두고 탈락시킨다 —
+     * regions 와 동형의 하향 안전 규칙이다. 확인하지 못한 자격을 주장하지 않는다.
+     */
+    @Test
+    void targetGroupConstrainedProduct_isExcludedWhenProfileCannotAssertIt() {
+        FundingProduct disabled = new FundingProduct("장애인기업지원자금",
+                new Eligibility(null, null, null, false, false, Set.of("장애인기업")),
+                10000, 2.0, 60, null, "open", "2026-07-27", SRC);
+        FundingProduct open = new FundingProduct("일반경영안정자금",
+                new Eligibility(null, null, null, false),
+                7000, 4.45, 60, null, "open", "2026-07-27", SRC);
+        Profile profile = new Profile(32, 5000, false, "cafe", "서울 마포구");
+
+        assertThat(EligibilityFilter.qualify(profile, List.of(disabled, open)))
+                .containsExactly(open);
+    }
+
     /** 청크가 붙은 상품은 투영에 원문 인용이 <b>그대로</b> 실린다 (BE-06 ①, 스펙 §5-4). */
     @Test
     void productWithChunk_projectionCarriesVerbatimQuote() {
         SourceQuote quote = new SourceQuote("만 39세 이하 예비창업자로서…",
                 "소진공", "2026_소상공인정책자금_융자공고", "2026-07-21");
         FundingProduct p = new FundingProduct(
-                "청년고용연계자금", new Eligibility(39, null, Set.of("서울"), false),
+                "F-021", "청년고용연계자금", new Eligibility(39, null, Set.of("서울"), false),
                 7000, 3.0, FundingProduct.RATE_FIXED, null,
                 60, null, "open", "2026-07-21", SRC, quote);
 

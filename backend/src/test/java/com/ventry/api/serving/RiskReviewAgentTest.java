@@ -48,7 +48,7 @@ class RiskReviewAgentTest {
         assertThat(review.skipped()).isTrue();
         assertThat(review.applied()).isFalse();
         assertThat(review.objectionText())
-                .isEqualTo(ReasonTemplate.recommendReview().objectionText());
+                .isEqualTo(ReasonTemplate.recommendReview(1, 0, 0).objectionText());
     }
 
     /** 검증을 통과한 반박은 그대로 실리고 {@code applied=true} 다. */
@@ -78,7 +78,7 @@ class RiskReviewAgentTest {
 
         assertThat(review.skipped()).isTrue();
         assertThat(review.objectionText())
-                .isEqualTo(ReasonTemplate.recommendReview().objectionText());
+                .isEqualTo(ReasonTemplate.recommendReview(1, 0, 0).objectionText());
     }
 
     /** 역방향 경로도 같은 규약을 따른다 — 사실 문자열만 다르다. */
@@ -91,6 +91,66 @@ class RiskReviewAgentTest {
         assertThat(review.skipped()).isTrue();
         assertThat(review.objectionText())
                 .isEqualTo(ReasonTemplate.checkAreaReview().objectionText());
+    }
+
+    /**
+     * D-23 (#104 ①) — 화면이 걸러내는 범위 외 상권은 반박 대상 사실로 넘어가지 않는다.
+     *
+     * <p>범위 외 상권의 수치를 인용한 반박은 사실 목록에 그 숫자가 없으므로 {@code sanitize} 가
+     * 버리고 템플릿으로 떨어진다. 즉 "볼 수 없는 상권에 대한 반박문"이 화면에 나갈 수 없다.
+     */
+    @Test
+    void outOfScopeAreas_areNotOfferedAsFacts() {
+        List<Area> outOfScope = List.of(
+                new Area("A-9", "황학코아루아파트", 37.5, 127.0, Verdict.OUT_OF_SCOPE, 84,
+                        null, null, 155, 2400, 30000, 0.065, "근거", null, null));
+        RiskReviewAgent agent = new RiskReviewAgent(new ReviewGenerator(
+                responding("황학코아루아파트의 부담률 0.065 는 매출 2400만원 유지를 전제로 합니다.")));
+
+        RiskReview review = agent.forRecommend("cafe", outOfScope);
+
+        assertThat(review.skipped()).isTrue();   // 사실에 없는 수치 → 폐기
+        assertThat(review.objectionText()).contains("진입하는 후보가 없어");
+    }
+
+    /**
+     * D-24 (#104 ②) — 템플릿 반박문이 판정 분포를 따라간다.
+     *
+     * <p>구 구현은 상수라 유의가 0곳인 구간에서도 「유의 판정 유지가 타당합니다」로 끝났다.
+     */
+    @Test
+    void template_variesWithVerdictDistribution() {
+        String noEntry = ReasonTemplate.recommendReview(0, 0, 70).objectionText();
+        String withCaution = ReasonTemplate.recommendReview(340, 340, 503).objectionText();
+        String allFit = ReasonTemplate.recommendReview(193, 0, 0).objectionText();
+
+        assertThat(noEntry).contains("진입하는 후보가 없어", "70곳").doesNotContain("유의 판정 유지");
+        assertThat(withCaution).contains("유의 판정 340곳");
+        assertThat(allFit).contains("진입 후보 193곳").doesNotContain("유의 판정");
+    }
+
+    /** D-11 — 사실 문자열의 판정은 한글 판정어다. 영문 enum 은 "분류" 메타 표현을 유도한다. */
+    @Test
+    void facts_useKoreanVerdictLabel() {
+        RiskReviewAgent agent = new RiskReviewAgent(new ReviewGenerator(
+                responding("조건부 적합 판정은 무권리 매물 확보를 전제로 하며 부족분 1320만원이 남습니다.")));
+
+        RiskReview review = agent.forCheckArea("망원역 상권", Verdict.CONDITIONAL, 1320, 0.11);
+
+        assertThat(review.applied()).isTrue();   // '조건부 적합' 이 사실에 있어야 통과한다
+    }
+
+    /** D-04 — 매출 결측 상권의 부담률이 사실 문자열에 `Infinity` 로 실리지 않는다. */
+    @Test
+    void checkArea_withNonFiniteRatio_reportsUnavailableInsteadOfInfinity() {
+        RiskReviewAgent agent = new RiskReviewAgent(new ReviewGenerator(
+                responding("추정매출이 결측이라 산출 불가 상태이며 부족분 500만원만 확인됩니다.")));
+
+        RiskReview review = agent.forCheckArea(
+                "동대문역 1번", Verdict.CONDITIONAL, 500, Double.POSITIVE_INFINITY);
+
+        assertThat(review.applied()).isTrue();
+        assertThat(review.objectionText()).doesNotContain("Infinity");
     }
 
     /** 부족분이 없는 판정(FIT)도 사실 문자열이 성립해야 한다 — null 이 그대로 흘러가면 안 된다. */

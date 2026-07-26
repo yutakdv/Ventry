@@ -26,8 +26,8 @@ public class FinanceRepository {
     private static final FundingProductRowMapper ROW_MAPPER = new FundingProductRowMapper();
 
     private static final String SELECT_ALL = """
-            SELECT p.name, p.max_age, p.industries, p.regions,
-                   p.pre_startup_only, p.existing_business_only,
+            SELECT p.product_id, p.name, p.max_age, p.industries, p.regions,
+                   p.pre_startup_only, p.existing_business_only, p.target_group,
                    p.amount_max, p.rate, p.rate_type, p.rate_note, p.term_months,
                    p.exclusive_group, p.status, p.data_as_of,
                    p.source_org, p.source_url, p.source_collected,
@@ -37,7 +37,7 @@ public class FinanceRepository {
                    c.doc_meta ->> 'date' AS quote_date
             FROM finance_product p
             LEFT JOIN finance_doc_chunk c ON c.chunk_id = p.doc_chunk_ref
-            ORDER BY p.amount_max DESC, p.name
+            ORDER BY p.amount_max DESC, p.product_id
             """;
 
     private final JdbcClient jdbcClient;

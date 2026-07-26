@@ -1,5 +1,6 @@
 package com.ventry.api.scenario;
 
+import com.ventry.api.common.ApiException;
 import com.ventry.api.common.SessionStore;
 import com.ventry.api.common.SseSupport;
 import com.ventry.api.scenario.ScenarioDtos.BudgetRequest;
@@ -58,9 +59,15 @@ public class ScenarioController {
     @PostMapping("/api/budget/{sid}")
     public BudgetResponse confirmBudget(@PathVariable String sid,
                                         @RequestBody BudgetRequest request) {
+        if (request.confirmedBudget() < 0) {
+            // 음수 예산은 200으로 통과했다 — 이후 진입 후보 0곳·판정 전건 범위 외로 흘러
+            // "예산이 잘못됐다"는 사실이 화면 어디에도 남지 않는다 (BE 리뷰 D-17).
+            throw ApiException.invalidRequest("confirmed_budget 은 음수일 수 없습니다.");
+        }
         SessionStore.SessionState state = sessions.get(sid);
         state.confirmBudget(request.confirmedBudget(), request.composition());
-        return new BudgetResponse(request.confirmedBudget(), request.composition(),
+        return new BudgetResponse(locationService.previewAsOf(), request.confirmedBudget(),
+                request.composition(),
                 locationService.preview(SessionMapper.profile(state).industry(),
                         request.confirmedBudget()));
     }

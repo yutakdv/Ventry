@@ -221,6 +221,12 @@ CREATE TABLE finance_product (
     -- 축이 없던 동안 예비창업 프로필에 대환대출이 편성됐다 — 상품명 블랙리스트로 코드에
     -- 숨기는 대신 자격 축으로 표현한다.
     existing_business_only BOOLEAN NOT NULL DEFAULT FALSE,
+    -- 프로필로 확인할 수 없는 **대상 한정 요건** (장애인기업·사회적경제기업·인증기업 등).
+    -- 5종 축(연령·업종·지역·예비창업·기존사업자)으로는 공고문의 대상 요건을 표현할 수 없어
+    -- 신청 자격이 없는 상품이 "자격 요건 부합"으로 노출됐다 (BE 리뷰 D-06).
+    -- 판정 규칙은 regions 와 동형의 **하향 안전**: 값이 있으면 프로필이 그 표시를 갖지 않는 한
+    -- 탈락시킨다 — 확인하지 못한 자격을 주장하지 않는다. NULL/빈 배열 = 대상 제한 없음.
+    target_group     TEXT[],
     amount_max       INTEGER NOT NULL,        -- 만원
     rate             NUMERIC(6, 3),           -- 연 %. 고정금리 숫자값. 단일 숫자로 표기 불가면 NULL → rate_note 참조.
                                               -- ⚠️ NULL ≠ variable: fixed도 숫자 미표기 시 NULL 가능(분기는 rate_type로, API_CONTRACT 금리 표기)
