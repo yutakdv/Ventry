@@ -59,9 +59,13 @@ export interface ProductSource {
 }
 
 /**
- * 금융상품 — `rate`는 nullable(변동금리는 생략), 표시 규칙은 API_CONTRACT §금리 표기.
- * 계약상 `rate_type`은 항상 존재한다고 되어 있으나 현재 BE(목 단계)는 보내지 않는다.
- * 계약의 "프론트는 undefined 허용으로 파싱" 규약에 따라 optional로 둔다 — BE-04 실계산 후 재확인.
+ * 금융상품 — `rate`는 변동금리면 **키 자체가 생략**된다(null이 아니다). 표시 규칙은
+ * API_CONTRACT §금리 표기.
+ *
+ * `rate_type`은 계약상 항상 존재하고 **실데이터도 그렇다** — `finance_product` 26건 전건이
+ * NOT NULL이며 시나리오·역방향 응답에서 누락 0건이다(2026-07-26 실측). 그럼에도 `optional`로
+ * 두는 것은 계약의 "프론트는 undefined 허용으로 파싱" 규약을 지키기 위해서다. `formatRate`가
+ * 없을 때도 동작하므로 필수로 바꿔 얻는 안전성이 없다.
  */
 export interface ScenarioProduct {
   name: string
