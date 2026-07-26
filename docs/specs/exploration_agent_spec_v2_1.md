@@ -2,7 +2,7 @@
 > KB 제8회 AI Challenge · 주제 2 「AI 데이터 기반 최적 입지 컨설팅 서비스」
 > 상위 문서: **final_pipeline_spec_v5.md** · 작성일: 2026-07-19 · 구현 슬롯: D7~D8 · 우선순위: **P0**
 > v2.1 변경: 상위 문서 참조 v3→v5 정합화 · T1 인사이트에 조달 상품 원문 인용(source_quote,
-> 상위 문서 §5-4 원문 근거 인용 — 구현 전 null 허용) 연결 · 발표 위치 = 3단계 서사 중 [2] 결정공간 탐색
+> 상위 문서 §5-4 원문 근거 인용 — **2026-07-26 구현 확정, CP4 문안 A**) 연결 · 발표 위치 = 3단계 서사 중 [2] 결정공간 탐색
 > (알고리즘·API 본문 변경 없음)
 > v1 대비 변경: ① 그리드 스윕 → 해석적 프런티어 ② 단일 N(B) → 이중 프런티어(진입/지속)
 > ③ 목적함수에 조달 비용 반영 ④ 조합 제약 추가 ⑤ 용어 컴플라이언스 전면 수정
@@ -145,7 +145,7 @@ GET /api/explore/{sid}?v={version}                          (SSE)
       gap_amount, marginal_payment,                           // T1: 갭·월 상환액(가정 명시)
       funding: { name, amount_max, rate, term_assumed, status, notice_date,
                  exclusive_group, source: { org, url, collected },
-                 source_quote: { text, org, doc, date } | null },   // v2.1: 원문 인용(§5-4), 구현 전 null
+                 source_quote: { text, org, doc, date } },         // 원문 인용(§5-4). 청크 없으면 필드 생략
       disclaimer: true }
 ```
 - `version`: 슬라이더 변경마다 프론트가 증가시켜 전달. 서버는 세션의 최신 version이 아니면

@@ -109,10 +109,12 @@ class LocationServiceTest {
     }
 
     @Test
-    void checkArea_matchingProductsQualified_withNullSourceQuoteBeforeRag() {
+    void checkArea_matchingProducts_omitQuote_whenProductHasNoChunk() {
         CheckAreaResponse res = svc.checkArea(demo, 8000, "A-9999");
         assertThat(res.matchingProducts()).isNotEmpty();
-        assertThat(res.matchingProducts().get(0).sourceQuote()).isNull();  // RAG=P1, 구현 전 null
+        // 이 경로는 픽스처 상품(DemoProducts)이라 연결된 청크가 없다 — 인용을 지어내지 않는다.
+        // 실적재 경로(profile db)에서는 26/26 이 청크를 보유해 인용이 실린다 (BE-06 ①).
+        assertThat(res.matchingProducts().get(0).sourceQuote()).isNull();
     }
 
     /** 계약 D8: matching_products는 amount_max 내림차순 고정 정렬 + rate_type passthrough. */

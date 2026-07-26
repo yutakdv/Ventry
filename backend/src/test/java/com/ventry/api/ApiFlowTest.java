@@ -153,7 +153,7 @@ class ApiFlowTest {
                 // 계약 D8 고정 정렬: amount_max 내림차순 (소진공 3000 → 서울보증 1500)
                 .andExpect(jsonPath("$.matching_products[0].amount_max").value(3000))
                 .andExpect(jsonPath("$.matching_products[1].amount_max").value(1500))
-                // source_quote(RAG)는 P1(BE-06)까지 미구현 → non_null 정책상 필드 생략
+                // 픽스처 상품에는 연결된 청크가 없다 → non_null 직렬화라 필드 자체가 생략된다
                 .andExpect(jsonPath("$.matching_products[0].source_quote").doesNotExist())
                 .andExpect(jsonPath("$.matching_products[0].rate_note").doesNotExist())  // fixed → 생략
                 .andExpect(jsonPath("$.risk_review.applied").value(true));
