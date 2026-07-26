@@ -70,6 +70,14 @@ python3 scripts/qa_integration.py --only F2       # LLM 전면 차단 폴백
 결과 리포트: [docs/QA_REPORT_BE07.md](docs/QA_REPORT_BE07.md) — 발견해 고친 결함과
 **남긴 미해결 항목**을 함께 적었습니다.
 
+브라우저까지 붙여 3파트 통신을 주행 검증한 CM 리포트는
+[docs/QA_REPORT_INTEGRATION_CM.md](docs/QA_REPORT_INTEGRATION_CM.md) 입니다 — 화면에 실제로
+그려지는 값의 사실성까지 확인하고, 미해결 항목마다 해결 절차를 제안했습니다.
+
+실데이터(`db` 프로파일) 경로에서 계약·불변 원칙이 지켜지는지 경계 조건까지 타격해 본 BE 리뷰는
+[docs/BE_CODE_REVIEW_2026-07-26.md](docs/BE_CODE_REVIEW_2026-07-26.md) 입니다 — 픽스처 테스트가
+통과시키는 결함 22건과 각각의 해결 방안, 재발을 막는 CI 게이트 7종을 제안했습니다.
+
 > 이 가이드는 **비개발자 외부 1인이 3분 안에 위 ★ 지점에 도달하는지**로 검증합니다.
 > 실행 대본·기록지·실패 시 조정 순서: [docs/tasks/CM-04_도슨트_테스트_프로토콜.md](docs/tasks/CM-04_도슨트_테스트_프로토콜.md)
 
