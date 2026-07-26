@@ -1,5 +1,17 @@
 server:
   port: 8080
+  # BE-07: /api/recommend 는 실데이터에서 후보 1,061곳 · 769 KB 로 나온다(목 4곳 시절의 200배).
+  # 슬라이더를 움직일 때마다 재호출되는 경로라 전송량이 곧 체감 반응성이다(스펙 §7 <100ms).
+  # gzip 만으로 실측 769 → 125 KB (6.1배) 라, 계약·프론트를 건드리지 않고 해소된다.
+  # 페이징은 계약 변경이라 D10 동결 전에는 하지 않는다 — 계약 §4 주석의 재검토 조건이다.
+  #
+  # text/event-stream 은 일부러 제외한다. SSE 는 「템플릿 문장 즉시 송출 → LLM refine 이
+  # 선택적으로 교체」가 설계의 핵심인데(expl §2-5), 압축이 붙으면 이벤트가 버퍼에 모였다가
+  # 한꺼번에 나갈 수 있다. 이벤트 하나가 수 KB 라 얻을 것도 없다.
+  compression:
+    enabled: true
+    mime-types: application/json
+    min-response-size: 4KB
 
 spring:
   application:
