@@ -167,6 +167,7 @@ def build_finance(reviewed: list[dict], docs_dir: Path) -> dict[str, pd.DataFram
             "product_id": pid, "name": name, "org": p.get("org"),
             "max_age": p.get("max_age"), "industries": p.get("industries"),
             "regions": p.get("regions"), "pre_startup_only": bool(p.get("pre_startup_only")),
+            "existing_business_only": bool(p.get("existing_business_only")),
             "amount_max": p.get("amount_max"),
             "rate": rate, "rate_type": rate_type, "rate_note": rate_note,
             "term_months": p.get("term_months"), "exclusive_group": p.get("exclusive_group"),

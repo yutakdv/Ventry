@@ -5,7 +5,7 @@ import java.util.Set;
 
 /**
  * BE-03a — 자격 정규칙 필터 (순수 함수, 스펙 §5-1).
- * 나이·예비창업자 여부·업종·지역 정규칙만 판정한다.
+ * 나이·창업 단계(예비창업 한정 / 기존 사업자 한정)·업종·지역 정규칙만 판정한다.
  * status=open·중복수혜·담보·상환 여력 등 조달 게이트는 BE-04 소관.
  */
 public final class EligibilityFilter {
@@ -22,6 +22,10 @@ public final class EligibilityFilter {
             return false;
         }
         if (e.preStartupOnly() && profile.existingBusiness()) {
+            return false;
+        }
+        // 반대 축 — 대환·재창업 상품은 예비창업자가 신청할 수 없다 (#90 문제 2).
+        if (e.existingBusinessOnly() && !profile.existingBusiness()) {
             return false;
         }
         if (constrains(e.industries()) && !e.industries().contains(profile.industry())) {
