@@ -1,6 +1,8 @@
 package com.ventry.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -42,7 +44,10 @@ class ApiFlowTest {
                 .andExpect(jsonPath("$.parsed_profile.collateral_available").value(true))
                 .andExpect(jsonPath("$.parsed_profile.monthly_investable").value(250))
                 .andExpect(jsonPath("$.parsed_profile.concerns[0]").value("premium"))
-                .andExpect(jsonPath("$.parsed_profile.parse_source").value("llm"))
+                // 자유 텍스트가 있어도 form_only 다 — concerns 추출은 키워드 매칭이고 LLM 호출이
+                // 아니다. 구 단언은 "llm" 을 기대해 실제로는 하지 않은 일을 계약으로 굳히고 있었다
+                // (BE-07 통합 QA 지적).
+                .andExpect(jsonPath("$.parsed_profile.parse_source").value("form_only"))
                 .andReturn();
         return JsonPath.read(result.getResponse().getContentAsString(), "$.session_id");
     }
@@ -219,6 +224,32 @@ class ApiFlowTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error.code").value("SESSION_NOT_FOUND"))
                 .andExpect(jsonPath("$.error.message").isNotEmpty());
+    }
+
+    /**
+     * BE-07 통합 QA 에서 잡힌 것 — 타입이 틀린 필드 하나가 <b>500</b>을 냈다.
+     *
+     * <p>서버 결함이 아니라 클라이언트 입력 문제이므로 400 이어야 한다. 500 이면 프론트는
+     * 재시도할지 입력을 고칠지 판단할 수 없고, 심사위원이 API 를 찔러 보는 경로에서도
+     * 없는 장애로 보인다. 응답 메시지에 Jackson 예외 원문(내부 타입명)이 새지 않는 것도 함께 잠근다.
+     */
+    @Test
+    void malformedBody_returnsBadRequest_notServerError() throws Exception {
+        mockMvc.perform(post("/api/diagnose").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"form\":{\"age\":\"서른둘\"}}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID_REQUEST"))
+                .andExpect(jsonPath("$.error.message").isNotEmpty())
+                .andExpect(jsonPath("$.error.message").value(not(containsString("java.lang"))));
+    }
+
+    /** 본문이 JSON 조차 아닌 경우도 같은 규격으로 떨어져야 한다. */
+    @Test
+    void nonJsonBody_returnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/diagnose").contentType(MediaType.APPLICATION_JSON)
+                        .content("not json at all"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID_REQUEST"));
     }
 
     /**

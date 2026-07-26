@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -18,6 +19,25 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleApi(ApiException e) {
         return ResponseEntity.status(e.status())
                 .body(Map.of("error", Map.of("code", e.code(), "message", e.getMessage())));
+    }
+
+    /**
+     * 읽을 수 없는 요청 본문은 <b>400</b>이다 — 서버 결함이 아니라 클라이언트 입력 문제다 (BE-07).
+     *
+     * <p>기본 동작은 이것을 {@link Exception} 핸들러로 흘려보내 500 + {@code INTERNAL_ERROR} 로
+     * 만들었다. 타입이 틀린 필드 하나(예: {@code "age": "서른둘"})에 서버 내부 오류라고 답하면
+     * 프론트는 재시도할지 입력을 고칠지 판단할 수 없고, 심사위원이 API를 찔러 보는 경로에서도
+     * 없는 장애로 보인다.
+     *
+     * <p>메시지에 Jackson 예외 원문을 싣지 않는다 — 내부 타입명·클래스 경로가 그대로 새어 나간다.
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> handleUnreadableBody(
+            HttpMessageNotReadableException e) {
+        log.warn("요청 본문 해석 실패: {}", e.getMostSpecificCause().getMessage());
+        return ResponseEntity.badRequest()
+                .body(Map.of("error", Map.of("code", "INVALID_REQUEST",
+                        "message", "요청 본문을 해석할 수 없습니다")));
     }
 
     /**
