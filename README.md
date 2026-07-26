@@ -59,7 +59,8 @@ make eval PYTHON=.venv/bin/python     # 산출물: ai/eval/out/{metrics.json, *.
 |---|---|---|
 | ![화면 1 — 자금 진단 (하이브리드 파싱)](docs/images/demo-1.png) | ![화면 2 — 조달 시나리오 카드](docs/images/demo-2.png) | ![화면 3 — 지도 마커·근거 패널·리스크 검증](docs/images/demo-3.png) |
 
-> 이미지가 비어 있으면 아직 캡처 전입니다. `docs/images/demo-{1,2,3}.png` 로 교체하세요.
+> 캡처는 1280×800 · 데모 프로필 기준입니다. 화면이 바뀌면 `docs/QA_REPORT_FE06.md`의 캡처
+> 가이드에 따라 `docs/images/demo-{1,2,3}.png` 를 다시 찍어 교체하세요.
 
 ---
 
