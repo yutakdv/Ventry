@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from batch import collected
 from batch.collect._common import (
     INTERIM_DIR,
     RAW_DIR,
@@ -75,6 +76,8 @@ def run(env: dict[str, str], session: object | None = None) -> None:
             continue
         text = extract_text(pdf)
         target.write_text(text, encoding="utf-8")
+        # 원본을 내려받은 시각이 그 파일의 mtime 이다 — 추출을 다시 돌려도 수집일은 안 바뀐다 (#93)
+        collected.record([pdf.stem], collected.stamp_from_mtime(pdf))
         garbled = looks_garbled(text)
         garbled_count += garbled
         logger.info("%s: %d자%s", pdf.name, len(text), " ⚠️ 깨짐(OCR 필요)" if garbled else "")
