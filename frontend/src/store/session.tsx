@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
 import type {
+  BudgetPreview,
   ExploreDoneEvent,
   ExploreInsightEvent,
   ExplorePlanEvent,
@@ -49,16 +50,28 @@ interface SessionState {
   diagnoseForm: FormState | null
   /** 화면 2에서 고른 시나리오 — 화면 3 슬라이더의 가동 범위(budget_min~max)와 조달 구성의 출처. */
   selectedScenario: Scenario | null
+  /**
+   * 확정 예산 기준 프리뷰 — `POST /budget` 응답의 `preview`.
+   *
+   * 예산을 확정한 화면과 그 결과를 보여주는 화면이 다르기 때문에 세션에 둔다. 화면 4가 자체 상태로
+   * 들고 있으면 **진입 직후에는 값이 없어 "—"** 가 뜨는데, 그렇다고 진입할 때마다 `/budget`을
+   * 다시 부르면 예산을 다시 쓰는 셈이라 옳지 않다. 확정한 쪽이 결과를 넘기는 것이 맞다.
+   */
+  budgetPreview: BudgetPreview | null
   setSession: (id: string, profile: ParsedProfile) => void
   setDiagnoseForm: (form: FormState) => void
   setSelectedScenario: (s: Scenario) => void
   /** 탐색 결과 — 화면을 떠났다 돌아와도 선택지가 유지되도록 세션에 둔다. */
   explore: ExploreCache | null
   setExplore: (cache: ExploreCache | null) => void
-  /** 화면 3 확정 — 현재 예산과 기준 예산을 함께 세운다. 탐색 캐시는 무효화된다. */
-  setBudget: (budget: number) => void
+  /**
+   * 화면 3 확정 — 현재 예산과 기준 예산을 함께 세운다. 탐색 캐시는 무효화된다.
+   * 프리뷰를 같은 호출로 받는 이유는 예산과 프리뷰가 **따로 움직이면 안 되기** 때문이다 —
+   * 예산만 바뀌고 프리뷰가 남으면 화면이 옛 후보 수를 새 예산의 것처럼 말하게 된다.
+   */
+  setBudget: (budget: number, preview: BudgetPreview | null) => void
   /** 탐색에서 인사이트 예산을 적용 — 기준 예산(baseBudget)은 건드리지 않는다. */
-  applyExploreBudget: (budget: number, appliedId: string | null) => void
+  applyExploreBudget: (budget: number, appliedId: string | null, preview: BudgetPreview | null) => void
   bumpVersion: () => void
 }
 
@@ -73,6 +86,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [explore, setExploreState] = useState<ExploreCache | null>(null)
   const [diagnoseForm, setDiagnoseFormState] = useState<FormState | null>(null)
   const [selectedScenario, setSelectedScenarioState] = useState<Scenario | null>(null)
+  const [budgetPreview, setBudgetPreviewState] = useState<BudgetPreview | null>(null)
 
   /**
    * setter는 **신원이 고정**되어야 한다.
@@ -85,16 +99,21 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [])
   const setDiagnoseForm = useCallback((form: FormState) => setDiagnoseFormState(form), [])
   const setSelectedScenario = useCallback((s: Scenario) => setSelectedScenarioState(s), [])
-  const setBudget = useCallback((b: number) => {
+  const setBudget = useCallback((b: number, preview: BudgetPreview | null) => {
     setBudgetState(b)
     setBaseBudgetState(b)
+    setBudgetPreviewState(preview)
     setExploreState(null) // 기준 예산이 바뀌면 이전 탐색 결과는 더 이상 유효하지 않다
   }, [])
   const setExplore = useCallback((c: ExploreCache | null) => setExploreState(c), [])
-  const applyExploreBudget = useCallback((b: number, appliedId: string | null) => {
-    setBudgetState(b)
-    setExploreState((prev) => (prev ? { ...prev, appliedId } : prev))
-  }, [])
+  const applyExploreBudget = useCallback(
+    (b: number, appliedId: string | null, preview: BudgetPreview | null) => {
+      setBudgetState(b)
+      setBudgetPreviewState(preview)
+      setExploreState((prev) => (prev ? { ...prev, appliedId } : prev))
+    },
+    [],
+  )
   const bumpVersion = useCallback(() => setVersion((v) => v + 1), [])
 
   const value = useMemo<SessionState>(
@@ -107,6 +126,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       explore,
       diagnoseForm,
       selectedScenario,
+      budgetPreview,
       setSession,
       setDiagnoseForm,
       setSelectedScenario,
@@ -124,6 +144,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       explore,
       diagnoseForm,
       selectedScenario,
+      budgetPreview,
       setSession,
       setDiagnoseForm,
       setSelectedScenario,

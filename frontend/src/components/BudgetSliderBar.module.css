@@ -1,0 +1,84 @@
+/*
+ * 하단 고정 바 — 지도·목록을 스크롤해도 예산 조정이 항상 손에 닿아야 한다(스펙 §7 "하단 고정").
+ * position: sticky를 쓰는 이유는 fixed와 달리 사이드바 레이아웃 폭을 그대로 따르기 때문이다.
+ */
+.bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-24);
+  align-items: center;
+  padding: var(--space-16) var(--space-20);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-surface);
+  box-shadow: var(--shadow-float);
+}
+
+.sliderCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-8);
+}
+
+.title {
+  color: var(--color-text-primary);
+}
+
+.hint {
+  color: var(--color-text-tertiary);
+}
+
+.previewCol {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-12);
+  min-width: 0;
+  transition: opacity 160ms ease;
+}
+
+/* 재계산 중 — 값을 비우지 않고 흐리게만 둔다 (숫자가 사라지면 더 느리게 느껴진다) */
+.previewPending {
+  opacity: 0.45;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.statLabel {
+  color: var(--color-text-secondary);
+}
+
+.statValue {
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+/* 숫자의 기준을 값 바로 아래에 붙인다 — 목록 개수와 다른 이유가 여기 있기 때문이다. */
+.statNote {
+  color: var(--color-text-tertiary);
+}
+
+.none {
+  grid-column: 1 / -1;
+  color: var(--color-text-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .previewCol {
+    transition-duration: 0ms;
+  }
+}

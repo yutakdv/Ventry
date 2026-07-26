@@ -51,6 +51,22 @@
   align-items: start;
 }
 
+/*
+ * 슬라이더 재조회 중 — 직전 결과를 남긴 채 "갱신 중"임만 알린다. 문구로 갈아 끼우면 지도가
+ * 매번 사라졌다 다시 그려져 오히려 느리게 느껴진다(마커 재생성 비용도 그대로 든다).
+ */
+.columnsStale {
+  opacity: 0.55;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .columnsStale {
+    transition-duration: 0ms;
+  }
+}
+
 .list {
   display: flex;
   flex-direction: column;
@@ -109,19 +125,6 @@
   border-color: var(--color-accent-primary);
   background: var(--color-bg-info);
   color: var(--color-text-accent);
-}
-
-/* FE-05에서 반박 왕복을 붙일 자리 — 지금은 비활성 */
-.riskTrigger {
-  align-self: flex-start;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--color-text-accent);
-  font-family: inherit;
-  text-align: left;
-  cursor: not-allowed;
-  opacity: 0.7;
 }
 
 .cards {

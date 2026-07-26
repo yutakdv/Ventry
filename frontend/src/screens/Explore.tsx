@@ -195,14 +195,14 @@ export default function Explore() {
       if (!sessionId || !selectedScenario || next === effectiveBudget) return
       setApplying(true)
       try {
-        await postBudget(sessionId, {
+        const res = await postBudget(sessionId, {
           confirmed_budget: next,
           composition: selectedScenario.composition.map((c) => ({
             type: c.type,
             amount: c.type === 'equity' ? c.amount_max : Math.max(0, next - selectedScenario.budget_min),
           })),
         })
-        applyExploreBudget(next, appliedId)
+        applyExploreBudget(next, appliedId, res.preview)
         bumpVersion() // recommend가 공유하는 version
       } finally {
         setApplying(false)
