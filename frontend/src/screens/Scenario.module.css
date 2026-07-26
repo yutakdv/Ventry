@@ -175,3 +175,15 @@
   margin: 0;
   color: var(--color-text-secondary);
 }
+
+/* 편성 근거 — 상한 역전의 이유를 예산 금액 바로 아래에서 설명한다. */
+.budgetBasis {
+  margin: var(--space-8) 0 0;
+  color: var(--color-text-tertiary);
+  word-break: keep-all;
+}
+
+.budgetBasis strong {
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}

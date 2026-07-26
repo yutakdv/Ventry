@@ -13,15 +13,12 @@
   gap: var(--space-8);
 }
 .logo {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.word {
-  color: var(--color-text-primary);
+  display: block;
+  height: 26px;
+  width: auto;
 }
 .beta {
-  padding: 2px 6px;
+  padding: var(--pill-pad-sm);
   border-radius: var(--radius-sm);
   background: var(--gray-100);
   color: var(--color-text-secondary);
@@ -50,4 +47,18 @@
 }
 .login:hover {
   background: var(--color-brand-primary-hover);
+}
+
+/*
+ * 좁은 화면에서는 링크를 접는다. 접기 전에는 헤더 내용이 뷰포트보다 넓어져 **페이지 전체에
+ * 가로 스크롤**이 생겼다(430px 실측에서 랜딩 히어로 카드까지 잘렸다). 링크가 가리키는 곳은
+ * 전부 같은 랜딩 페이지의 섹션이라, 접어도 스크롤로 도달할 수 있다.
+ */
+@media (max-width: 720px) {
+  .header {
+    padding: 0 var(--space-16);
+  }
+  .nav {
+    display: none;
+  }
 }

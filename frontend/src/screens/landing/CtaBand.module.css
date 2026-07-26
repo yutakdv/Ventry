@@ -1,0 +1,110 @@
+.wrap {
+  max-width: var(--layout-max);
+  margin: 0 auto;
+  padding: var(--landing-gap-y) var(--landing-pad);
+}
+
+.band {
+  position: relative;
+  border-radius: 28px;
+  background:
+    radial-gradient(90% 140% at 12% 0%, rgba(255, 255, 255, 0.55) 0%, transparent 55%),
+    linear-gradient(120deg, var(--yellow-500) 0%, #ffd45e 52%, var(--yellow-400, #ffc93d) 100%);
+  overflow: hidden;
+  box-shadow: 0 26px 60px -28px rgba(245, 183, 0, 0.75);
+}
+
+.grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, var(--color-text-primary) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-text-primary) 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity: 0.05;
+  pointer-events: none;
+}
+
+.content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-16);
+  padding: 72px var(--space-32);
+  text-align: center;
+}
+
+.title {
+  margin: 0;
+  font-weight: 700;
+  font-size: clamp(26px, 2.8vw, 40px);
+  line-height: 1.28;
+  letter-spacing: -0.032em;
+  word-break: keep-all;
+  color: var(--color-text-primary);
+}
+
+.sub {
+  max-width: 32em;
+  margin: 0;
+  font-size: 16px;
+  line-height: 26px;
+  color: rgba(15, 18, 26, 0.72);
+}
+
+/* 노란 배경 위에서는 어두운 버튼이 가장 강한 대비를 만든다. */
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  height: 54px;
+  margin-top: var(--space-8);
+  padding: 0 30px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: var(--color-text-primary);
+  color: var(--color-bg-surface);
+  font: inherit;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  transition:
+    transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 12px 28px -12px rgba(15, 18, 26, 0.6);
+}
+
+.cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 38px -14px rgba(15, 18, 26, 0.7);
+}
+
+.arrow {
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cta:hover .arrow {
+  transform: translateX(3px);
+}
+
+.note {
+  margin: 0;
+  color: rgba(15, 18, 26, 0.55);
+}
+
+@media (max-width: 720px) {
+  .content {
+    padding: 48px var(--space-20);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta,
+  .arrow {
+    transition: none;
+  }
+  .cta:hover {
+    transform: none;
+  }
+}

@@ -1,0 +1,55 @@
+/*
+ * 브라우저 목업 — 캡처를 그대로 얹으면 "이미지를 붙여 놓은" 인상이 남는다.
+ * 크롬 바를 두면 화면이 제품 안에서 돌아가는 것으로 읽힌다.
+ */
+.frame {
+  position: relative;
+  border-radius: var(--radius-xl);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-default);
+  box-shadow:
+    0 1px 2px rgba(15, 18, 26, 0.04),
+    0 12px 32px -8px rgba(15, 18, 26, 0.12),
+    0 32px 64px -24px rgba(15, 18, 26, 0.14);
+  overflow: hidden;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding: 10px var(--space-12);
+  border-bottom: 1px solid var(--color-border-default);
+  background: var(--color-bg-page);
+}
+
+.dots {
+  display: flex;
+  gap: 6px;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: var(--radius-full);
+  background: var(--color-border-strong);
+}
+
+.url {
+  flex: 1;
+  min-width: 0;
+  padding: 3px var(--space-12);
+  border-radius: var(--radius-full);
+  background: var(--color-bg-surface);
+  color: var(--color-text-tertiary);
+  text-align: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.shot {
+  display: block;
+  width: 100%;
+  height: auto;
+}

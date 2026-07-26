@@ -22,7 +22,7 @@
 
 .chip {
   align-self: flex-start;
-  padding: 3px 10px;
+  padding: var(--pill-pad-md);
   border-radius: var(--radius-full);
   background: var(--color-brand-primary);
   color: var(--color-text-on-brand);

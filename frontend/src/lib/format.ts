@@ -123,3 +123,16 @@ export function formatRate(p: { rate?: number; rate_type?: string; rate_note?: s
 export function formatRateNote(p: { rate?: number; rate_note?: string }): string | null {
   return p.rate != null ? (p.rate_note ?? null) : null
 }
+
+/**
+ * 부담률 표기 — 값이 유한한 수가 아니면 대체 표시한다.
+ *
+ * **임시 가드다.** 계약·타입 선언은 `burden_ratio: number` 인데, 실데이터에 `est_sales = 0` 인
+ * 상권이 1건 있어(동대문역 1번) 서버가 **문자열 `"Infinity"`** 를 보낸다. 그대로 계산하면 화면에
+ * `Infinity%` 가 찍힌다. `Number.isFinite` 는 문자열도 무한대도 전부 false 라 한 번에 걸린다.
+ *
+ * 근본 수정은 BE 몫이다(0 매출 상권의 부담률을 어떻게 정의할지). 그때 이 가드는 지워도 된다.
+ */
+export function formatBurdenRatio(ratio: number): string {
+  return Number.isFinite(ratio) ? `${Math.round(ratio * 100)}%` : '—'
+}

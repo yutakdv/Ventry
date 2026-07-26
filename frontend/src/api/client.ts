@@ -19,6 +19,7 @@ import {
   mockRecommend,
   mockScenarios,
 } from './mock'
+import { markApiFallback } from './fallback'
 
 /**
  * API 클라이언트 — "실제 우선 + 목 폴백" 하이브리드.
@@ -40,6 +41,7 @@ export async function postDiagnose(req: DiagnoseRequest): Promise<DiagnoseRespon
     return (await res.json()) as DiagnoseResponse
   } catch (e) {
     console.warn('[api] 실제 diagnose 실패 → 목 폴백', e)
+    markApiFallback()
     return mockDiagnose(req)
   }
 }
@@ -60,6 +62,7 @@ export async function postBudget(sessionId: string, req: BudgetRequest): Promise
     return (await res.json()) as BudgetResponse
   } catch (e) {
     console.warn('[api] 실제 budget 실패 → 목 폴백', e)
+    markApiFallback()
     return mockBudget(req)
   }
 }
@@ -77,6 +80,7 @@ export async function getRecommend(sessionId: string, version?: number): Promise
     return (await res.json()) as RecommendResponse
   } catch (e) {
     console.warn('[api] 실제 recommend 실패 → 목 폴백', e)
+    markApiFallback()
     return mockRecommend()
   }
 }
@@ -126,6 +130,7 @@ export function getScenarios(
     es.onerror = (err) => {
       if (finish()) return
       console.warn('[api] 실제 scenarios SSE 실패 → 목 폴백', err)
+      markApiFallback()
       mockScenarios(onScenario, signal).then(resolve)
     }
   })
@@ -198,6 +203,7 @@ export function getExplore(
     es.onerror = (err) => {
       if (finish()) return
       console.warn('[api] 실제 explore SSE 실패 → 목 폴백', err)
+      markApiFallback()
       mockExplore(handlers, currentBudget, signal).then(resolve)
     }
   })
@@ -220,6 +226,7 @@ export async function postCheckArea(sessionId: string, areaCode: string): Promis
     return (await res.json()) as CheckAreaResponse
   } catch (e) {
     console.warn('[api] 실제 check-area 실패 → 목 폴백', e)
+    markApiFallback()
     return mockCheckArea(areaCode)
   }
 }

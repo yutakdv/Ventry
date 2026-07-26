@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useKakaoLoader } from '../lib/useKakaoLoader'
 import { MAP_LEGEND, VERDICT_LABEL, VERDICT_MARKER_COLOR } from '../lib/verdict'
-import { formatTransit } from '../lib/format'
+import { formatBurdenRatio, formatTransit } from '../lib/format'
 import type { Area } from '../api/types'
 import styles from './KakaoMap.module.css'
 
@@ -37,7 +37,7 @@ function buildOverlay(area: Area): HTMLElement {
   }
   add('추천 점수', `${area.score}점`)
   add('환산 임대료', `${area.monthly_rent.toLocaleString('ko-KR')}만원/월`)
-  add('부담률', `${Math.round(area.burden_ratio * 100)}%`)
+  add('부담률', formatBurdenRatio(area.burden_ratio))
 
   const transit = document.createElement('p')
   transit.className = styles.overlayTransit
