@@ -7,6 +7,7 @@ import com.ventry.api.engine.CostCalculator;
 import com.ventry.api.engine.CostEstimate;
 import com.ventry.api.engine.EligibilityFilter;
 import com.ventry.api.engine.Frontier;
+import com.ventry.api.engine.FundingProduct;
 import com.ventry.api.engine.Profile;
 import com.ventry.api.engine.ReverseCheck;
 import com.ventry.api.engine.ReverseResult;
@@ -85,7 +86,7 @@ public class LocationService {
         // 계약 D8: matching_products는 amount_max 내림차순(동점 시 이름 오름차순) 고정 정렬.
         // 금리 정렬은 하지 않는다 — rate 생략(변동) 상품의 순위를 임의로 정하지 않기 위함이다.
         List<Product> matching = EligibilityFilter.qualify(profile, products.all()).stream()
-                .map(fp -> fp.toProduct(null))   // source_quote=RAG(P1), 구현 전 null. rate_type은 항상 실림
+                .map(FundingProduct::toProduct)   // rate_type은 항상, source_quote는 청크 보유 시 실림
                 .sorted(Comparator.comparingInt(Product::amountMax).reversed()
                         .thenComparing(Product::name))
                 .toList();

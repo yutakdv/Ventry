@@ -1,6 +1,7 @@
 package com.ventry.api.serving;
 
 import com.ventry.api.common.FinanceDtos.Source;
+import com.ventry.api.common.FinanceDtos.SourceQuote;
 import com.ventry.api.engine.Eligibility;
 import com.ventry.api.engine.FundingProduct;
 import java.sql.Array;
@@ -42,7 +43,23 @@ public class FundingProductRowMapper implements RowMapper<FundingProduct> {
                 rs.getString("name"), eligibility, rs.getInt("amount_max"),
                 nullableDouble(rs, "rate"), rs.getString("rate_type"), rs.getString("rate_note"),
                 nullableInt(rs, "term_months"), rs.getString("exclusive_group"),
-                rs.getString("status"), rs.getString("data_as_of"), source);
+                rs.getString("status"), rs.getString("data_as_of"), source, sourceQuote(rs));
+    }
+
+    /**
+     * 원문 인용 (BE-06 ①). {@code doc_chunk_ref} 가 비었거나 가리키는 청크가 없으면 LEFT JOIN 이
+     * NULL 을 주고, 그때는 <b>인용 객체 자체를 만들지 않는다</b> — 빈 문자열이나 상품 설명으로
+     * 대체하면 그 순간 근거를 지어낸 것이 된다 (스펙 §5-4).
+     *
+     * <p>{@code text} 는 자르지 않는다. 화면 줄 수 제한은 표현 계층의 몫이다.
+     */
+    private static SourceQuote sourceQuote(ResultSet rs) throws SQLException {
+        String text = rs.getString("quote_text");
+        if (text == null) {
+            return null;
+        }
+        return new SourceQuote(text, rs.getString("quote_org"),
+                rs.getString("quote_doc"), rs.getString("quote_date"));
     }
 
     /** NULL 을 0 으로 강등하지 않는다 — "무제약"과 "0"은 다른 뜻이다. */
