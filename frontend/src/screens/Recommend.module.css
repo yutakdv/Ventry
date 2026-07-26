@@ -51,6 +51,22 @@
   align-items: start;
 }
 
+/*
+ * 슬라이더 재조회 중 — 직전 결과를 남긴 채 "갱신 중"임만 알린다. 문구로 갈아 끼우면 지도가
+ * 매번 사라졌다 다시 그려져 오히려 느리게 느껴진다(마커 재생성 비용도 그대로 든다).
+ */
+.columnsStale {
+  opacity: 0.55;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .columnsStale {
+    transition-duration: 0ms;
+  }
+}
+
 .list {
   display: flex;
   flex-direction: column;
@@ -111,19 +127,6 @@
   color: var(--color-text-accent);
 }
 
-/* FE-05에서 반박 왕복을 붙일 자리 — 지금은 비활성 */
-.riskTrigger {
-  align-self: flex-start;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--color-text-accent);
-  font-family: inherit;
-  text-align: left;
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
 .cards {
   display: flex;
   flex-direction: column;
@@ -151,4 +154,37 @@
   .cards {
     max-height: none;
   }
+}
+
+/* 지도 열 — 지도 + 표시 상한 안내 + 역방향 판정 패널 */
+.mapCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  min-width: 0;
+}
+
+.mapNote {
+  color: var(--color-text-tertiary);
+}
+
+/* 탐색 진입 CTA (Figma Bottom CTA Bar) */
+.exploreCta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+  padding: var(--space-16) var(--space-20);
+  background: var(--color-bg-tip);
+  border-radius: var(--radius-lg);
+}
+
+.exploreText {
+  flex: 1 1 auto;
+  color: var(--color-text-primary);
+}
+
+/* 목록 하단 "더 보기" — .cards가 max-height 세로 flex라 축소를 막아야 높이가 유지된다 */
+.moreBtn {
+  flex: none;
+  margin-top: var(--space-4);
 }

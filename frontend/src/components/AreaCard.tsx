@@ -1,3 +1,4 @@
+import { ClipboardCheck } from 'lucide-react'
 import VerdictBadge from './VerdictBadge'
 import { formatRentSource, formatTransit } from '../lib/format'
 import type { Area } from '../api/types'
@@ -23,19 +24,21 @@ export default function AreaCard({
   area,
   selected,
   onSelect,
+  onCheck,
 }: {
   area: Area
   selected: boolean
+  /** 카드 본문 클릭 — 선택(지도 마커 연동)만 한다. */
   onSelect: () => void
+  /** 하단 버튼 — 역방향 판정을 연다. 선택과 분리해 둔 이유는 목록을 훑는 동안 모달이 뜨지 않게 하기 위함. */
+  onCheck: () => void
 }) {
   return (
-    <button
-      type="button"
+    <article
       className={`${styles.card} ${selected ? styles.selected : ''}`}
       data-area-code={area.area_code}
-      aria-pressed={selected}
-      onClick={onSelect}
     >
+      <button type="button" className={styles.body} aria-pressed={selected} onClick={onSelect}>
       <span className={styles.header}>
         <span className={`t-title2 ${styles.score} ${styles[grade(area.score)]}`}>{area.score}</span>
         <span className={styles.titleCol}>
@@ -90,6 +93,16 @@ export default function AreaCard({
         <span className={`t-caption ${styles.reasonTitle}`}>분석 근거</span>
         <span className={`t-caption ${styles.reasonBody}`}>{area.reason_text}</span>
       </span>
-    </button>
+      </button>
+
+      <button
+        type="button"
+        className={`t-label ${styles.verdictBtn}`}
+        onClick={onCheck}
+        aria-label={`${area.name} 판정과 자격 요건 부합 상품 보기`}
+      >
+        <ClipboardCheck size={14} aria-hidden /> 판정·자격 부합 상품 보기
+      </button>
+    </article>
   )
 }

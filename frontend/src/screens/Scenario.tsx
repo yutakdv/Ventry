@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ShieldCheck, TrendingUp, Landmark, Wallet } from 'lucide-react'
+import { ShieldCheck, Layers, Landmark, Wallet } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import AppShell from '../components/layout/AppShell'
 import Button from '../components/Button'
@@ -9,14 +9,19 @@ import ScenarioCard from '../components/ScenarioCard'
 import FundingItem from '../components/FundingItem'
 import { getScenarios } from '../api/client'
 import { useSession } from '../store/session'
-import { formatBudgetRange } from '../lib/format'
+import { formatBudgetRange, formatRate, formatRateNote } from '../lib/format'
 import type { CompositionType, Scenario as ScenarioData } from '../api/types'
 import styles from './Scenario.module.css'
 
+/*
+ * 두 카드는 **조달 수단의 차이**로 서술한다 — 보수는 보증형만, 적극은 전체 상품을 후보로 본다.
+ * 금액의 대소가 아니다: 후보 풀이 달라 실데이터에서 보수 상한(15,000) > 적극 상한(10,000)이
+ * 나오기도 한다 (docs/HANDOFF_FRONTEND.md #2). "더 큰 예산"을 암시하는 문구·아이콘을 두지 않는다.
+ * "승인" 표현도 용어 컴플라이언스 금지어(CLAUDE.md)라 정보 서술형만 쓴다.
+ */
 const SCENARIO_META: Record<ScenarioData['label'], { icon: LucideIcon; title: string; description: string }> = {
-  // "승인" 표현은 용어 컴플라이언스 금지어(CLAUDE.md) — "안정적으로 가능한 자금" 등 정보 서술형으로 대체.
-  보수: { icon: ShieldCheck, title: '보수적 시나리오', description: '안정적으로 가능한 자금만 반영' },
-  적극: { icon: TrendingUp, title: '적극적 시나리오', description: '추가 확보 가능 자금까지 반영' },
+  보수: { icon: ShieldCheck, title: '보수적 시나리오', description: '보증형 상품만으로 구성' },
+  적극: { icon: Layers, title: '적극적 시나리오', description: '정책자금·대출까지 포함해 구성' },
 }
 
 const COMPOSITION_ORDER: CompositionType[] = ['policy_loan', 'guarantee', 'equity']
@@ -165,7 +170,8 @@ export default function Scenario() {
               <div className={styles.itemList}>
                 {selected.products.map((p) => {
                   // 금리 표시 규칙(API_CONTRACT §금리 표기): rate가 오면 "연 N%", 생략되면 rate_note를 그대로.
-                  const rateText = p.rate != null ? `연 ${p.rate}%` : p.rate_note
+                  const rateText = formatRate(p)
+                  const rateNote = formatRateNote(p)
                   return (
                     <FundingItem
                       key={p.name}
@@ -175,12 +181,12 @@ export default function Scenario() {
                       value={`최대 ${p.amount_max.toLocaleString('ko-KR')}만원`}
                       source={p.source.org}
                       dataAsOf={p.data_as_of}
-                      note={rateText}
-                      quote={p.source_quote}
+                      note={rateText ?? undefined}
                       details={[
                         { label: '상품명', value: p.name },
                         { label: '한도', value: `최대 ${p.amount_max.toLocaleString('ko-KR')}만원` },
                         ...(rateText ? [{ label: '금리', value: rateText }] : []),
+                        ...(rateNote ? [{ label: '적용 조건', value: rateNote }] : []),
                         { label: '데이터 기준일', value: p.data_as_of },
                         {
                           label: '출처',

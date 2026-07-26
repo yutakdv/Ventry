@@ -1,0 +1,219 @@
+/* Figma "Scenario Row" (Highlight=True/False) — 상단 본문 + 하단 판단 근거 줄 */
+.row {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+}
+
+/* 강조(정보) — 흰 배경 + 1px 브랜드 테두리. 면을 칠하지 않아 CTA 버튼과 경쟁하지 않는다. */
+.highlight {
+  border-color: var(--color-brand-primary);
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-16) 18px;
+}
+
+/* Figma icon-badge 40×40 r10 — 강조 행만 브랜드 채움 */
+.badge {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-control);
+  background: var(--color-brand-subtle);
+  color: var(--color-brand-primary-hover);
+}
+
+.badgeHighlight {
+  background: var(--color-brand-primary);
+  color: var(--color-text-on-brand);
+}
+
+/* 제목 열이 남는 폭을 흡수한다 — 지표·버튼이 밀려 잘리지 않게 한다. */
+.titleCol {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 220px;
+  min-width: 170px;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+/* 제목은 자르지 않는다 — "진입 후보 1,014곳 확대"가 이 행의 핵심 정보다. */
+.title {
+  color: var(--color-text-primary);
+  word-break: keep-all;
+}
+
+.chip {
+  flex: none;
+  padding: 1px 7px;
+  border: 1px solid var(--color-brand-primary);
+  border-radius: var(--radius-full);
+  color: var(--color-brand-primary-hover);
+}
+
+.sub {
+  color: var(--color-text-tertiary);
+}
+
+.accent {
+  color: var(--color-brand-primary-hover);
+}
+
+.stat {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 78px;
+}
+
+.statLabel {
+  color: var(--color-text-secondary);
+}
+
+.statValue {
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.statSub {
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+
+.action {
+  flex: none;
+}
+
+/* 판단 근거 줄 — 상단 구분선 + 체크 칩 + 펼침 트리거 */
+.reasons {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  flex-wrap: wrap;
+  padding: 10px 18px;
+  border-top: 1px solid var(--color-border-default);
+}
+
+.reasonsLabel {
+  color: var(--color-text-tertiary);
+}
+
+.reasonChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--color-text-secondary);
+}
+
+.check {
+  color: var(--color-status-success);
+  display: inline-flex;
+}
+
+.expand {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font: inherit;
+}
+
+.expand:hover {
+  color: var(--color-text-primary);
+}
+
+.chevron {
+  transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+/* 근거 상세 — height가 아니라 grid-template-rows로 접는다(레이아웃 재계산 회피) */
+.panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 200ms cubic-bezier(0.23, 1, 0.32, 1),
+    opacity 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.panelOpen {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.panelInner {
+  overflow: hidden;
+}
+
+.panelBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding: 0 18px var(--space-16);
+}
+
+.fundingName {
+  color: var(--color-text-primary);
+}
+
+.fundingMeta {
+  color: var(--color-text-secondary);
+}
+
+.disclaimer {
+  color: var(--color-text-tertiary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .chevron {
+    transition-duration: 0ms;
+  }
+}
+
+/*
+ * 적용 중(상태) — 옅은 브랜드 면 + 2px 테두리로 강조보다 한 단 위에 둔다.
+ * 두께는 border-width 대신 inset 그림자로 겹쳐 낸다 — border를 2px로 바꾸면
+ * 적용/해제할 때마다 카드 높이가 1px씩 흔들린다.
+ */
+.applied {
+  border-color: var(--color-brand-primary);
+  background: var(--color-brand-subtle);
+  box-shadow: inset 0 0 0 1px var(--color-brand-primary);
+}
+
+/* 상태 칩은 채움, 정보 칩(.chip)은 외곽선 — 무게로 둘을 구분한다. */
+.appliedChip {
+  flex: none;
+  padding: 2px var(--space-8);
+  border-radius: var(--radius-full);
+  background: var(--color-brand-primary);
+  color: var(--color-text-on-brand);
+}

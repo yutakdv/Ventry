@@ -98,6 +98,13 @@ export default function KakaoMap({
   // 최신 onSelect를 유지해, 마커를 다시 만들지 않고도 콜백이 갱신되게 한다.
   const onSelectRef = useRef(onSelect)
   onSelectRef.current = onSelect
+  /**
+   * 같은 이유로 선택 코드도 ref로 읽는다 — 의존성에 넣으면 선택할 때마다 마커 전체가 다시 만들어진다.
+   * 직전 선택은 강조를 되돌릴 대상 하나를 찾는 데 쓴다.
+   */
+  const selectedRef = useRef(selectedCode)
+  selectedRef.current = selectedCode
+  const prevSelectedRef = useRef<string | null>(null)
 
   // 지도 1회 생성
   useEffect(() => {
@@ -119,17 +126,21 @@ export default function KakaoMap({
     const bounds = new kakao.maps.LatLngBounds()
     areas.forEach((a) => {
       const pos = new kakao.maps.LatLng(a.lat, a.lng)
+      // 선택 상태를 여기서 반영한다(ref로 읽으므로 의존성은 늘지 않는다) — 아래 강조 효과가
+      // 마커 전체를 다시 칠하지 않아도 되게 하려면 처음부터 맞는 이미지로 만들어야 한다.
+      const selected = a.area_code === selectedRef.current
       const marker = new kakao.maps.Marker({
         position: pos,
         map,
         title: `${a.name} · ${VERDICT_LABEL[a.verdict]} · ${a.score}점`,
-        // 선택 강조는 바로 아래 selectedCode 효과가 적용한다 (여기서 참조하면 매 선택마다 마커를 다시 만든다).
-        image: buildMarkerImage(VERDICT_MARKER_COLOR[a.verdict], a.score, false),
+        image: buildMarkerImage(VERDICT_MARKER_COLOR[a.verdict], a.score, selected),
+        zIndex: selected ? 10 : 1,
       })
       kakao.maps.event.addListener(marker, 'click', () => onSelectRef.current(a.area_code))
       markersRef.current.set(a.area_code, marker)
       bounds.extend(pos)
     })
+    prevSelectedRef.current = selectedRef.current
 
     boundsRef.current = bounds
     // 위쪽 여백을 크게 잡아 말풍선(≈150px)이 들어갈 자리를 미리 비워 둔다 —
@@ -159,13 +170,24 @@ export default function KakaoMap({
     if (status !== 'ready') return
     const map = mapRef.current
 
-    areas.forEach((a) => {
-      const marker = markersRef.current.get(a.area_code)
-      if (!marker) return
-      const selected = a.area_code === selectedCode
+    /*
+     * 강조는 **바뀐 마커 둘만** 다시 칠한다 (직전 선택 해제 + 새 선택 강조).
+     * 전건을 돌면 선택 한 번에 마커 이미지를 100개 다시 만드는데(SVG data URI 생성 포함),
+     * 목록을 훑는 동안 매 클릭마다 그 비용을 치르게 되어 <100ms 체감(스펙 §7)이 무너진다.
+     */
+    const repaint = (code: string | null, selected: boolean) => {
+      if (!code) return
+      const marker = markersRef.current.get(code)
+      const a = areas.find((x) => x.area_code === code)
+      if (!marker || !a) return
       marker.setImage(buildMarkerImage(VERDICT_MARKER_COLOR[a.verdict], a.score, selected))
       marker.setZIndex(selected ? 10 : 1)
-    })
+    }
+    if (prevSelectedRef.current !== selectedCode) {
+      repaint(prevSelectedRef.current, false)
+      repaint(selectedCode, true)
+      prevSelectedRef.current = selectedCode
+    }
 
     const area = areas.find((a) => a.area_code === selectedCode)
     if (!map || !area) {

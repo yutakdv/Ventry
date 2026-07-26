@@ -1,0 +1,102 @@
+/* 리스크 검증 "왜?" 패널 — 접힘 전개는 SseEventLog와 같은 문법을 쓴다(같은 성격의 근거 영역). */
+.panel {
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-page);
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+  padding: var(--space-12) var(--space-16);
+  border: 0;
+  background: none;
+  color: var(--color-text-accent);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.count {
+  color: var(--color-text-tertiary);
+}
+
+.chevron {
+  margin-left: auto;
+  transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.body {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 200ms cubic-bezier(0.23, 1, 0.32, 1),
+    opacity 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.bodyOpen {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.bodyInner {
+  overflow: hidden;
+}
+
+.rounds {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  margin: 0;
+  padding: 0 var(--space-16) var(--space-12);
+  list-style: none;
+}
+
+/*
+ * 왕복의 세 단계는 세로선 하나로 잇는다 — 「추천 → 반박 → 반영」이 시간 순서라는 것이
+ * 이 패널의 요지이고, 카드 3장으로 흩어 놓으면 그 순서가 사라진다.
+ */
+.round {
+  position: relative;
+  padding-left: var(--space-16);
+  border-left: 2px solid var(--color-border-default);
+}
+
+.round:last-child {
+  border-left-color: var(--color-brand-primary);
+}
+
+.step {
+  display: block;
+  color: var(--color-text-primary);
+}
+
+.text {
+  margin: 2px 0 0;
+  color: var(--color-text-secondary);
+}
+
+.origin {
+  display: block;
+  margin-top: var(--space-4);
+  color: var(--color-text-tertiary);
+}
+
+.note {
+  padding: 0 var(--space-16) var(--space-12);
+  color: var(--color-text-tertiary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .body,
+  .chevron {
+    transition-duration: 0ms;
+  }
+}
