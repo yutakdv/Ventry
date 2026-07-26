@@ -44,7 +44,8 @@ class EligibilityMatchingGoldTest {
     private static final Pattern PRODUCT_ROW = Pattern.compile(
             "^\\('(?<id>F-\\d+)', '(?<name>(?:[^']|'')*)', '(?:[^']|'')*', "
                     + "(?<maxAge>NULL|\\d+), (?<industries>NULL|ARRAY\\[[^\\]]*\\]), "
-                    + "(?<regions>NULL|ARRAY\\[[^\\]]*\\]), (?<preStartup>TRUE|FALSE), ",
+                    + "(?<regions>NULL|ARRAY\\[[^\\]]*\\]), (?<preStartup>TRUE|FALSE), "
+                    + "(?<existingOnly>TRUE|FALSE), ",
             Pattern.MULTILINE);
 
     private static final Path REPO_ROOT = Path.of("..").toAbsolutePath().normalize();
@@ -158,6 +159,41 @@ class EligibilityMatchingGoldTest {
         assertThat(EligibilityFilter.qualify(existing, List.of(preStartupOnly))).isEmpty();
     }
 
+    /**
+     * 기존 사업자 한정 축 — 실적재본에 4건 있으므로 위 교차에서도 채점되지만, <b>방향</b>이
+     * {@code pre_startup_only} 와 반대라는 것을 여기서 못 박는다 (#90 문제 2).
+     *
+     * <p>이 축이 없던 동안 예비창업 프로필의 적극 카드에 <b>대환대출</b>이 편성됐다. 상품명
+     * 블랙리스트로 코드에 숨기는 대신 공고문 근거("보유한 대출"·"재창업")를 자격 축으로 옮겼다.
+     */
+    @Test
+    void existingBusinessOnlyAxis_isOppositeOfPreStartupOnly() {
+        FundingProduct refinancing = new FundingProduct("합성 대환 상품",
+                new Eligibility(null, null, null, false, true),
+                5000, 4.5, 120, null, "open", "2026-07-26", SRC);
+        Profile preStartup = new Profile(32, 5000, false, "cafe", "서울 마포구");
+        Profile existing = new Profile(32, 5000, true, "cafe", "서울 마포구");
+
+        assertThat(EligibilityFilter.qualify(preStartup, List.of(refinancing))).isEmpty();
+        assertThat(EligibilityFilter.qualify(existing, List.of(refinancing)))
+                .containsExactly(refinancing);
+    }
+
+    /** 두 축이 동시에 true 이면 아무도 통과하지 못한다 — 데이터 모순을 조용히 넘기지 않는다. */
+    @Test
+    void bothStageAxes_excludeEveryone() {
+        FundingProduct contradictory = new FundingProduct("합성 모순 상품",
+                new Eligibility(null, null, null, true, true),
+                3000, 2.5, 60, null, "open", "2026-07-26", SRC);
+
+        assertThat(EligibilityFilter.qualify(
+                new Profile(32, 5000, false, "cafe", "서울 마포구"), List.of(contradictory)))
+                .isEmpty();
+        assertThat(EligibilityFilter.qualify(
+                new Profile(32, 5000, true, "cafe", "서울 마포구"), List.of(contradictory)))
+                .isEmpty();
+    }
+
     /** 업종 축도 실적재에는 제조업 1건뿐이라, 카페/음식점 경계는 합성 상품으로 증명한다. */
     @Test
     void industryAxis_provenWithSyntheticProducts() {
@@ -183,7 +219,8 @@ class EligibilityMatchingGoldTest {
                             "NULL".equals(m.group("maxAge")) ? null : Integer.valueOf(m.group("maxAge")),
                             textArray(m.group("industries")),
                             textArray(m.group("regions")),
-                            "TRUE".equals(m.group("preStartup"))),
+                            "TRUE".equals(m.group("preStartup")),
+                            "TRUE".equals(m.group("existingOnly"))),
                     0, 0.0, 60, null, "open", "2026-07-26", SRC));
         }
         return parsed;

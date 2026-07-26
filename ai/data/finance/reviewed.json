@@ -17,7 +17,8 @@
     "status": "open",
     "notice_date": "2026-07-21",
     "source_url": "https://obank.kbstar.com",
-    "doc": "KB_소상공인_보증서대출_지역재단"
+    "doc": "KB_소상공인_보증서대출_지역재단",
+    "existing_business_only": false
   },
   {
     "name": "KB소상공인 신용대출",
@@ -35,7 +36,8 @@
     "status": "open",
     "notice_date": "2026-07-21",
     "source_url": "https://obank.kbstar.com",
-    "doc": "KB_소상공인_신용대출_상품안내"
+    "doc": "KB_소상공인_신용대출_상품안내",
+    "existing_business_only": false
   },
   {
     "name": "이자지원 보증서 대출",
@@ -55,7 +57,8 @@
     "status": "open",
     "notice_date": "2026-07-21",
     "source_url": "https://obank.kbstar.com",
-    "doc": "KB_소상공인정책자금_이자지원보증서대출_안내"
+    "doc": "KB_소상공인정책자금_이자지원보증서대출_안내",
+    "existing_business_only": false
   },
   {
     "name": "소상공인 정책자금대출",
@@ -75,7 +78,8 @@
     "status": "open",
     "notice_date": "2026-07-21",
     "source_url": "https://obank.kbstar.com",
-    "doc": "KB_소상공인정책자금대출_상품목록"
+    "doc": "KB_소상공인정책자금대출_상품목록",
+    "existing_business_only": false
   },
   {
     "name": "ESG 실천기업 보증",
@@ -95,7 +99,8 @@
     "status": "open",
     "notice_date": "2026-07-21",
     "source_url": "https://www.seoulshinbo.co.kr",
-    "doc": "서울신보_보증상품_ESG실천기업"
+    "doc": "서울신보_보증상품_ESG실천기업",
+    "existing_business_only": false
   },
   {
     "name": "서울형 자영업자 위기극복 안심통장 특별보증",
@@ -115,7 +120,8 @@
     "status": "open",
     "notice_date": "2026-07-21",
     "source_url": "https://www.seoulshinbo.co.kr",
-    "doc": "서울신보_보증상품_모바일앱자동심사"
+    "doc": "서울신보_보증상품_모바일앱자동심사",
+    "existing_business_only": false
   },
   {
     "name": "지능형 모바일 자동심사 특별보증",
@@ -135,7 +141,8 @@
     "status": "open",
     "notice_date": "2026-07-21",
     "source_url": "https://www.seoulshinbo.co.kr",
-    "doc": "서울신보_보증상품_모바일앱자동심사"
+    "doc": "서울신보_보증상품_모바일앱자동심사",
+    "existing_business_only": false
   },
   {
     "name": "미래 유망기업 성장지원 보증",
@@ -155,7 +162,8 @@
     "status": "open",
     "notice_date": "2026-07-21",
     "source_url": "https://www.seoulshinbo.co.kr",
-    "doc": "서울신보_보증상품_미래성장산업"
+    "doc": "서울신보_보증상품_미래성장산업",
+    "existing_business_only": false
   },
   {
     "name": "일자리 창출 및 고용안정 우수기업 특별보증",
@@ -175,7 +183,8 @@
     "status": "open",
     "notice_date": "2026-07-21",
     "source_url": "https://www.seoulshinbo.co.kr",
-    "doc": "서울신보_보증상품_일자리창출사회적기업"
+    "doc": "서울신보_보증상품_일자리창출사회적기업",
+    "existing_business_only": false
   },
   {
     "name": "사회적경제기업 특별보증",
@@ -195,7 +204,8 @@
     "status": "open",
     "notice_date": "2026-07-21",
     "source_url": "https://www.seoulshinbo.co.kr",
-    "doc": "서울신보_보증상품_일자리창출사회적기업"
+    "doc": "서울신보_보증상품_일자리창출사회적기업",
+    "existing_business_only": false
   },
   {
     "name": "장애인 기업 특별보증",
@@ -215,7 +225,8 @@
     "status": "open",
     "notice_date": "2026-07-21",
     "source_url": "https://www.seoulshinbo.co.kr",
-    "doc": "서울신보_보증상품_장애인기업"
+    "doc": "서울신보_보증상품_장애인기업",
+    "existing_business_only": false
   },
   {
     "name": "창업자금 및 사업장 임차자금 특별보증",
@@ -235,7 +246,8 @@
     "status": "open",
     "notice_date": "2026-07-21",
     "source_url": "https://www.seoulshinbo.co.kr",
-    "doc": "서울신보_보증상품_창업기업"
+    "doc": "서울신보_보증상품_창업기업",
+    "existing_business_only": false
   },
   {
     "name": "일반경영안정자금",
@@ -255,7 +267,8 @@
     "status": "open",
     "notice_date": "2025-12-29",
     "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_2026_소상공인정책자금_융자공고"
+    "doc": "소진공_2026_소상공인정책자금_융자공고",
+    "existing_business_only": false
   },
   {
     "name": "긴급경영안정자금 (재해)",
@@ -275,7 +288,8 @@
     "status": "open",
     "notice_date": "2025-12-29",
     "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_2026_소상공인정책자금_융자공고"
+    "doc": "소진공_2026_소상공인정책자금_융자공고",
+    "existing_business_only": false
   },
   {
     "name": "긴급경영안정자금 (일시적 경영애로)",
@@ -295,7 +309,8 @@
     "status": "open",
     "notice_date": "2025-12-29",
     "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_2026_소상공인정책자금_융자공고"
+    "doc": "소진공_2026_소상공인정책자금_융자공고",
+    "existing_business_only": false
   },
   {
     "name": "신용취약소상공인자금",
@@ -315,7 +330,8 @@
     "status": "open",
     "notice_date": "2025-12-29",
     "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_2026_소상공인정책자금_융자공고"
+    "doc": "소진공_2026_소상공인정책자금_융자공고",
+    "existing_business_only": false
   },
   {
     "name": "대환대출",
@@ -335,7 +351,8 @@
     "status": "open",
     "notice_date": "2025-12-29",
     "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_2026_소상공인정책자금_융자공고"
+    "doc": "소진공_2026_소상공인정책자금_융자공고",
+    "existing_business_only": true
   },
   {
     "name": "재도전특별자금 (일반형)",
@@ -355,7 +372,8 @@
     "status": "open",
     "notice_date": "2025-12-29",
     "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_2026_소상공인정책자금_융자공고"
+    "doc": "소진공_2026_소상공인정책자금_융자공고",
+    "existing_business_only": true
   },
   {
     "name": "재도전특별자금 (희망형)",
@@ -375,7 +393,8 @@
     "status": "open",
     "notice_date": "2025-12-29",
     "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_2026_소상공인정책자금_융자공고"
+    "doc": "소진공_2026_소상공인정책자금_융자공고",
+    "existing_business_only": true
   },
   {
     "name": "재도전특별자금 (도약형)",
@@ -395,7 +414,8 @@
     "status": "open",
     "notice_date": "2025-12-29",
     "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_2026_소상공인정책자금_융자공고"
+    "doc": "소진공_2026_소상공인정책자금_융자공고",
+    "existing_business_only": true
   },
   {
     "name": "장애인기업지원자금",
@@ -415,7 +435,8 @@
     "status": "open",
     "notice_date": "2025-12-29",
     "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_2026_소상공인정책자금_융자공고"
+    "doc": "소진공_2026_소상공인정책자금_융자공고",
+    "existing_business_only": false
   },
   {
     "name": "청년고용연계자금",
@@ -435,7 +456,8 @@
     "status": "open",
     "notice_date": "2025-12-29",
     "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_2026_소상공인정책자금_융자공고"
+    "doc": "소진공_2026_소상공인정책자금_융자공고",
+    "existing_business_only": false
   },
   {
     "name": "혁신성장촉진자금",
@@ -455,7 +477,8 @@
     "status": "open",
     "notice_date": "2026-07-21",
     "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_소상공인정책자금_지원사업안내"
+    "doc": "소진공_소상공인정책자금_지원사업안내",
+    "existing_business_only": false
   },
   {
     "name": "민간투자연계형 매칭융자",
@@ -475,7 +498,8 @@
     "status": "open",
     "notice_date": "2026-07-21",
     "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_소상공인정책자금_지원사업안내"
+    "doc": "소진공_소상공인정책자금_지원사업안내",
+    "existing_business_only": false
   },
   {
     "name": "상생성장 지원자금",
@@ -495,7 +519,8 @@
     "status": "open",
     "notice_date": "2026-07-21",
     "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_소상공인정책자금_지원사업안내"
+    "doc": "소진공_소상공인정책자금_지원사업안내",
+    "existing_business_only": false
   },
   {
     "name": "소공인 특화자금(일반)",
@@ -517,6 +542,7 @@
     "status": "open",
     "notice_date": "2026-07-21",
     "source_url": "https://ols.semas.or.kr",
-    "doc": "소진공_소상공인정책자금_지원사업안내"
+    "doc": "소진공_소상공인정책자금_지원사업안내",
+    "existing_business_only": false
   }
 ]
