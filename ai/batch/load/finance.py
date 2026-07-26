@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from batch.collect import collected
+from batch import collected
 from batch.extract.funding_llm import OUT_DIR, validate_product
 from batch.paths import INTERIM_DIR, REPO_ROOT, logger
 

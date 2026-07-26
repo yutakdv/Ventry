@@ -6,7 +6,7 @@ from datetime import date
 
 import pytest
 
-from batch.collect import collected
+from batch import collected
 
 
 @pytest.fixture

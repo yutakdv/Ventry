@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from batch.collect import collected
+from batch import collected
 from batch.collect._common import (
     INTERIM_DIR,
     RAW_DIR,
