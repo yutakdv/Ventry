@@ -42,9 +42,7 @@ notes: list[str] = []
 
 # 알려진 미결선 — 실패로 세지 않되 매 실행에 드러낸다. 조용히 단언을 지우면 QA 는 통과하고
 # 문제는 남으므로, 「통과」와 「미결선」을 구분해 보여주고 이슈 번호를 함께 인쇄한다.
-KNOWN_GAPS = {
-    "risk_review": "#96 리스크 검증 에이전트 LLM 미결선 — 템플릿이 applied=true 로 나간다",
-}
+KNOWN_GAPS: dict[str, str] = {}
 
 
 # ── HTTP ────────────────────────────────────────────────────────────────────
@@ -179,8 +177,12 @@ def n4_recommend() -> None:
               f"{area['name']} 좌표가 WGS84 한국 범위 밖 ({area['lat']}, {area['lng']})")
         check("N4", area["cost"]["ex_premium"][0] <= area["cost"]["incl_premium"][0],
               f"{area['name']} 권리금 제외 비용이 포함 비용보다 크다")
-    notes.append(f"N4 후보 {len(areas)}곳 · risk_review.applied="
-                 f"{body.get('risk_review', {}).get('applied')}")
+    review = body.get("risk_review", {})
+    check("N4", review.get("applied") is not review.get("skipped"),
+          f"applied={review.get('applied')} skipped={review.get('skipped')} — 두 플래그가 모순이다")
+    check("N4", bool(review.get("objection_text")), "objection_text 가 비었다")
+    notes.append(f"N4 후보 {len(areas)}곳 · 검증 applied={review.get('applied')} "
+                 f"skipped={review.get('skipped')}")
     scan_terms("N4", body)
 
 
@@ -286,8 +288,11 @@ def f2_no_llm() -> None:
           "근거 문장이 빈 후보가 있다 — 템플릿 폴백이 최종본이 되지 못했다")
     review = rec.get("risk_review", {})
     check("F2", review.get("skipped") is True,
-          f"LLM 없는데 risk_review.skipped={review.get('skipped')} (true 기대)",
-          gap="risk_review")
+          f"LLM 없는데 risk_review.skipped={review.get('skipped')} (true 기대)")
+    check("F2", review.get("applied") is False,
+          f"LLM 없는데 risk_review.applied={review.get('applied')} (false 기대)")
+    check("F2", bool(review.get("objection_text")),
+          "검증 생략인데 템플릿 문장도 비었다 — 화면이 빈 패널을 받는다")
     events = sse(f"/api/explore/{sid}?v=1")
     names = [n for n, _ in events]
     check("F2", "refine" not in names, "무LLM 인데 refine 이벤트가 왔다")

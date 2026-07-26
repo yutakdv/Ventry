@@ -27,7 +27,11 @@ import org.springframework.stereotype.Service;
 
 /**
  * BE-03f — 입지 추천·역방향 판정 오케스트레이션. 결정적 도구 계층(engine)의 첫 소비자.
- * 이중 필터 → 점수 → 판정 4단계 → reason_text 템플릿. LLM 의존성 0.
+ * 이중 필터 → 점수 → 판정 4단계 → reason_text 템플릿.
+ *
+ * <p><b>판정과 수치에는 LLM 의존성이 0이다.</b> {@link RiskReviewAgent} 가 붙은 뒤에도 그렇다 —
+ * 검증 에이전트는 이미 확정된 결과를 <b>반박하는 문장</b>만 만들고 판정을 바꾸지 않는다(§5-3).
+ * 그 호출이 실패하면 템플릿 문장 + {@code skipped=true} 로 떨어질 뿐 응답의 나머지는 동일하다.
  */
 @Service
 public class LocationService {
@@ -38,11 +42,14 @@ public class LocationService {
     private final CandidateSource candidates;
     private final ProductSource products;
     private final DataMetaSource meta;
+    private final RiskReviewAgent riskReview;
 
-    public LocationService(CandidateSource candidates, ProductSource products, DataMetaSource meta) {
+    public LocationService(CandidateSource candidates, ProductSource products, DataMetaSource meta,
+                           RiskReviewAgent riskReview) {
         this.candidates = candidates;
         this.products = products;
         this.meta = meta;
+        this.riskReview = riskReview;
     }
 
     /** 화면 3 입지 추천: 후보 풀 → 점수 정렬 → 판정 + 근거문. */
@@ -55,7 +62,7 @@ public class LocationService {
                 .map(c -> toArea(c, budget, weights))
                 .toList();
         return new RecommendResponse(meta.asOf("sales"), areas.size(), summary(pool), areas,
-                ReasonTemplate.recommendReview());
+                riskReview.forRecommend(profile.industry(), areas));
     }
 
     /**
@@ -91,7 +98,8 @@ public class LocationService {
                         .thenComparing(Product::name))
                 .toList();
         return new CheckAreaResponse(result.verdict(), result.gapAmount(), matching,
-                ReasonTemplate.checkAreaReview());
+                riskReview.forCheckArea(area.name(), result.verdict(), result.gapAmount(),
+                        area.burdenRatio()));
     }
 
     private Area toArea(CandidateArea c, int budget, Weights weights) {
