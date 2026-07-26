@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -29,7 +30,13 @@ import org.junit.jupiter.api.Test;
  * 필터 출력으로 골드를 만들면 순환 논증이 되어 아무것도 증명하지 못한다.
  *
  * <p><b>대상은 실적재본이다</b>: 픽스처가 아니라 배포되는 덤프를 직접 파싱한다. 덤프가 바뀌면
- * 이 테스트가 먼저 깨져야 골드와 데이터의 괴리를 놓치지 않는다.
+ * 이 테스트가 먼저 깨져야 골드와 데이터의 괴리를 놓치지 않는다. 덤프를 {@code src/test/resources}
+ * 로 복사해 두면 그 순간 픽스처가 되어 실적재본과 조용히 어긋날 수 있으므로 복사하지 않는다.
+ *
+ * <p><b>Docker 이미지 빌드에서는 건너뛴다</b>: 이미지의 빌드 컨텍스트는 {@code ./backend} 하나뿐이라
+ * 저장소 루트의 {@code db/init} 이 아예 존재하지 않는다. 채점은 전체 체크아웃으로 도는
+ * backend-ci 「Test &amp; Build」 단계가 담당한다. 다만 {@code db/init} 이 보이는데 덤프만 없는
+ * 경우는 실제 결함이므로 건너뛰지 않고 실패한다.
  */
 class EligibilityMatchingGoldTest {
 
@@ -41,6 +48,7 @@ class EligibilityMatchingGoldTest {
             Pattern.MULTILINE);
 
     private static final Path REPO_ROOT = Path.of("..").toAbsolutePath().normalize();
+    private static final Path DUMP_DIR = REPO_ROOT.resolve("db/init");
     private static final Source SRC = new Source("적재본", "https://example.test", "2026-07-26");
 
     private static List<FundingProduct> products;
@@ -48,15 +56,28 @@ class EligibilityMatchingGoldTest {
 
     @BeforeAll
     static void loadFixtures() throws IOException {
-        products = parseShippedProducts();
+        // db/init 이 있는데 덤프만 없으면 parseShippedProducts 가 그대로 실패한다 — 그건 실제 결함이다.
+        if (Files.isDirectory(DUMP_DIR)) {
+            products = parseShippedProducts();
+        }
         try (var in = EligibilityMatchingGoldTest.class.getResourceAsStream("/matching_gold.json")) {
             gold = JsonMapper.builder().build().readTree(in);
         }
     }
 
+    /**
+     * 적재 덤프를 읽는 테스트만 건너뛴다 — 합성 상품 축 테스트는 파일에 의존하지 않으므로
+     * Docker 이미지 빌드에서도 그대로 돈다.
+     */
+    private static void requireShippedDump() {
+        Assumptions.assumeTrue(products != null,
+                "db/init 이 빌드 컨텍스트에 없다 (Docker 이미지 빌드) — 채점은 저장소 체크아웃 잡이 한다");
+    }
+
     /** 골드가 전제한 적재 규모와 실덤프가 어긋나면 라벨 전체가 무효다 — 먼저 잠근다. */
     @Test
     void shippedDumpMatchesGoldAssumptions() {
+        requireShippedDump();
         assertThat(products).hasSize(gold.get("products_expected_total").asInt());
         assertThat(idsOf(products)).contains(gold.get("unconstrained_product").asText());
     }
@@ -69,6 +90,7 @@ class EligibilityMatchingGoldTest {
      */
     @Test
     void qualifyMatchesHandLabeledGold_withPerfectPrecisionAndRecall() {
+        requireShippedDump();
         int truePositive = 0;
         int falsePositive = 0;
         int falseNegative = 0;
