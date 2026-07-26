@@ -74,3 +74,23 @@ button {
   font-size: 12px;
   line-height: 16px;
 }
+
+/*
+ * 모션 축소 요청 대응 (FE-06).
+ *
+ * transition을 쓰는 모듈 8개가 이 미디어 쿼리를 갖고 있지 않았다 — 컴포넌트가 늘어날 때마다
+ * 각자 챙기는 방식은 반드시 빠진다. 전역에서 한 번에 끈다.
+ *
+ * 0이 아니라 0.01ms인 것은 의도적이다. 지속시간이 정확히 0이면 transitionend 이벤트가
+ * 발화하지 않는 브라우저가 있어, 그 이벤트를 기다리는 코드가 멈춘다.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,100 @@
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 44fr) minmax(0, 56fr);
+  gap: 64px;
+  align-items: center;
+}
+
+/*
+ * 두 번째 블록은 좌우를 뒤집는다 — 스크롤에 리듬을 주는 유일한 장치다.
+ * **열 너비도 함께 뒤집어야 한다.** order만 바꾸면 카피가 넓은 열로, 캡처가 좁은 열로 들어가
+ * 두 블록의 이미지 크기가 달라진다.
+ */
+.reverse {
+  grid-template-columns: minmax(0, 56fr) minmax(0, 44fr);
+}
+
+.reverse .copy {
+  order: 2;
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-16);
+  min-width: 0;
+}
+
+.eyebrow {
+  padding: 4px var(--space-12);
+  border-radius: var(--radius-full);
+  background: var(--color-bg-tip);
+  color: var(--color-brand-primary-hover);
+}
+
+.title {
+  margin: 0;
+  font-weight: 700;
+  font-size: clamp(24px, 2.4vw, 34px);
+  line-height: 1.3;
+  letter-spacing: -0.028em;
+  word-break: keep-all;
+  color: var(--color-text-primary);
+}
+
+.titleLine {
+  display: inline;
+}
+
+.desc {
+  max-width: 34em;
+  word-break: keep-all;
+  margin: 0;
+  font-size: 16px;
+  line-height: 28px;
+  color: var(--color-text-secondary);
+}
+
+.points {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.point {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-8);
+  color: var(--color-text-secondary);
+}
+
+.check {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-success-subtle);
+  color: var(--color-status-success);
+}
+
+.stage {
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  .row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-32);
+  }
+  .reverse .copy {
+    order: 0;
+  }
+}

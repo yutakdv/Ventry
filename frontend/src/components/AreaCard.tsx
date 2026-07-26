@@ -1,6 +1,6 @@
 import { ClipboardCheck } from 'lucide-react'
 import VerdictBadge from './VerdictBadge'
-import { formatRentSource, formatTransit } from '../lib/format'
+import { formatBurdenRatio, formatRentSource, formatTransit } from '../lib/format'
 import type { Area } from '../api/types'
 import styles from './AreaCard.module.css'
 
@@ -64,7 +64,7 @@ export default function AreaCard({
         </span>
         <span className={styles.stat}>
           <span className={`t-caption ${styles.statLabel}`}>부담률 (임대료/매출)</span>
-          <span className={`t-label ${styles.statValue}`}>{Math.round(area.burden_ratio * 100)}%</span>
+          <span className={`t-label ${styles.statValue}`}>{formatBurdenRatio(area.burden_ratio)}</span>
         </span>
         <span className={styles.stat}>
           <span className={`t-caption ${styles.statLabel}`}>초기비용 (권리금 제외)</span>
