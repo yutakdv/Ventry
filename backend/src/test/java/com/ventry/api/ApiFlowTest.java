@@ -138,8 +138,12 @@ class ApiFlowTest {
                 .andExpect(jsonPath("$.areas[0].monthly_rent").value(198))
                 .andExpect(jsonPath("$.areas[0].est_sales").value(1800))
                 .andExpect(jsonPath("$.areas[0].daily_floating").value(24500))
-                .andExpect(jsonPath("$.risk_review.applied").value(true))
-                .andExpect(jsonPath("$.risk_review.skipped").value(false));
+                // 테스트 프로파일에는 LLM 키가 없다 → 검증 에이전트가 돌지 않고 템플릿이
+                // 최종본이 되며, 그 사실이 skipped=true 로 드러난다 (#96, 스펙 §5-3).
+                // 구 단언(applied=true)은 LLM 없이도 "검증했다"고 말하던 상태를 굳히고 있었다.
+                .andExpect(jsonPath("$.risk_review.applied").value(false))
+                .andExpect(jsonPath("$.risk_review.skipped").value(true))
+                .andExpect(jsonPath("$.risk_review.objection_text").isNotEmpty());
     }
 
     @Test
@@ -161,7 +165,7 @@ class ApiFlowTest {
                 // 픽스처 상품에는 연결된 청크가 없다 → non_null 직렬화라 필드 자체가 생략된다
                 .andExpect(jsonPath("$.matching_products[0].source_quote").doesNotExist())
                 .andExpect(jsonPath("$.matching_products[0].rate_note").doesNotExist())  // fixed → 생략
-                .andExpect(jsonPath("$.risk_review.applied").value(true));
+                .andExpect(jsonPath("$.risk_review.skipped").value(true));   // 키 없음 → 템플릿 (#96)
     }
 
     @Test
