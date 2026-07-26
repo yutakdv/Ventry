@@ -5,13 +5,16 @@
 from __future__ import annotations
 
 import datetime as _dt
-import math
 
 import pandas as pd
 
 
 def _lit(v) -> str:
-    if v is None or (isinstance(v, float) and math.isnan(v)):
+    # pd.NA·NaT 도 결측이다 — float('nan') 만 걸러내면 nullable 정수(Int64) 컬럼이 한 단계만
+    # 우회해도 문자열 '<NA>' 가 그대로 INSERT 된다 (rent_join·transit_join 이 Int64 사용, 리뷰 #12).
+    if v is None:
+        return "NULL"
+    if not isinstance(v, (list, tuple, str)) and pd.isna(v):
         return "NULL"
     if isinstance(v, bool):
         return "TRUE" if v else "FALSE"

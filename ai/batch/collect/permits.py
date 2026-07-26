@@ -40,9 +40,28 @@ NON_FOOD_TYPES = {
     "유원지", "공항", "고속도로", "키즈카페",
 }
 
+# I561 음식점업 + I5621 주점업의 실측 업태 목록 (영업/정상 132,876건 전수 집계, 2026-07-27).
+# **「기타」·「기타 휴게음식점」(28,574건 = 21.5%)을 여기 남기는 것이 이 목록의 핵심 결정이다** —
+# 휴게·일반음식점 인허가에 등록된 이상 경쟁 실체가 있고, 빼면 경쟁을 과소평가해
+# 하향 안전 마진 원칙(스펙 §0-1)과 반대 방향이 된다.
+FOOD_TYPES = {
+    "한식", "기타", "호프/통닭", "경양식", "분식", "기타 휴게음식점", "일식", "중국식",
+    "일반조리판매", "외국음식전문점(인도,태국등)", "패스트푸드", "정종/대포집/소주방",
+    "통닭(치킨)", "식육(숯불구이)", "횟집", "김밥(도시락)", "푸드트럭", "뷔페식", "감성주점",
+    "냉면집", "패밀리레스트랑", "라이브카페", "과자점", "탕류(보신용)", "출장조리",
+    "복어취급", "이동조리", "단란주점", "",
+}
+
+KNOWN_TYPES = CAFE_TYPES | NON_FOOD_TYPES | FOOD_TYPES
+
 
 def classify_category(business_type: str) -> str:
-    """업태구분명 → cafe / food / other (KSIC I56 기준, assumptions.md #20)."""
+    """업태구분명 → cafe / food / other (KSIC I56 기준, assumptions.md #20).
+
+    목록에 없는 **미등재 업태는 `food` 로 남기되 호출부가 로그로 드러낸다** (리뷰 #8).
+    `other` 로 보내 모집단에서 빼면 경쟁을 과소평가하게 되어 방향이 위험한 쪽이다 —
+    문제는 "흡수" 자체가 아니라 "조용한" 흡수였다.
+    """
     name = "" if business_type is None else str(business_type).strip()  # 결측은 float nan
     if name in CAFE_TYPES:
         return "cafe"
@@ -66,6 +85,15 @@ def run(env: dict[str, str], session: object | None = None) -> None:
         out = INTERIM_DIR / "permits" / f"{suffix}_live_classified.csv"
         out.parent.mkdir(parents=True, exist_ok=True)
         live.to_csv(out, index=False, encoding="utf-8-sig")
+
+        # 미등재 업태를 드러낸다 — 신규 업태·표기 변형이 조용히 food 로 흡수되면
+        # 다음 사람은 그 사실을 알 방법이 없다 (assumptions #20 '까페' 1,230건 선례).
+        unknown = (live.loc[~live["업태구분명"].fillna("").str.strip().isin(KNOWN_TYPES),
+                            "업태구분명"].value_counts())
+        if not unknown.empty:
+            logger.warning("%s: 미등재 업태 %d종 %d건 — food 로 계상됨(하향 안전): %s",
+                           desc, len(unknown), int(unknown.sum()),
+                           dict(unknown.head(10)))
         logger.info(
             "%s: 총 %d → 영업중 %d (cafe=%d food=%d other=%d)",
             desc,
