@@ -128,10 +128,10 @@ public class ScenarioBuilder {
         if (selected.isPresent()) {
             FundingProduct product = selected.get();
             composition.add(new CompositionRange(ProductType.of(product), 0, product.amountMax()));
-            // 기준일은 상품 데이터 기준일로 덮어쓰되, rate_type·rate_note는 상품 값을 그대로 싣는다
+            // 기준일은 상품 데이터 기준일로 덮어쓰되, rate_type·rate_note·source_quote는 상품 값 그대로
             cardProducts.add(new Product(product.name(), product.amountMax(), product.rate(),
                     product.rateType(), product.rateNote(), meta.asOf(META_SOURCE_PRODUCT),
-                    product.source(), null));   // source_quote=RAG(P1)
+                    product.source(), product.sourceQuote()));
             budgetMax += product.amountMax();
         }
         cardProducts.sort(PRODUCT_ORDER);   // 계약 D8 고정 정렬 (카드당 1종이라 실질 no-op, 규약 준수)

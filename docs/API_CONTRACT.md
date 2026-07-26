@@ -68,7 +68,8 @@ FE 검토 의견 6건은 2026-07-21 반영됨 (5건 수용 · 1건 스코프 외
                    { "type": "guarantee", "amount_min": 0, "amount_max": 1500 } ],
   "products": [ { "name": "…", "amount_max": 1500,
                   "rate": 2.5, "rate_type": "fixed",   // 변동금리면 rate 생략 + "rate_type":"variable","rate_note":"정책자금 기준금리+0.6%p"
-                  "data_as_of": "2026-Q1", "source": {…}, "source_quote": null } ] }
+                  "data_as_of": "2026-Q1", "source": {…},
+                  "source_quote": { "text": "…", "org": "…", "doc": "…", "date": "…" } } ] }
 // done
 { "scenario_count": 2 }
 ```
@@ -153,7 +154,8 @@ FE 검토 의견 6건은 2026-07-21 반영됨 (5건 수용 · 1건 스코프 외
                // 변동금리(rate 생략·"rate_type":"variable")면 "rate_note" 동반, 상위 marginal_payment 생략
                "status": "open", "notice_date": "…", "exclusive_group": "…",
                "source": { "org": "…", "url": "…", "collected": "…" },
-               "source_quote": null },        // 원문 인용 구현 전 null 허용 (P1-①)
+               "source_quote": { "text": "…", "org": "…", "doc": "…", "date": "…" } },
+                                             // ★2026-07-26 결선 (#18). 청크 없으면 필드 생략
   "disclaimer": true }
 // refine
 { "insight_id": "…", "headline": "…" }
@@ -194,6 +196,14 @@ FE 검토 의견 6건은 2026-07-21 반영됨 (5건 수용 · 1건 스코프 외
   "risk_review": { "objection_text": "…", "applied": true } }
 ```
 
+- **★2026-07-26 — `source_quote`가 실제로 채워진다** (BE-06 ① 결선, 이슈 #18). `finance_product.doc_chunk_ref`
+  → `finance_doc_chunk` **id 직접 조회**(LEFT JOIN 1회)이며 유사도 검색·벡터DB는 쓰지 않는다.
+  적재 26건 전건이 청크를 보유해 세 경로(`check-area`·`scenarios`·`explore`) 모두 인용이 실린다.
+  - `text`는 **공고문 원문 그대로**다 — 서버는 요약·재작성은 물론 **길이 자르기도 하지 않는다**.
+    바이트 동일성이 §5-4("인용은 검색이지 생성이 아니다")의 유일한 증명 수단이기 때문이다.
+  - **길이 편차가 크다: 19자 ~ 7,688자.** 화면 줄 수 제한은 표현 계층이 담당하고 전문은
+    `source.url`로 연결한다. FE 조치 사항은 [HANDOFF_FRONTEND.md](HANDOFF_FRONTEND.md) 참고.
+  - 청크가 없는 상품은 **필드 자체가 생략**된다(non_null 직렬화). 빈 문자열을 넣지 않는다.
 - `matching_products`는 서버가 `amount_max` **내림차순**(동점 시 `product_id` 오름차순)으로 **고정 정렬**해
   반환한다. **금리 정렬은 하지 않는다** — `rate`가 생략된 상품(변동금리)의 순위를 프론트가 정하면 사실상
   순위 조작이 되므로 정렬 기준은 계약이 고정하고 FE는 재정렬하지 않는다. scenarios의 `products`도 동일.

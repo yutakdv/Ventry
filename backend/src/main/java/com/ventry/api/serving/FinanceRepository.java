@@ -14,6 +14,11 @@ import org.springframework.stereotype.Repository;
  *
  * <p>{@code status='open'} 필터도 걸지 않는다. 마감 상품은 조달 검증({@code FundingCheck})이
  * 거르며, 자격 부합 목록에는 상태와 함께 노출될 수 있어야 하기 때문이다.
+ *
+ * <p><b>원문 인용도 같은 쿼리에서 가져온다</b> (BE-06 ①): {@code doc_chunk_ref} → {@code chunk_id}
+ * <b>LEFT JOIN</b> 한 번이다. 유사도 검색·벡터DB는 도입하지 않았고(DECISIONS §7) 상품당 청크가
+ * 1건이라 조인으로 행이 늘지 않는다. LEFT 인 이유는 청크가 없는 상품도 목록에서 사라지면 안 되기
+ * 때문이며, 그 경우 인용은 null 이 된다 — 없는 근거를 지어내지 않는다.
  */
 @Repository
 public class FinanceRepository {
@@ -21,12 +26,17 @@ public class FinanceRepository {
     private static final FundingProductRowMapper ROW_MAPPER = new FundingProductRowMapper();
 
     private static final String SELECT_ALL = """
-            SELECT name, max_age, industries, regions, pre_startup_only,
-                   amount_max, rate, rate_type, rate_note, term_months,
-                   exclusive_group, status, data_as_of,
-                   source_org, source_url, source_collected
-            FROM finance_product
-            ORDER BY amount_max DESC, name
+            SELECT p.name, p.max_age, p.industries, p.regions, p.pre_startup_only,
+                   p.amount_max, p.rate, p.rate_type, p.rate_note, p.term_months,
+                   p.exclusive_group, p.status, p.data_as_of,
+                   p.source_org, p.source_url, p.source_collected,
+                   c.text              AS quote_text,
+                   c.doc_meta ->> 'org'  AS quote_org,
+                   c.doc_meta ->> 'doc'  AS quote_doc,
+                   c.doc_meta ->> 'date' AS quote_date
+            FROM finance_product p
+            LEFT JOIN finance_doc_chunk c ON c.chunk_id = p.doc_chunk_ref
+            ORDER BY p.amount_max DESC, p.name
             """;
 
     private final JdbcClient jdbcClient;

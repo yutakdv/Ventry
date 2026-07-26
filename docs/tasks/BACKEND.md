@@ -114,9 +114,11 @@
 
 ## BE-06 (D9~10) — P1 (여유 시, 순서 고정: ①→②→③)
 
-- [ ] ① 원문 근거 인용: `doc_chunk_ref` → `finance_doc_chunk` **id 직접 조회** → `source_quote`
+- [x] ① 원문 근거 인용: `doc_chunk_ref` → `finance_doc_chunk` **id 직접 조회** → `source_quote`
       **원문 그대로** (LLM 재작성 금지 — "인용은 검색이지 생성이 아니다", 스펙 §5-4)
-      미구현 확정 시: D10에 계약의 `source_quote: null` 유지 + 스펙 §5-4 이월 문서 처리 (CM-03)
+      → **2026-07-26 결선 (#18)**. `FinanceRepository` LEFT JOIN 1회로 상품과 함께 읽어
+      `FundingProduct.sourceQuote` 에 싣는다. 세 경로(`check-area`·`scenarios`·`explore`)
+      모두 반영. 실적재 검증: 26/26 인용 보유, 서버 측 가공 0 (요약·자르기 없음)
 - [ ] ② 근거문 캐시: 상권×업종 근거문 사전 생성, 탐색 인사이트는 템플릿 즉시+LLM 교체
 - [ ] ③ 개인화 언어화: 근거문 프롬프트에 사용자 발화 요약 주입
 - **DoD**: 구현분 계약 반영 or 이월 문서화 완료
