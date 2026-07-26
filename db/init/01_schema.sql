@@ -216,6 +216,11 @@ CREATE TABLE finance_product (
     industries       TEXT[],                  -- NULL/빈 배열 = 전 업종
     regions          TEXT[],                  -- NULL/빈 배열 = 전 지역
     pre_startup_only BOOLEAN NOT NULL DEFAULT FALSE,
+    -- 기존 사업자 한정 — pre_startup_only 의 반대 축이다 (이슈 #90 문제 2).
+    -- 공고문이 '보유한 대출'(대환) 또는 '재창업'을 명시한 상품은 예비창업자가 신청할 수 없다.
+    -- 축이 없던 동안 예비창업 프로필에 대환대출이 편성됐다 — 상품명 블랙리스트로 코드에
+    -- 숨기는 대신 자격 축으로 표현한다.
+    existing_business_only BOOLEAN NOT NULL DEFAULT FALSE,
     amount_max       INTEGER NOT NULL,        -- 만원
     rate             NUMERIC(6, 3),           -- 연 %. 고정금리 숫자값. 단일 숫자로 표기 불가면 NULL → rate_note 참조.
                                               -- ⚠️ NULL ≠ variable: fixed도 숫자 미표기 시 NULL 가능(분기는 rate_type로, API_CONTRACT 금리 표기)
