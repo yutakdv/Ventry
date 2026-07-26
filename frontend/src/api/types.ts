@@ -170,7 +170,12 @@ export interface Area {
   monthly_rent: number // 만원/월 (환산임대료)
   est_sales: number // 만원/월 (추정매출)
   daily_floating: number // 명/일
-  burden_ratio: number // monthly_rent ÷ est_sales
+  /**
+   * monthly_rent ÷ est_sales.
+   * ⚠️ `est_sales = 0` 인 상권에서 서버가 문자열 `"Infinity"` 를 보낸다(실측 1,061건 중 1건).
+   * 표시할 때는 `formatBurdenRatio` 로 감싼다 — 타입만 믿고 계산하면 화면에 `Infinity%` 가 찍힌다.
+   */
+  burden_ratio: number
   reason_text: string
   rent_source: RentSource
   transit: Transit
