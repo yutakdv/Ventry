@@ -109,3 +109,17 @@ export function formatRate(p: { rate?: number; rate_type?: string; rate_note?: s
   if (p.rate != null) return kind ? `연 ${p.rate}% (${kind})` : `연 ${p.rate}%`
   return p.rate_note ?? null
 }
+
+/**
+ * 금리 보조 줄 — `rate` 숫자와 **함께** 낼 원문 표현.
+ *
+ * `rate`가 실려 와도 그 숫자는 특정 분기 실값이다("’26년 3/4분기 적용 · 분기별 변동금리").
+ * 숫자만 남기면 사용자는 지금도 유효한 확정 이율로 읽고, 데이터 기준일 상시 표기 원칙과도
+ * 어긋난다 (docs/HANDOFF_FRONTEND.md #3). 그래서 적용 조건이 담긴 `rate_note`를 병기한다.
+ * 고정금리 상품의 `rate_note`도 "○○자금 이용 시에만 해당" 같은 단서를 담고 있어 함께 낸다.
+ *
+ * `rate`가 없을 때는 `formatRate`가 이미 `rate_note`를 본문으로 쓰므로 중복을 피해 null을 준다.
+ */
+export function formatRateNote(p: { rate?: number; rate_note?: string }): string | null {
+  return p.rate != null ? (p.rate_note ?? null) : null
+}

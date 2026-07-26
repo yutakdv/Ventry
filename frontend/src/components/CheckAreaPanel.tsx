@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import VerdictBadge from './VerdictBadge'
 import SourceQuoteBlock from './SourceQuoteBlock'
-import { formatAmount, formatRate } from '../lib/format'
+import { formatAmount, formatRate, formatRateNote } from '../lib/format'
 import type { CheckAreaResponse } from '../api/types'
 import styles from './CheckAreaPanel.module.css'
 
@@ -61,6 +61,7 @@ export default function CheckAreaPanel({
       <ul className={styles.products}>
         {products.map((p) => {
           const rate = formatRate(p)
+          const rateNote = formatRateNote(p)
           return (
             <li key={p.name} className={styles.product}>
               <span className={`t-body-strong ${styles.productName}`}>{p.name}</span>
@@ -69,7 +70,8 @@ export default function CheckAreaPanel({
                 {rate && ` · ${rate}`}
                 {` · ${p.source.org} · ${p.data_as_of} 기준`}
               </span>
-              {p.source_quote && <SourceQuoteBlock quote={p.source_quote} />}
+              {rateNote && <span className={`t-caption ${styles.rateNote}`}>{rateNote}</span>}
+              {p.source_quote && <SourceQuoteBlock quote={p.source_quote} sourceUrl={p.source.url} />}
             </li>
           )
         })}

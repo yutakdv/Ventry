@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { Check, ChevronDown, ShieldCheck, Star, TrendingUp } from 'lucide-react'
 import Button from './Button'
 import SourceQuoteBlock from './SourceQuoteBlock'
-import { formatAmount, formatRate } from '../lib/format'
+import { formatAmount, formatRate, formatRateNote } from '../lib/format'
 import type { ExploreInsightEvent } from '../api/types'
 import styles from './ScenarioRow.module.css'
 
@@ -103,6 +103,7 @@ export default function ScenarioRow({
         : '월 상환액 미산출'
 
   const rateText = insight.funding ? formatRate(insight.funding) : null
+  const rateNote = insight.funding ? formatRateNote(insight.funding) : null
 
   return (
     <article className={`${styles.row} ${highlight ? styles.highlight : ''} ${applied ? styles.applied : ''}`}>
@@ -224,7 +225,13 @@ export default function ScenarioRow({
                   {insight.funding.source.org}
                   {insight.funding.source.collected && ` (${insight.funding.source.collected} 수집)`}
                 </p>
-                {insight.funding.source_quote && <SourceQuoteBlock quote={insight.funding.source_quote} />}
+                {rateNote && <p className={`t-caption ${styles.fundingMeta}`}>{rateNote}</p>}
+                {insight.funding.source_quote && (
+                  <SourceQuoteBlock
+                    quote={insight.funding.source_quote}
+                    sourceUrl={insight.funding.source.url}
+                  />
+                )}
               </>
             )}
 
