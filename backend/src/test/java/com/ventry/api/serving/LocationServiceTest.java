@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.within;
 import com.ventry.api.checkarea.CheckAreaDtos.CheckAreaResponse;
 import com.ventry.api.common.Verdict;
 import com.ventry.api.engine.Profile;
+import com.ventry.api.llm.NoLlmClient;
 import com.ventry.api.recommend.RecommendDtos.Area;
 import com.ventry.api.recommend.RecommendDtos.RecommendResponse;
 import com.ventry.api.scenario.ScenarioDtos.BudgetPreview;
@@ -15,8 +16,9 @@ import org.junit.jupiter.api.Test;
 /** BE-03f — 도구 계층 결선(엔진 오케스트레이션) 검증. 데모 프로필·예산 8,000 기준. */
 class LocationServiceTest {
 
-    private final LocationService svc =
-            new LocationService(new DemoCandidates(), new DemoProducts(), new DemoDataMeta());
+    /** 무LLM 검증 에이전트 — 이 테스트가 보는 것은 판정·정렬이지 반박문이 아니다 (#96). */
+    private final LocationService svc = new LocationService(new DemoCandidates(),
+            new DemoProducts(), new DemoDataMeta(), new RiskReviewAgent(new ReviewGenerator(new NoLlmClient(null))));
     private final Profile demo = new Profile(32, 5000, false, "cafe", "망원");
 
     @Test
@@ -39,10 +41,12 @@ class LocationServiceTest {
     }
 
     @Test
-    void recommend_riskReviewApplied_andReasonTextComplianceSafe() {
+    void recommend_riskReviewSkippedWithoutLlm_andReasonTextComplianceSafe() {
         RecommendResponse res = svc.recommend(demo, 8000);
-        assertThat(res.riskReview().applied()).isTrue();
-        assertThat(res.riskReview().skipped()).isFalse();
+        // 무LLM 에이전트를 주입했으므로 반박은 생략되고 템플릿이 최종본이다 (#96, 스펙 §5-3).
+        // 판정·근거문은 그대로 나온다 — 검증 실패가 추천을 막지 않는다.
+        assertThat(res.riskReview().skipped()).isTrue();
+        assertThat(res.riskReview().objectionText()).isNotEmpty();
         for (var area : res.areas()) {
             assertThat(area.reasonText()).isNotEmpty();
             assertThat(area.reasonText()).doesNotContain("추천", "권장");
