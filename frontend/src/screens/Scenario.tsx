@@ -9,7 +9,7 @@ import ScenarioCard from '../components/ScenarioCard'
 import FundingItem from '../components/FundingItem'
 import { getScenarios } from '../api/client'
 import { useSession } from '../store/session'
-import { formatBudgetRange, formatRate, formatRateNote } from '../lib/format'
+import { formatAmount, formatBudgetRange, formatRate, formatRateNote } from '../lib/format'
 import type { CompositionType, Scenario as ScenarioData } from '../api/types'
 import styles from './Scenario.module.css'
 
@@ -19,9 +19,33 @@ import styles from './Scenario.module.css'
  * 나오기도 한다 (docs/HANDOFF_FRONTEND.md #2). "더 큰 예산"을 암시하는 문구·아이콘을 두지 않는다.
  * "승인" 표현도 용어 컴플라이언스 금지어(CLAUDE.md)라 정보 서술형만 쓴다.
  */
-const SCENARIO_META: Record<ScenarioData['label'], { icon: LucideIcon; title: string; description: string }> = {
-  보수: { icon: ShieldCheck, title: '보수적 시나리오', description: '보증형 상품만으로 구성' },
-  적극: { icon: Layers, title: '적극적 시나리오', description: '정책자금·대출까지 포함해 구성' },
+const SCENARIO_META: Record<
+  ScenarioData['label'],
+  { icon: LucideIcon; title: string; description: string; basis: string }
+> = {
+  보수: {
+    icon: ShieldCheck,
+    title: '보수적 시나리오',
+    description: '보증형 상품만으로 구성',
+    basis: '권리금 제외 진입 비용',
+  },
+  적극: {
+    icon: Layers,
+    title: '적극적 시나리오',
+    description: '정책자금·대출까지 포함해 구성',
+    basis: '권리금 포함 진입 비용',
+  },
+}
+
+/**
+ * 카드에 편성된 필요분 = 기본 예산 − 자기자본.
+ *
+ * 서버가 `budget = 자기자본 + 필요분`, `budget_min = 자기자본`으로 내려주므로 뺄셈으로 나온다
+ * (계약 2번 · `ScenarioBuilder`). 새 필드를 요구하지 않고 서버 값에서 파생시킨 것이지
+ * 화면이 금액을 만들어 내는 것이 아니다 (§0-1).
+ */
+function neededAmount(s: ScenarioData): number {
+  return Math.max(0, s.budget - s.budget_min)
 }
 
 const COMPOSITION_ORDER: CompositionType[] = ['policy_loan', 'guarantee', 'equity']
@@ -80,7 +104,7 @@ export default function Scenario() {
         <div className={styles.header}>
           <div className={styles.titleRow}>
             <h1 className="t-title1">2단계. 조달 시나리오</h1>
-            <Button variant="secondary" size="sm" onClick={() => navigate('/')}>
+            <Button variant="secondary" size="sm" onClick={() => navigate('/diagnose')}>
               입력 정보 수정
             </Button>
           </div>
@@ -122,6 +146,18 @@ export default function Scenario() {
                   예상 총 예산 범위 ({SCENARIO_META[selected.label].title.replace(' 시나리오', '')})
                 </p>
                 <p className={styles.budgetAmount}>{formatBudgetRange(selected.budget_min, selected.budget_max)}</p>
+                {/*
+                  상한이 카드 간에 역전될 수 있다 — 편성 규칙이 「한도 최대」가 아니라
+                  「필요분을 덮는 최소 한도」라, 후보 풀이 넓은 적극 쪽이 더 잘 맞는(=더 작은)
+                  상품을 고르는 경우가 있기 때문이다 (DECISIONS §13-3). 이유를 화면에 밝히지 않으면
+                  "적극인데 왜 상한이 작은가"가 결함으로 읽힌다.
+                */}
+                <p className={`t-caption ${styles.budgetBasis}`}>
+                  {SCENARIO_META[selected.label].basis} 기준 필요분{' '}
+                  <strong>{formatAmount(neededAmount(selected))}</strong>을 덮는{' '}
+                  <strong>최소 한도</strong> 상품이 편성됩니다. 상한은 그 상품의 공고상 한도이므로
+                  두 시나리오의 크기를 비교하는 값이 아닙니다.
+                </p>
               </div>
               <div className={styles.gauge}>
                 {COMPOSITION_ORDER.map((type) => {
