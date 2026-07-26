@@ -152,3 +152,36 @@
     max-height: none;
   }
 }
+
+/* 지도 열 — 지도 + 표시 상한 안내 + 역방향 판정 패널 */
+.mapCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  min-width: 0;
+}
+
+.mapNote {
+  color: var(--color-text-tertiary);
+}
+
+/* 탐색 진입 CTA (Figma Bottom CTA Bar) */
+.exploreCta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+  padding: var(--space-16) var(--space-20);
+  background: var(--color-bg-tip);
+  border-radius: var(--radius-lg);
+}
+
+.exploreText {
+  flex: 1 1 auto;
+  color: var(--color-text-primary);
+}
+
+/* 목록 하단 "더 보기" — .cards가 max-height 세로 flex라 축소를 막아야 높이가 유지된다 */
+.moreBtn {
+  flex: none;
+  margin-top: var(--space-4);
+}
