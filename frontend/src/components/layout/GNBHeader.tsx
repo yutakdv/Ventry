@@ -1,7 +1,14 @@
 import logo from '../../assets/brand/ventry-logo.png'
 import styles from './GNBHeader.module.css'
 
-/** 상단 GNB — 로고+Beta(좌) / 이용안내·데이터출처·로그인(우). 전 화면 공용. */
+/**
+ * 상단 GNB — 로고+Beta(좌) / 서비스 소개·데이터 출처(우). 전 화면 공용.
+ *
+ * 로그인 버튼과 이용 안내 링크는 두지 않는다 (이슈 #108). 인증·회원 개념이 백엔드에 없고
+ * (계약 6개 엔드포인트 어디에도 인증이 없다), 스펙 §0-2 가 결과 저장·공유를 P2 로 미뤄 둔
+ * 상태라 저장할 것이 없는데 로그인할 이유가 없다. 눌러도 아무 일이 없는 버튼을 화면 최상단에
+ * 두는 쪽이 더 큰 위험이다.
+ */
 export default function GNBHeader() {
   return (
     <header className={styles.header}>

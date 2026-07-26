@@ -35,19 +35,6 @@
 .link:hover {
   color: var(--color-text-primary);
 }
-.login {
-  height: 34px;
-  padding: 0 16px;
-  border: 0;
-  border-radius: var(--radius-control);
-  background: var(--color-brand-primary);
-  color: var(--color-text-on-brand);
-  cursor: pointer;
-  transition: background-color 120ms ease;
-}
-.login:hover {
-  background: var(--color-brand-primary-hover);
-}
 
 /*
  * 좁은 화면에서는 링크를 접는다. 접기 전에는 헤더 내용이 뷰포트보다 넓어져 **페이지 전체에
