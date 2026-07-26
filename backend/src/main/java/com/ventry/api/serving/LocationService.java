@@ -109,11 +109,20 @@ public class LocationService {
                 ReverseCheck.DEFAULT_THETA);
         return new Area(c.areaCode(), c.name(), c.lat(), c.lng(), result.verdict(),
                 score(c, weights), breakdown(c), toCost(cost),
-                c.monthlyRent(), c.estSales(), c.dailyFloating(), burdenRatio,
+                c.monthlyRent(), c.estSales(), c.dailyFloating(), serializableRatio(burdenRatio),
                 ReasonTemplate.reason(c.name(), result.verdict(), burdenRatio),
                 new RentSource(c.rentOrg(), c.rentDistrict(), c.rentFallback()),
                 new Transit(c.transitStation(), c.transitLine(), c.transitDistanceM(),
                         c.transitDailyRiders(), c.transitFallback()));
+    }
+
+    /**
+     * 계약 타입을 지키는 마지막 관문 — 비유한값은 <b>필드 생략</b>으로 내보낸다 (BE 리뷰 D-04).
+     * 추정매출이 결측(0)인 상권에서 {@code Infinity} 가 문자열로 직렬화되던 경로를 여기서 끊는다.
+     * 데이터가 고쳐져도(가정 #70) 이 가드는 계약 타입 보증으로 남는다.
+     */
+    private static Double serializableRatio(double value) {
+        return Double.isFinite(value) ? value : null;
     }
 
     /** 화면 노출 점수 = 가중 합[0,1]을 0~100 정수로 (assumptions.md #8). */
