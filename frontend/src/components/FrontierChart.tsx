@@ -1,4 +1,6 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
+import { Download } from 'lucide-react'
+import { downloadSvgAsPng } from '../lib/svgExport'
 import styles from './FrontierChart.module.css'
 
 const W = 400
@@ -38,6 +40,21 @@ export interface FrontierChartProps {
  * 수치는 전부 서버가 준 좌표이며 화면은 좌표계 변환만 한다 (§0-1).
  */
 export default function FrontierChart({ points, currentBudget }: FrontierChartProps) {
+  const svgRef = useRef<SVGSVGElement>(null)
+  const [exportError, setExportError] = useState(false)
+
+  /** 기술설명서 삽입용 정적 이미지 (§0-8 P1-② ★v6.1). */
+  const exportPng = useCallback(async () => {
+    if (!svgRef.current) return
+    setExportError(false)
+    try {
+      await downloadSvgAsPng(svgRef.current, `ventry-frontier-${currentBudget}.png`)
+    } catch {
+      // 내보내기가 실패해도 차트 자체는 멀쩡하다 — 화면을 망가뜨리지 않고 문구로만 알린다.
+      setExportError(true)
+    }
+  }, [currentBudget])
+
   const model = useMemo(() => {
     if (points.length === 0) return null
 
@@ -90,6 +107,7 @@ export default function FrontierChart({ points, currentBudget }: FrontierChartPr
   return (
     <div className={styles.wrap}>
       <svg
+        ref={svgRef}
         className={styles.svg}
         viewBox={`0 0 ${W} ${H}`}
         role="img"
@@ -142,6 +160,18 @@ export default function FrontierChart({ points, currentBudget }: FrontierChartPr
           {label}
         </text>
       </svg>
+
+      <div className={styles.actions}>
+        <button type="button" className={`t-caption ${styles.export}`} onClick={() => void exportPng()}>
+          <Download size={13} aria-hidden />
+          이미지로 저장 (PNG)
+        </button>
+        {exportError && (
+          <span className={`t-caption ${styles.exportError}`}>
+            이미지를 만들지 못했습니다. 차트는 그대로 사용할 수 있습니다.
+          </span>
+        )}
+      </div>
     </div>
   )
 }
