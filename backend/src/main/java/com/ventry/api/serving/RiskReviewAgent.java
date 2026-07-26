@@ -46,8 +46,10 @@ public class RiskReviewAgent {
      * 그 예산이 만들어 낸 후보 구성이다.
      */
     public RiskReview forRecommend(String industry, List<Area> areas) {
-        return generator.generate(recommendFacts(industry, areas),
-                ReasonTemplate.recommendReview());
+        List<Area> visible = visibleTop(areas);
+        return generator.generate(recommendFacts(industry, visible),
+                ReasonTemplate.recommendReview(entered(areas), count(areas, Verdict.CAUTION),
+                        count(areas, Verdict.CONDITIONAL)));
     }
 
     /** 역방향 판정에 대한 반박. 클릭 한 곳의 판정·부족분·부담률이 사실이다. */
@@ -57,16 +59,48 @@ public class RiskReviewAgent {
                 판정 대상: %s
                 판정: %s
                 부족분(만원): %s
-                환산임대료 대비 추정매출 부담률: %.3f
-                """.formatted(areaName, verdict,
-                gapAmount == null ? "없음" : String.valueOf(gapAmount), burdenRatio);
+                환산임대료 대비 추정매출 부담률: %s
+                """.formatted(areaName, verdict.label(),
+                gapAmount == null ? "없음" : String.valueOf(gapAmount), ratio(burdenRatio));
         return generator.generate(facts, ReasonTemplate.checkAreaReview());
     }
 
-    private static String recommendFacts(String industry, List<Area> areas) {
-        String top = areas.stream().limit(FACT_AREAS)
-                .map(a -> "  - %s: 판정 %s, 종합점수 %d, 부담률 %.3f, 환산임대료 %d만원, 추정매출 %d만원"
-                        .formatted(a.name(), a.verdict(), a.score(), a.burdenRatio(),
+    /**
+     * 반박 대상은 <b>화면이 실제로 제시한 후보</b>다 (BE 리뷰 D-23 · 이슈 #104 ①).
+     *
+     * <p>종합점수 정렬은 예산과 무관해 상위 3곳의 이름이 고정인데, 예산이 낮아지면 그 3곳이 전부
+     * {@code OUT_OF_SCOPE} 가 되는 구간이 있다. 화면은 범위 외를 걸러 내므로 그대로 두면
+     * <b>사용자가 볼 수 없는 상권</b>에 대한 반박문이 만들어진다. 캐시 키 성질(assumptions #64
+     * 「사실이 달라지는 시점 = 추천이 실질적으로 달라지는 시점」)은 이 필터 뒤에도 유지된다.
+     */
+    private static List<Area> visibleTop(List<Area> areas) {
+        return areas.stream()
+                .filter(a -> a.verdict() != Verdict.OUT_OF_SCOPE)
+                .limit(FACT_AREAS)
+                .toList();
+    }
+
+    private static int count(List<Area> areas, Verdict verdict) {
+        return (int) areas.stream().filter(a -> a.verdict() == verdict).count();
+    }
+
+    /** 진입한 후보 수 = 범위 외·조건부를 뺀 수 (적합 + 유의). */
+    private static int entered(List<Area> areas) {
+        return count(areas, Verdict.FIT) + count(areas, Verdict.CAUTION);
+    }
+
+    private static String recommendFacts(String industry, List<Area> visible) {
+        if (visible.isEmpty()) {
+            // 진입 후보가 0곳이면 반박 대상 자체가 없다. 사실을 비워 보내면 sanitize 가 대조할
+            // 것이 없어 지어낸 수치가 통과할 여지가 생기므로, 그 사실 자체를 문장으로 넘긴다.
+            return """
+                    업종: %s
+                    상위 후보: 없음 (현재 예산으로 진입 가능한 후보가 없음)
+                    """.formatted(industry);
+        }
+        String top = visible.stream()
+                .map(a -> "  - %s: 판정 %s, 종합점수 %d, 부담률 %s, 환산임대료 %d만원, 추정매출 %d만원"
+                        .formatted(a.name(), a.verdict().label(), a.score(), ratio(a.burdenRatio()),
                                 a.monthlyRent(), a.estSales()))
                 .collect(Collectors.joining("\n"));
         return """
@@ -74,5 +108,12 @@ public class RiskReviewAgent {
                 상위 후보:
                 %s
                 """.formatted(industry, top);
+    }
+
+    /** 비유한 부담률은 숫자가 아니라 사실로 적는다 — 반박문에 `Infinity` 가 실리던 경로 (D-04). */
+    private static String ratio(Double value) {
+        return value != null && Double.isFinite(value)
+                ? "%.3f".formatted(value)
+                : "산출 불가(매출 결측)";
     }
 }

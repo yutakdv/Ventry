@@ -13,7 +13,9 @@ public final class ScenarioDtos {
      * 예산은 범위로 제시한다: 상품 한도는 공고상 상한일 뿐 승인 금액이 아니므로,
      * 하한(심사와 무관한 확정 재원)과 상한(한도 전액 활용 가정)을 함께 노출한다.
      *
-     * @param budget    화면 2 슬라이더 초기 선택값 (= budgetMax)
+     * @param budget    화면 2 슬라이더 초기 선택값 = <b>budgetMin + 필요분</b>
+     *                  (★2026-07-26 계약 변경 — 구: budgetMax). 상한을 초기값으로 두면
+     *                  「한도 전액 사용」이 기본 선택이 된다 (DECISIONS §13-3)
      * @param budgetMin 심사와 무관한 확정 재원 합 (자기자본 등)
      * @param budgetMax budgetMin + Σ 상품 한도(amountMax)
      */
@@ -33,8 +35,13 @@ public final class ScenarioDtos {
 
     public record BudgetRequest(int confirmedBudget, List<CompositionItem> composition) {}
 
-    public record BudgetResponse(int confirmedBudget, List<CompositionItem> composition,
-                                 BudgetPreview preview) {}
+    /**
+     * @param dataAsOf 프리뷰 수치(환산임대료·유동인구)의 데이터 기준일. 화면 3은 이 값이 없어
+     *                 <b>기준일을 표기할 원천이 없는 유일한 화면</b>이었다 (불변 원칙 4 ·
+     *                 이슈 #104 ④). 값은 {@code /recommend} 와 같은 {@code data_source_meta.sales}
+     */
+    public record BudgetResponse(String dataAsOf, int confirmedBudget,
+                                 List<CompositionItem> composition, BudgetPreview preview) {}
 
     /**
      * 확정 예산 기준 프리뷰 (화면 2 슬라이더 즉시 갱신용, DECISIONS.md §9).

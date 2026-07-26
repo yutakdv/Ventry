@@ -17,8 +17,16 @@ public final class ReverseCheck {
     /**
      * 부담률 = 환산임대료 ÷ 월 추정매출 (스펙 §4-2 필터 2의 좌변).
      * 분모·분자는 배치 산출물(AI-05)이며 서빙은 비율을 저장하지 않고 매번 파생한다.
+     *
+     * <p><b>매출이 0이면 판정 불가를 명시적 센티널로 돌려준다</b> — {@link SustainFilter#extendedBurdenRatio}
+     * 와 같은 의미론이다. 가드가 없을 때 `rent / 0` 이 그대로 흘러 계약이 number 로 규정한
+     * `burden_ratio` 가 문자열 {@code "Infinity"} 로 직렬화됐고, 리스크 검증 반박문에도 그 글자가
+     * 실려 나갔다 (BE 리뷰 D-04 · 이슈 #104 ⑤). 표현 계층은 비유한값을 필드 생략으로 내보낸다.
      */
     public static double burdenRatio(int monthlyRent, int estSales) {
+        if (estSales <= 0) {
+            return Double.POSITIVE_INFINITY;
+        }
         return (double) monthlyRent / estSales;
     }
 

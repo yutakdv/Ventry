@@ -24,11 +24,14 @@ public final class RecommendDtos {
      * @param monthlyRent   환산임대료(만원/월) — 부담률 분자
      * @param estSales      월 추정매출(만원) — 부담률 분모
      * @param dailyFloating 일평균 유동인구(명)
-     * @param burdenRatio   monthlyRent ÷ estSales (스펙 §4-2)
+     * @param burdenRatio   monthlyRent ÷ estSales (스펙 §4-2). <b>추정매출이 결측(0)이면 null</b> —
+     *                      비유한값을 그대로 실으면 계약이 number 로 규정한 필드가 문자열
+     *                      {@code "Infinity"} 로 나간다 (BE 리뷰 D-04). null 은 non_null 직렬화라
+     *                      필드 자체가 생략되며, FE 는 「산출 불가」로 표기한다
      */
     public record Area(String areaCode, String name, double lat, double lng,
                        Verdict verdict, int score, Breakdown breakdown, Cost cost,
-                       int monthlyRent, int estSales, int dailyFloating, double burdenRatio,
+                       int monthlyRent, int estSales, int dailyFloating, Double burdenRatio,
                        String reasonText, RentSource rentSource, Transit transit) {}
 
     public record Breakdown(double w1, double w2, double w3, double w4, double w5) {}

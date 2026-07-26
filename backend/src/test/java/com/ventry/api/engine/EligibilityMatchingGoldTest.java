@@ -45,7 +45,7 @@ class EligibilityMatchingGoldTest {
             "^\\('(?<id>F-\\d+)', '(?<name>(?:[^']|'')*)', '(?:[^']|'')*', "
                     + "(?<maxAge>NULL|\\d+), (?<industries>NULL|ARRAY\\[[^\\]]*\\]), "
                     + "(?<regions>NULL|ARRAY\\[[^\\]]*\\]), (?<preStartup>TRUE|FALSE), "
-                    + "(?<existingOnly>TRUE|FALSE), ",
+                    + "(?<existingOnly>TRUE|FALSE), (?<targetGroup>NULL|ARRAY\\[[^\\]]*\\]), ",
             Pattern.MULTILINE);
 
     private static final Path REPO_ROOT = Path.of("..").toAbsolutePath().normalize();
@@ -220,7 +220,8 @@ class EligibilityMatchingGoldTest {
                             textArray(m.group("industries")),
                             textArray(m.group("regions")),
                             "TRUE".equals(m.group("preStartup")),
-                            "TRUE".equals(m.group("existingOnly"))),
+                            "TRUE".equals(m.group("existingOnly")),
+                            textArray(m.group("targetGroup"))),
                     0, 0.0, 60, null, "open", "2026-07-26", SRC));
         }
         return parsed;

@@ -31,6 +31,12 @@ public final class EligibilityFilter {
         if (constrains(e.industries()) && !e.industries().contains(profile.industry())) {
             return false;
         }
+        // 대상 한정 요건(장애인기업·사회적경제기업·인증기업 등)은 진단 폼에 대응 필드가 없다.
+        // 확인하지 못한 자격을 주장하지 않는다 — regions 와 동형의 하향 안전 규칙이다.
+        // 「미기재 = 해당 없음」이므로 대상 한정 상품은 전부 탈락한다 (BE 리뷰 D-06 ②).
+        if (constrains(e.targetGroups())) {
+            return false;
+        }
         return !constrains(e.regions()) || regionMatches(profile.region(), e.regions());
     }
 

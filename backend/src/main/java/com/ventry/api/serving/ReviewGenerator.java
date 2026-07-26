@@ -41,7 +41,10 @@ public class ReviewGenerator {
      * <p>{@code template} 은 호출 지점마다 고정 상수라 키에 넣지 않는다 — 사실 문자열이 이미
      * 두 지점을 구분한다.
      */
-    @Cacheable(cacheNames = "reviews", key = "#facts")
+    // unless: 폴백(skipped=true)은 캐시하지 않는다. 일시적 타임아웃 한 번이 그 사실 조합에 대해
+    // 「검증 생략」을 1시간 고정하면, 데모 중 한 번 삐끗한 것이 계속 삐끗한다. 성공만 캐시한다
+    // (BE 리뷰 D-12). 이 수정이 있어야 D-24 의 판정 분포 분기도 구간마다 다시 계산된다.
+    @Cacheable(cacheNames = "reviews", key = "#facts", unless = "#result.skipped()")
     public RiskReview generate(String facts, RiskReview template) {
         Optional<String> objection = ReviewPrompt.sanitize(
                 llm.complete(ReviewPrompt.build(facts)), facts);
