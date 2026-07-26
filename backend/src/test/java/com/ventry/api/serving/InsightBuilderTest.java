@@ -142,6 +142,47 @@ class InsightBuilderTest {
                 .isBetween(-10.0, 10.0));   // 0~100 점수 체계의 등급 구간 차
     }
 
+    /**
+     * D-03 (계약 D8) — <b>변동금리 근거</b>는 월 상환액을 금액으로 싣지 않고 문구로 대체한다.
+     *
+     * <p>실데이터 26건 중 19건이 변동금리이고 그중 13건이 현 분기 금리를 갖는다. 그 금리로
+     * 계산은 하되(지속 후보 수 산출), 분기마다 바뀌는 값을 고정 금액처럼 표기하지 않는다.
+     */
+    @Test
+    void variableRateLead_omitsMarginalPayment_andShipsServerNote() {
+        FundingProduct variable = new FundingProduct(
+                "소진공 혁신성장촉진자금",
+                new Eligibility(null, null, null, false),
+                3000, 4.25, "variable",
+                "정책자금 기준금리 3.85% + 0.4%p = 연 4.25% (분기별 변동금리)",
+                60, null, "open", "2026-Q1",
+                new Source("소상공인시장진흥공단", "https://www.semas.or.kr", "2026-07-19"));
+        InsightBuilder variableBuilder = new InsightBuilder(
+                new DemoCandidates(), () -> List.of(variable),
+                new FrontierService(new DemoCandidates()));
+
+        InsightBuilder.Result result = variableBuilder.build(demo, 7800, ROOMY, null);
+        InsightEvent t1 = of(result, "T1").orElseThrow();
+
+        assertThat(t1.marginalPayment()).isNull();                     // 금액 생략 (계약 D8)
+        assertThat(t1.marginalPaymentNote()).isEqualTo(InsightBuilder.VARIABLE_PAYMENT_NOTE);
+        assertThat(t1.funding().rateType()).isEqualTo("variable");
+        assertThat(t1.funding().rateNote()).isNotBlank();
+        assertThat(t1.headline())
+                .contains("분기별 변동금리")
+                .doesNotContain("연 4.25%")                            // 고정 어감 금지
+                .contains("지속 안정 후보");                            // 지속 수는 여전히 보고한다
+    }
+
+    /** 고정금리 근거는 금액을 싣고 문구를 싣지 않는다 — 두 필드가 동시에 나가면 안 된다. */
+    @Test
+    void fixedRateLead_shipsAmount_withoutNote() {
+        InsightEvent t1 = of(builder.build(demo, 7800, ROOMY, null), "T1").orElseThrow();
+
+        assertThat(t1.marginalPayment()).isNotNull();
+        assertThat(t1.marginalPaymentNote()).isNull();
+    }
+
     /** 원칙 3의 코드적 강제 — 상향(T1·T5)이 있으면 같은 스트림에 T2가 반드시 있다. */
     @Test
     void upsideNeverShipsWithoutSafetyMargin() {

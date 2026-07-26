@@ -60,6 +60,18 @@ public record FundingProduct(String name, Eligibility eligibility, int amountMax
     }
 
     /**
+     * <b>확정 이율</b>인가 — 즉 산출한 월 상환액을 그대로 표기해도 되는가 (계약 D8).
+     *
+     * <p>{@link #hasKnownRate()} 와 다르다. 변동금리 상품도 현 분기 금리는 알려져 있어 계산은
+     * 되지만, 그 값을 {@code marginal_payment} 로 실으면 <b>분기마다 바뀌는 값을 고정 금액처럼</b>
+     * 보여주게 된다. 그래서 계약은 변동금리에서 금액 대신 {@code marginal_payment_note} 를
+     * 싣기로 3인 합의했다(D8 · assumptions #30). 계산 가능성과 표기 가능성은 다른 문제다.
+     */
+    public boolean hasFixedRate() {
+        return rate != null && RATE_FIXED.equals(rateType);
+    }
+
+    /**
      * 화면 노출용 DTO 투영. rate_type은 항상, rate_note는 변동 시에만, source_quote는 연결된 청크가
      * 있을 때만 실린다 (non_null 직렬화라 없으면 필드 자체가 생략된다).
      */

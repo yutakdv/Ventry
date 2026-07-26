@@ -45,6 +45,15 @@ public class InsightBuilder {
     private static final String QUALIFICATION_TAIL =
             "자격 요건 부합 여부만 확인된 것이며, 실제 한도와 심사 결과는 해당 기관이 정합니다.";
 
+    /**
+     * 변동금리 근거일 때 {@code marginal_payment} 자리를 대신하는 문구 (계약 D8 ③).
+     * <b>문구는 서버가 단일 통제한다</b> — FE 가 하드코딩 사전을 두면 같은 상황에 두 문장이 생긴다.
+     */
+    static final String VARIABLE_PAYMENT_NOTE =
+            "근거 상품이 분기별 변동금리라 월 상환액을 확정 금액으로 표기하지 않습니다. "
+                    + "지속 안정 후보 수는 현 분기 고시 금리를 적용해 산출했으며, "
+                    + "금리 조건은 상품 원문을 확인하세요.";
+
     /** 0건 보고 문장 — 스펙 §2-4가 규정한 정상 출력이다. */
     static final String NO_INSIGHT_REASON =
             "인접 시나리오를 전 구간 검토했으나 현 조건 대비 유의미한 대안이 없습니다. "
@@ -162,31 +171,46 @@ public class InsightBuilder {
         return List.copyOf(insights);
     }
 
-    /** T1 기회 경계 — 진입 수·지속 수·갭·조달 명세·고지가 <b>한 묶음</b>으로만 생성된다. */
+    /**
+     * T1 기회 경계 — 진입 수·지속 수·갭·조달 명세·고지가 <b>한 묶음</b>으로만 생성된다.
+     *
+     * <p><b>변동금리 근거는 금액 대신 문구를 싣는다</b> (계약 D8 · BE 리뷰 D-03). 현 분기 금리로
+     * 월 상환액을 계산해 지속 후보 수를 내는 것까지는 하되, 그 금액을 화면에 고정 금액처럼
+     * 표기하지는 않는다 — 분기마다 바뀌는 값이기 때문이다.
+     */
     private InsightEvent t1(String id, BoundaryEval eval, FundingPlan plan, double medianSales) {
         FundingPlan.Allocation lead = plan.allocations().get(0);
         FundingProduct product = lead.product();
         int payment = (int) Math.round(eval.monthlyPayment());
+        boolean fixedRate = plan.allocations().stream()
+                .allMatch(a -> a.product().hasFixedRate());
+        String rateClause = fixedRate
+                ? "연 %s%%, %d개월 상환%s".formatted(rate(product.rate()), lead.termMonths(),
+                        lead.termAssumed() ? " 가정" : "")
+                : "분기별 변동금리, %d개월 상환%s".formatted(lead.termMonths(),
+                        lead.termAssumed() ? " 가정" : "");
+        String paymentClause = fixedRate
+                ? "월 상환 부담 %s만 원을 반영하면 지속 안정 후보는 %d곳입니다. "
+                        .formatted(won(payment), eval.nSustainAfter())
+                : "상환 부담을 반영하면 지속 안정 후보는 %d곳입니다. ".formatted(eval.nSustainAfter());
         String headline = "%s만 원을 추가 확보하면 진입 가능 후보는 %d곳에서 %d곳으로 늘어납니다. "
                 .formatted(won(eval.gap()), eval.nEntryBefore(), eval.nEntryAfter())
-                + "다만 해당 금액을 %s(연 %s%%, %d개월 상환%s)으로 조달할 경우 "
-                        .formatted(product.name(), rate(product.rate()), lead.termMonths(),
-                                lead.termAssumed() ? " 가정" : "")
-                + "월 상환 부담 %s만 원을 반영하면 지속 안정 후보는 %d곳입니다. "
-                        .formatted(won(payment), eval.nSustainAfter())
+                + "다만 해당 금액을 %s(%s)으로 조달할 경우 ".formatted(product.name(), rateClause)
+                + paymentClause
                 + QUALIFICATION_TAIL;
         // score_delta 는 계약·스펙상 **ΔS_top(종합점수 등급 개선분)** 이다. 목적함수 값
         // (Q×F/C)을 실으면 0~100 점수 체계에 +455.41 같은 값이 나가 화면에 그릴 수 없다
         // (BE 리뷰 D-02). 목적함수는 정렬에만 쓴다.
         Delta delta = new Delta(eval.nEntryBefore(), eval.nEntryAfter(), eval.nSustainAfter(),
                 (double) eval.deltaScoreGrades());
-        // rate_type은 항상, rate_note는 변동 시에만 실린다. 현 lead는 fixed만 될 수 있다
-        // (변동 상품은 커버에서 제외 — assumptions #28·#32). notice_date는 여전히 미보유 → 생략.
+        // rate_type은 항상, rate_note는 변동 시에만 실린다. notice_date는 여전히 미보유 → 생략.
         // source_quote는 상품에 붙어 오므로(BE-06 ①) 인사이트 근거에도 원문이 함께 실린다.
         Funding funding = new Funding(product.name(), product.amountMax(), product.rate(),
                 product.rateType(), product.rateNote(), lead.termMonths(), product.status(),
                 null, product.exclusiveGroup(), product.source(), product.sourceQuote());
-        return new InsightEvent(id, "T1", headline, delta, eval.gap(), payment, funding, true);
+        return new InsightEvent(id, "T1", headline, delta, eval.gap(),
+                fixedRate ? payment : null, fixedRate ? null : VARIABLE_PAYMENT_NOTE,
+                funding, true);
     }
 
     /**
@@ -211,7 +235,7 @@ public class InsightBuilder {
                         .formatted(entered)
                         + "여기서 예산을 낮추면 진입 가능 후보가 줄어듭니다.";
         return new InsightEvent(id, "T2", headline,
-                new Delta(entered, entered, sustain, 0.0), null, null, null, true);
+                new Delta(entered, entered, sustain, 0.0), null, null, null, null, true);
     }
 
     /**
@@ -232,7 +256,7 @@ public class InsightBuilder {
                 + "권리금 포함 비용 기준으로는 현재 예산을 넘어서는 상권입니다.";
         return new InsightEvent(id, "T5", headline,
                 new Delta(before, after, sustainAfter, null),
-                null, null, null, true);
+                null, null, null, null, true);
     }
 
     // ── 집계 보조 (전부 기존 engine 판정을 그대로 사용) ──────────────────────
