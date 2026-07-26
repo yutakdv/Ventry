@@ -131,6 +131,10 @@ FE 검토 의견 6건은 2026-07-21 반영됨 (5건 수용 · 1건 스코프 외
                  "daily_riders": 21000, "fallback": false } } ],
   "risk_review": { "objection_text": "…", "applied": true,
                    "skipped": false } }   // FE "왜?(검증 의견 n건)" 패널 원천 — 장애 시 skipped=true("검증 생략" 플래그)
+// ★2026-07-26 — 두 플래그가 실제 수행 여부를 반영한다 (#96). LLM 검증이 돌고 그 응답이 검증기를
+// 통과하면 applied=true·skipped=false, 그 외(키 부재·타임아웃·지어낸 수치·금지 표현)는 전부
+// applied=false·skipped=true 이며 objection_text 에는 템플릿 문장이 실린다. 구 구현은 LLM 없이도
+// 항상 applied=true 였다. 판정(verdict)은 어느 쪽이든 바뀌지 않는다 (스펙 §5-3).
 ```
 
 - `areas`는 `score` 내림차순 정렬로 반환된다.

@@ -22,11 +22,18 @@ public class CacheConfig {
      * 조회 캐시 — 이름은 {@code @Cacheable} 어노테이션과 일치해야 한다.
      * {@code candidates} = 후보 상권(업종별) · {@code products} = 금융상품 전량(BE-03g).
      * 둘 다 배치 산출이라 런타임 중 불변이다.
+     *
+     * <p>{@code reviews} 는 성격이 다르다 — 리스크 검증 반박문(BE-05·#96)이며 <b>LLM 왕복을
+     * 줄이려는</b> 캐시다. 키가 입력 사실 문자열이라 사실이 같으면 같은 반박이 나오고, 슬라이더가
+     * 예산을 되돌릴 때 왕복이 사라진다. 최대 크기를 두는 이유도 여기 있다: 예산·후보 조합만큼
+     * 키가 늘 수 있어 무한정 쌓게 두지 않는다.
      */
     @Bean
     public CacheManager cacheManager() {
-        CaffeineCacheManager manager = new CaffeineCacheManager("candidates", "products");
-        manager.setCaffeine(Caffeine.newBuilder().expireAfterWrite(Duration.ofHours(1)));
+        CaffeineCacheManager manager =
+                new CaffeineCacheManager("candidates", "products", "reviews");
+        manager.setCaffeine(
+                Caffeine.newBuilder().expireAfterWrite(Duration.ofHours(1)).maximumSize(500));
         return manager;
     }
 }
