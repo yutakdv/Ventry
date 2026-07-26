@@ -22,10 +22,38 @@
   min-width: 0;
 }
 
+/*
+ * 원문은 서버가 자르지 않는다(§5-4 — 바이트 동일성이 "인용은 검색이지 생성이 아니다"의 증명).
+ * 실측 19~1,863자라 길이 통제는 화면 몫이다. 4줄로 클램프하고 전문은 출처 링크로 넘긴다.
+ * 표의 셀 경계가 개행으로 보존돼 있어 pre-wrap이 없으면 한 덩어리로 뭉개진다.
+ */
 .text {
   color: var(--color-text-primary);
+  white-space: pre-wrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  flex-wrap: wrap;
 }
 
 .attribution {
   color: var(--color-text-tertiary);
+}
+
+.sourceLink {
+  color: var(--color-text-accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.sourceLink:hover {
+  text-decoration: underline;
 }
