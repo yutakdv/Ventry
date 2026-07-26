@@ -38,11 +38,16 @@ public class ExploreController {
                               @RequestParam(name = "v", defaultValue = "0") long version) {
         SessionStore.SessionState state = sessions.get(sid);
         state.acceptVersion(version);
-        ExplorePayload payload = explore.explore(state);   // 결정적 계산 (송출 밖에서 1회)
         return sse.run(emitter -> {
             if (stale(state, version)) {
                 return;   // 구 버전 요청 — 아무 이벤트도 보내지 않고 종료
             }
+            // 계산(그 안의 LLM 계획 호출 포함)을 **송출 스레드 안에서** 한다. 밖에 두면 톰캣
+            // 워커가 LLM 왕복 동안 점유돼, SseSupport 자신의 주석(「워커 스레드에서 LLM 대기
+            // 금지」)을 어긴다 — 동시 요청이 몇 개만 겹쳐도 워커가 고갈된다 (BE 리뷰 D-10).
+            // TTFB 자체는 그대로다. 폴백 축을 먼저 송출하고 refine 으로 교체하는 것은 축 목록이
+            // 나중에 바뀌어도 되는지 FE 와 확인이 필요해 이번 범위에서 제외했다.
+            ExplorePayload payload = explore.explore(state);
             emitter.send(SseEmitter.event().name("plan")
                     .data(payload.plan(), MediaType.APPLICATION_JSON));
             for (InsightEvent insight : payload.insights()) {

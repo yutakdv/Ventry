@@ -24,8 +24,8 @@ import com.ventry.api.common.FinanceDtos.SourceQuote;
  *                        유사도 검색이 아니라 {@code doc_chunk_ref} id 직접 조회 결과이므로
  *                        상품에 1:1로 붙는 속성이다 — 조회 시점이 아니라 적재 시점에 정해진다
  */
-public record FundingProduct(String name, Eligibility eligibility, int amountMax, Double rate,
-                             String rateType, String rateNote,
+public record FundingProduct(String productId, String name, Eligibility eligibility, int amountMax,
+                             Double rate, String rateType, String rateNote,
                              Integer termMonths, String exclusiveGroup, String status,
                              String dataAsOf, Source source, SourceQuote sourceQuote) {
 
@@ -42,7 +42,7 @@ public record FundingProduct(String name, Eligibility eligibility, int amountMax
     public FundingProduct(String name, Eligibility eligibility, int amountMax, double rate,
                           Integer termMonths, String exclusiveGroup, String status,
                           String dataAsOf, Source source) {
-        this(name, eligibility, amountMax, rate, RATE_FIXED, null,
+        this(null, name, eligibility, amountMax, rate, RATE_FIXED, null,
                 termMonths, exclusiveGroup, status, dataAsOf, source, null);
     }
 
@@ -50,8 +50,19 @@ public record FundingProduct(String name, Eligibility eligibility, int amountMax
     public FundingProduct(String name, Eligibility eligibility, int amountMax, Double rate,
                           String rateType, String rateNote, Integer termMonths,
                           String exclusiveGroup, String status, String dataAsOf, Source source) {
-        this(name, eligibility, amountMax, rate, rateType, rateNote,
+        this(null, name, eligibility, amountMax, rate, rateType, rateNote,
                 termMonths, exclusiveGroup, status, dataAsOf, source, null);
+    }
+
+    /**
+     * 계약 §6 의 동점 정렬 키 — {@code product_id} 오름차순. 픽스처 상품은 ID 가 없으므로
+     * 이름으로 대체한다(픽스처는 동점이 없어 순서가 갈리지 않는다).
+     *
+     * <p>ID 의 안정성은 적재 측이 보증한다 — 위치 기반 채번을 금지하고 검수본에 명시한다
+     * (AI 리뷰 #5 · 가정 #74). 그 전제가 깨지면 이 정렬도 의미를 잃는다.
+     */
+    public String sortKey() {
+        return productId != null ? productId : name;
     }
 
     /** 월 상환액을 결정적으로 계산할 수 있는가 — 조달 검증의 1차 게이트 (assumptions #28). */

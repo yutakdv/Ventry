@@ -1,7 +1,6 @@
 package com.ventry.api.llm;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,13 +18,16 @@ import org.springframework.context.annotation.Configuration;
 public class LlmClientConfig {
 
     @Bean
-    @ConditionalOnProperty(name = "OPENAI_API_KEY")
+    @ConditionalOnProperty(name = "OPENAI_API_KEY", matchIfMissing = false)
     LlmClient openAiLlmClient(@Value("${OPENAI_API_KEY:}") String apiKey) {
         return build(apiKey);
     }
 
+    // matchIfMissing 으로 두 빈을 **속성 하나로 양분**한다. @ConditionalOnMissingBean 은 일반
+    // @Configuration 에서 @Bean 평가 순서에 의존하는데, 순서가 뒤집히면 LlmClient 빈이 2개가 되어
+    // 기동이 실패한다 — 조건이 서로를 참조하지 않게 만드는 편이 안전하다 (BE 리뷰 D-18).
     @Bean
-    @ConditionalOnMissingBean(LlmClient.class)
+    @ConditionalOnProperty(name = "OPENAI_API_KEY", matchIfMissing = true, havingValue = "")
     LlmClient fallbackLlmClient(@Value("${OPENAI_API_KEY:}") String apiKey) {
         return new NoLlmClient(apiKey);
     }

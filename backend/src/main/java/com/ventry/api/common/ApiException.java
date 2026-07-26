@@ -24,6 +24,14 @@ public class ApiException extends RuntimeException {
                 "상권을 찾을 수 없습니다: " + areaCode);
     }
 
+    /**
+     * 입력 규격 위반 (400). <b>세션을 만들기 전에</b> 던져야 한다 — 진단이 200으로 통과하면
+     * 그 세션은 이후 모든 엔드포인트에서 500을 낸다 (BE 리뷰 D-09).
+     */
+    public static ApiException invalidRequest(String message) {
+        return new ApiException(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", message);
+    }
+
     public HttpStatus status() {
         return status;
     }

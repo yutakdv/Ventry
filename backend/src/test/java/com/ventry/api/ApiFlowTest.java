@@ -75,6 +75,63 @@ class ApiFlowTest {
                 .andExpect(status().isOk());
     }
 
+    // ── 입력 검증 (D-09·D-17) ────────────────────────────────────────────
+
+    /**
+     * 본문 {@code {}} 는 200 + 세션 발급이었고, 그 세션은 이후 전 엔드포인트를 500으로 만들었다
+     * ({@code Null key returned for cache operation}). 오류는 발생 지점에서 드러나야 한다.
+     */
+    @Test
+    void diagnose_withoutIndustry_isRejected() throws Exception {
+        mockMvc.perform(post("/api/diagnose")
+                        .contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID_REQUEST"));
+    }
+
+    /** 업종 오타가 조용히 빈 후보 목록이 되면 사용자는 "후보가 없구나"로 읽는다. */
+    @Test
+    void diagnose_withUnknownIndustry_isRejected() throws Exception {
+        String body = """
+                { "form": { "age": 32, "capital": 5000, "industry": "cafee" } }
+                """;
+        mockMvc.perform(post("/api/diagnose")
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID_REQUEST"));
+    }
+
+    @Test
+    void budget_negativeAmount_isRejected() throws Exception {
+        String sid = createSession();
+        String body = """
+                { "confirmed_budget": -9999, "composition": [] }
+                """;
+        mockMvc.perform(post("/api/budget/" + sid)
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("INVALID_REQUEST"));
+    }
+
+    /** D-25 (#104 ④) — 화면 3이 기준일을 표기할 수 있어야 한다 (불변 원칙 4). */
+    @Test
+    void budget_carriesDataAsOf_sameAsRecommend() throws Exception {
+        String sid = createSession();
+        String body = """
+                { "confirmed_budget": 8000, "composition": [ { "type": "equity", "amount": 5000 } ] }
+                """;
+        MvcResult budget = mockMvc.perform(post("/api/budget/" + sid)
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data_as_of").isNotEmpty())
+                .andReturn();
+        MvcResult recommend = mockMvc.perform(get("/api/recommend/" + sid))
+                .andExpect(status().isOk()).andReturn();
+
+        assertThat((String) JsonPath.read(budget.getResponse().getContentAsString(), "$.data_as_of"))
+                .isEqualTo(JsonPath.read(recommend.getResponse().getContentAsString(), "$.data_as_of"));
+    }
+
     @Test
     void diagnose_withoutFreeText_marksFormOnly() throws Exception {
         String body = """
