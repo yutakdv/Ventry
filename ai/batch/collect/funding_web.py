@@ -57,14 +57,32 @@ def fetch(url: str, *, timeout: int = 30) -> str:
 
 
 def to_text(raw: str, anchor: str) -> str:
-    """HTML → 본문 텍스트. 태그를 개행으로 바꿔 표의 셀 경계를 보존한다."""
+    """HTML → 본문 텍스트. **상품 표를 문단 단위로 뽑는다.**
+
+    이 사이트의 본문은 전부 `<table>` 안에 있고 **표 하나가 상품 하나**다(첫 셀이 "○○ 목록").
+    표만 뽑으면 좌측 메뉴·글자크기·프린트 같은 전역 크롬이 애초에 들어오지 않는다.
+
+    표 사이를 **빈 줄**로 띄우는 것이 핵심이다. `load.finance._SPLIT` 은 빈 줄과 `- N -` 페이지
+    표식만 문단 경계로 보는데, 구 구현이 빈 줄을 전부 버리고 한 줄씩 이어 붙인 탓에 문서 하나가
+    통짜 청크 `#0` 하나가 되었고 — 후보가 하나뿐이니 `select_chunk` 도 그것을 고를 수밖에 없어 —
+    **인용문이 사이트 내비게이션으로 시작**했다 (가정 #60, 스펙 §5-4 귀속 오류).
+
+    표가 없으면 앵커 이후 전문으로 폴백한다. 사이트 개편으로 인용을 통째로 잃느니 넓게 받는다.
+    """
     body = re.sub(r"(?is)<(script|style)\b.*?</\1>", " ", raw)
-    body = html.unescape(re.sub(r"<[^>]+>", "\n", body))
-    lines = [ln.strip() for ln in body.splitlines()]
-    lines = [ln for ln in lines if ln and not _NAV_NOISE.match(ln)]
-    text = "\n".join(lines)
+    tables = re.findall(r"(?is)<table\b.*?</table>", body)
+    if tables:
+        return "\n\n".join(_lines(table) for table in tables)
+    text = _lines(body)
     idx = text.rfind(anchor)
     return text[idx:] if idx > 0 else text
+
+
+def _lines(fragment: str) -> str:
+    """태그를 개행으로 바꿔 표의 셀 경계를 보존하고, 빈 줄·전역 크롬 줄을 걷어낸다."""
+    text = html.unescape(re.sub(r"<[^>]+>", "\n", fragment))
+    kept = [ln.strip() for ln in text.splitlines()]
+    return "\n".join(ln for ln in kept if ln and not _NAV_NOISE.match(ln))
 
 
 def run(env: dict[str, str] | None = None, session: object | None = None) -> dict[str, int]:
