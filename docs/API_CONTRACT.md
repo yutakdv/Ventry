@@ -46,7 +46,9 @@ FE 검토 의견 6건은 2026-07-21 반영됨 (5건 수용 · 1건 스코프 외
   "free_text": "권리금이 제일 걱정..." }
 // res
 { "session_id": "…", "parsed_profile": { …, "concerns": ["premium"],
-                                          "parse_source": "llm" } }   // "llm" | "form_only"(LLM 장애 폴백)
+                                          "parse_source": "form_only" } }
+// ★2026-07-26 — 현재 서버는 **항상 `"form_only"`** 를 보낸다. 자유 텍스트 처리는 키워드 매칭이고
+// LLM 실파싱이 없기 때문이다(BE-07 지적, 가정 #63). `"llm"` 은 실파싱을 붙인 뒤에야 나간다.
 ```
 
 - **숫자는 반드시 `form`으로 보낸다.** 금액을 `free_text`에만 담으면 LLM 파싱이 수치를
