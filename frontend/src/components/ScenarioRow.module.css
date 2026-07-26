@@ -62,7 +62,7 @@
 
 .chip {
   flex: none;
-  padding: 1px 7px;
+  padding: var(--pill-pad-sm);
   border: 1px solid var(--color-brand-primary);
   border-radius: var(--radius-full);
   color: var(--color-brand-primary-hover);
@@ -212,7 +212,7 @@
 /* 상태 칩은 채움, 정보 칩(.chip)은 외곽선 — 무게로 둘을 구분한다. */
 .appliedChip {
   flex: none;
-  padding: 2px var(--space-8);
+  padding: var(--pill-pad-sm);
   border-radius: var(--radius-full);
   background: var(--color-brand-primary);
   color: var(--color-text-on-brand);

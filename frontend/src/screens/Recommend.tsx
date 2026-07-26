@@ -14,6 +14,7 @@ import { getRecommend, postBudget, postCheckArea } from '../api/client'
 import { useSession } from '../store/session'
 import { formatAmount } from '../lib/format'
 import { buildComposition } from '../lib/composition'
+import { prefersReducedMotion } from '../lib/motion'
 import { VERDICT_LABEL } from '../lib/verdict'
 import type { CheckAreaResponse, RecommendResponse, Verdict } from '../api/types'
 import styles from './Recommend.module.css'
@@ -187,7 +188,11 @@ export default function Recommend() {
   useEffect(() => {
     if (!selected || !listRef.current) return
     const card = listRef.current.querySelector<HTMLElement>(`[data-area-code="${CSS.escape(selected)}"]`)
-    card?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    // CSS 미디어 쿼리는 JS가 부르는 스크롤에 닿지 않는다 — 여기서 직접 확인한다.
+    card?.scrollIntoView({
+      block: 'nearest',
+      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    })
   }, [selected])
 
   // 상권을 고르면 역방향 판정을 재조회한다 (계약 6번 — 판정 4단계 + 부족분 + 자격 부합 상품).
@@ -248,7 +253,7 @@ export default function Recommend() {
    * 세션이 없으면 목 폴백으로 그럴듯한 화면이 떠서 "확정 예산 —"처럼 반쪽 상태가 된다
    * (새로고침·주소 직접 입력에서 실제로 발생). 화면을 보여주는 대신 앞 단계로 돌려보낸다.
    */
-  if (!sessionId) return <Navigate to="/" replace />
+  if (!sessionId) return <Navigate to="/diagnose" replace />
   if (budget == null) return <Navigate to="/budget" replace />
 
   return (
