@@ -10,6 +10,7 @@ import StatCard from '../components/StatCard'
 import { postBudget } from '../api/client'
 import { useSession } from '../store/session'
 import { formatAmount, formatBudgetRange, formatPeople } from '../lib/format'
+import { buildComposition } from '../lib/composition'
 import type { BudgetCompositionItem, BudgetPreview, Scenario } from '../api/types'
 import styles from './Budget.module.css'
 
@@ -26,22 +27,6 @@ const PRESETS: { label: string; ratio: number }[] = [
   { label: '적극', ratio: 0.75 },
   { label: '최대', ratio: 1 },
 ]
-
-/**
- * 확정 예산을 조달 구성에 배분한다.
- * 자기자본은 심사와 무관한 확정 재원이므로 먼저 채우고, 나머지를 상품 한도 순서대로 배분한다.
- */
-function buildComposition(scenario: Scenario, budget: number): BudgetCompositionItem[] {
-  const ordered = [...scenario.composition].sort((a, b) =>
-    a.type === 'equity' ? -1 : b.type === 'equity' ? 1 : 0,
-  )
-  let remaining = budget
-  return ordered.map((c) => {
-    const amount = Math.max(0, Math.min(c.amount_max, remaining))
-    remaining -= amount
-    return { type: c.type, amount }
-  })
-}
 
 export default function Budget() {
   const navigate = useNavigate()
@@ -67,7 +52,7 @@ export default function Budget() {
           composition: comp,
         })
         setPreview(res.preview)
-        setBudget(res.confirmed_budget) // 세션 B₀ — 화면 4의 진실 원천
+        setBudget(res.confirmed_budget, res.preview) // 세션 B₀ — 화면 4의 진실 원천
         bumpVersion() // /recommend·/explore가 공유하는 version 갱신
       } finally {
         setPending(false)

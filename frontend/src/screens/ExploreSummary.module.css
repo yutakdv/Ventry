@@ -1,0 +1,176 @@
+/* Figma "applied-summary" — 적용 상태 요약 스트립 */
+.card {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-brand-primary);
+  border-radius: var(--radius-lg);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-24);
+  padding: var(--space-20) var(--space-24);
+}
+
+.budget {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.chip {
+  align-self: flex-start;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-brand-primary);
+  color: var(--color-text-on-brand);
+}
+
+.valueRow {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  color: var(--color-text-primary);
+}
+
+.delta {
+  color: var(--color-brand-primary-hover);
+}
+
+.base {
+  color: var(--color-text-tertiary);
+}
+
+.divider {
+  flex: none;
+  align-self: stretch;
+  width: 1px;
+  background: var(--color-border-default);
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.iconWrap {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background: var(--color-brand-subtle);
+  color: var(--color-brand-primary-hover);
+}
+
+.statTexts {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.statLabel {
+  color: var(--color-text-secondary);
+}
+
+.statValue {
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.statSub {
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.cta {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.revert {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font: inherit;
+}
+
+.revert:hover {
+  color: var(--color-text-primary);
+}
+
+.disclosure {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: 10px;
+  border: 0;
+  border-top: 1px solid var(--color-border-default);
+  background: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font: inherit;
+}
+
+.disclosure:hover {
+  color: var(--color-text-primary);
+}
+
+.chevron {
+  transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.sourcePanel {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 200ms cubic-bezier(0.23, 1, 0.32, 1),
+    opacity 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.sourcePanelOpen {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.sourceInner {
+  overflow: hidden;
+}
+
+.sourceBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: 0 var(--space-24) var(--space-16);
+  color: var(--color-text-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sourcePanel,
+  .chevron {
+    transition-duration: 0ms;
+  }
+}

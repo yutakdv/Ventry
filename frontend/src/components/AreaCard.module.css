@@ -1,16 +1,19 @@
+/*
+ * 카드는 컨테이너다 — 안에 "선택" 버튼과 "판정 보기" 버튼 두 개가 들어가므로
+ * 카드 자체를 <button>으로 두면 버튼 중첩(무효 HTML)이 된다.
+ */
 .card {
   display: flex;
   flex-direction: column;
-  gap: var(--space-12);
-  width: 100%;
-  padding: var(--space-16);
-  text-align: left;
+  /*
+   * 목록(.cards)이 max-height를 가진 세로 flex라 기본 shrink가 걸린다.
+   * overflow: hidden과 겹치면 카드가 내용보다 작게 찌그러진 채 잘리므로 축소를 막는다.
+   */
+  flex: none;
   background: var(--color-bg-surface);
   border: 1px solid var(--color-border-default);
   border-radius: var(--radius-lg);
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
+  overflow: hidden;
   transition:
     border-color 160ms ease,
     box-shadow 160ms ease;
@@ -18,9 +21,56 @@
 .card:hover {
   border-color: var(--color-border-strong);
 }
-.card:focus-visible {
+
+/** 카드 본문 = 선택 영역. 클릭하면 지도 마커만 이동하고 판정은 열지 않는다. */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  width: 100%;
+  padding: var(--space-16);
+  text-align: left;
+  background: none;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.body:focus-visible {
   outline: 2px solid var(--color-border-focus);
-  outline-offset: 2px;
+  outline-offset: -2px;
+}
+
+/** 판정 열기 — 카드 하단 고정 액션 */
+.verdictBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: 10px var(--space-16);
+  border: 0;
+  border-top: 1px solid var(--color-border-default);
+  background: var(--color-bg-page);
+  color: var(--color-text-secondary);
+  font: inherit;
+  cursor: pointer;
+}
+.verdictBtn:hover {
+  background: var(--color-brand-subtle);
+  color: var(--color-text-primary);
+}
+.verdictBtn:active {
+  transform: scale(0.99);
+}
+.verdictBtn:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: -2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .verdictBtn:active {
+    transform: none;
+  }
 }
 .selected {
   border-color: var(--color-accent-primary);

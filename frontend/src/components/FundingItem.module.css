@@ -163,14 +163,6 @@
   color: var(--color-text-accent);
 }
 
-.quote {
-  margin: 0 var(--space-16) var(--space-16) 68px;
-  padding: var(--space-12);
-  border-radius: var(--radius-md);
-  background: var(--color-bg-page);
-  color: var(--color-text-secondary);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .panel,
   .chevron,

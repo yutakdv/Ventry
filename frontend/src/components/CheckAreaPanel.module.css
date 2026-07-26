@@ -1,0 +1,82 @@
+/* Figma 05 "funding-card" — 역방향 판정 결과. 테두리·여백은 감싸는 모달이 갖는다. */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  flex-wrap: wrap;
+}
+
+.title {
+  color: var(--color-text-primary);
+}
+
+.gap {
+  margin-left: auto;
+  color: var(--color-text-secondary);
+}
+
+.gapStrong {
+  color: var(--color-brand-primary-hover);
+}
+
+.products {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.product {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-12);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+}
+
+.productName {
+  color: var(--color-text-primary);
+}
+
+.productMeta {
+  color: var(--color-text-secondary);
+}
+
+.more {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
+}
+
+.more:hover {
+  color: var(--color-text-primary);
+}
+
+.note {
+  color: var(--color-text-tertiary);
+}
+
+.loading {
+  padding: var(--space-16);
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+/* 금리 적용 조건 — rate 숫자와 함께 내는 보조 줄 (HANDOFF #3) */
+.rateNote {
+  color: var(--color-text-tertiary);
+}

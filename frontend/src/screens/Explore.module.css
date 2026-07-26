@@ -1,0 +1,180 @@
+.surface {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  padding: var(--space-24);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-xl);
+}
+
+/*
+ * h2·p의 브라우저 기본 마진 제거. 간격은 전부 flex gap으로 잡으므로 UA 마진이 남으면
+ * gap 위에 얹혀 이중으로 벌어진다(헤더 51px, 안내 줄 위아래 12px씩).
+ */
+.surface :is(h1, h2, h3, p) {
+  margin: 0;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+}
+
+.subtitle {
+  color: var(--color-text-secondary);
+}
+
+/* plan 이벤트 근거 1줄 — 헤더 상시 노출 (스펙 §0-8) */
+.planBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-8);
+  padding: var(--space-12) var(--space-16);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-info);
+  color: var(--color-text-primary);
+}
+
+.planDot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-top: 7px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-primary);
+}
+
+/*
+ * 2열 × 2행 — 좌측(차트·계산 로그)이 우측 목록보다 짧아 아래가 크게 비던 것을 막는다.
+ * 우측 목록은 두 행에 걸쳐 늘어난다.
+ */
+.columns {
+  display: grid;
+  grid-template-columns: 440px minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  gap: var(--space-12) var(--space-16);
+  align-items: start;
+}
+
+.stream {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+.evidenceCol {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.frontierCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  padding: var(--space-20);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+}
+
+.frontierCaption {
+  color: var(--color-text-secondary);
+}
+
+.doneSummary {
+  color: var(--color-status-success);
+}
+
+.stream {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  min-width: 0;
+}
+
+.streamHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.liveTag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: 2px var(--space-8);
+  border-radius: var(--radius-full);
+  background: var(--color-bg-success-subtle);
+  color: var(--color-text-success);
+}
+
+.liveDot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-status-success);
+}
+
+.countBadge {
+  margin-left: auto;
+  color: var(--color-text-tertiary);
+}
+
+.loading,
+.empty {
+  padding: var(--space-24);
+  text-align: center;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-page);
+  border-radius: var(--radius-lg);
+}
+
+.refineNote {
+  color: var(--color-text-tertiary);
+}
+
+.disclaimer {
+  color: var(--color-text-tertiary);
+}
+
+@media (max-width: 1200px) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+  }
+
+  .stream,
+  .evidenceCol {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
+
+/* 지금 무엇이 반영돼 있는지 알리는 줄 — 목록 위 상시 표기 */
+.baselineNote {
+  padding: var(--space-8) var(--space-12);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-page);
+  color: var(--color-text-secondary);
+}
+
+/* 선택된 시나리오 — 목록 위 별도 블록 */
+.activeBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding-bottom: var(--space-12);
+  border-bottom: 1px solid var(--color-border-default);
+}
+
+.activeTitle {
+  color: var(--color-text-primary);
+}

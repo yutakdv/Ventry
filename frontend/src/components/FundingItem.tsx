@@ -12,7 +12,6 @@ export interface FundingDetail {
  * 조달 구성 내역 1행 — Figma "Accordion Row".
  * `details`가 있으면 펼칠 수 있는 행이 되고, 없으면(자기자본 등) 평범한 행으로 남는다
  * — 펼칠 내용이 없는 행에 화살표를 두면 눌러도 아무 일이 없다.
- * `quote`는 벡터DB 원문 그대로만 넣는다 (스펙 §5-4, LLM 재작성 금지).
  */
 export default function FundingItem({
   icon: Icon,
@@ -23,7 +22,6 @@ export default function FundingItem({
   dataAsOf,
   note,
   details,
-  quote,
 }: {
   icon: LucideIcon
   title: string
@@ -33,7 +31,6 @@ export default function FundingItem({
   dataAsOf?: string
   note?: string
   details?: FundingDetail[]
-  quote?: string | null
 }) {
   const [open, setOpen] = useState(false)
   const panelId = useId()
@@ -97,7 +94,6 @@ export default function FundingItem({
                 </div>
               ))}
             </dl>
-            {quote && <blockquote className={`t-caption ${styles.quote}`}>{quote}</blockquote>}
           </div>
         </div>
       )}
