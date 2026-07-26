@@ -57,12 +57,55 @@ export function walkMinutes(distanceM: number): number {
   return Math.max(1, Math.round(distanceM / 67))
 }
 
-/** 교통 줄 — "도보 5분 내 망원역(6호선) — 일평균 승하차 21,000명". */
+/**
+ * 역명 표기 — 실데이터의 `station`은 "망원"처럼 접미사가 없기도 하고
+ * "잠실(송파구청)"처럼 부역명 괄호를 달고 오기도 한다. 뒤에 무조건 "역"을 붙이면
+ * "잠실(송파구청)역"이 되므로, 괄호가 있거나 이미 "역"으로 끝나면 그대로 쓴다.
+ */
+function stationLabel(station: string): string {
+  return station.includes('(') || station.endsWith('역') ? station : `${station}역`
+}
+
+/**
+ * 노선 표기 — `line`이 "6"으로 올 수도 "8호선"으로 올 수도 있다.
+ * 이미 "호선"이 붙어 있으면 덧붙이지 않는다("8호선호선" 방지).
+ */
+function lineLabel(line: string): string {
+  return line.includes('호선') ? line : `${line}호선`
+}
+
+/**
+ * 교통 줄 — "도보 5분 내 망원역(6호선) — 일평균 승하차 21,000명".
+ * 역명에 부역명 괄호가 있으면 괄호 중첩을 피해 "8호선 잠실(송파구청)" 형태로 낸다.
+ */
 export function formatTransit(t: {
   station: string
   line: string
   distance_m: number
   daily_riders: number
 }): string {
-  return `도보 ${walkMinutes(t.distance_m)}분 내 ${t.station}역(${t.line}호선) — 일평균 승하차 ${t.daily_riders.toLocaleString('ko-KR')}명`
+  const walk = `도보 ${walkMinutes(t.distance_m)}분 내`
+  const riders = `일평균 승하차 ${t.daily_riders.toLocaleString('ko-KR')}명`
+  const place = t.station.includes('(')
+    ? `${lineLabel(t.line)} ${t.station}`
+    : `${stationLabel(t.station)}(${lineLabel(t.line)})`
+  return `${walk} ${place} — ${riders}`
+}
+
+/* ─────────────────── 금리 표기 (API_CONTRACT §금리 표기) ─────────────────── */
+
+/**
+ * 금융상품의 금리 한 줄.
+ *
+ * 계약이 정한 표시 규칙을 그대로 따른다 — `rate`가 실려 오면 "연 {rate}%"를 쓰고,
+ * **생략됐을 때만** `rate_note` 원문을 그대로 표기한다. 고정/변동 라벨은 `rate` 유무가 아니라
+ * 항상 `rate_type`으로 판단한다(계약 D8: `rate_type`은 항상 존재, non_null 직렬화라 `rate`는
+ * null이 아니라 키 자체가 사라진다).
+ *
+ * 폴백 문구를 프론트가 만들지 않는 것이 핵심이다 — 금리 표기는 서버가 단일 통제한다.
+ */
+export function formatRate(p: { rate?: number; rate_type?: string; rate_note?: string }): string | null {
+  const kind = p.rate_type === 'variable' ? '변동' : p.rate_type === 'fixed' ? '고정' : null
+  if (p.rate != null) return kind ? `연 ${p.rate}% (${kind})` : `연 ${p.rate}%`
+  return p.rate_note ?? null
 }
