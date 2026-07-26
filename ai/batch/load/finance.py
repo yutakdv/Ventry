@@ -75,6 +75,10 @@ def _is_clean(text: str) -> bool:
 # — 남는 문장은 여전히 원문 그대로이고 verbatim 대조도 통과한다 (assumptions #50).
 _PRINT_HEADER = re.compile(r"^\d{4}\.\s*\d{1,2}\.\s*\d{1,2}\.")   # 인쇄 날짜·시각 머리말
 _PRINT_FOOTER = re.compile(r"^\d+\S{0,6}/\d+\S{0,6}https?://")     # N/M 페이지 + 원본 URL 꼬리말
+# 인쇄본에 딸려온 사이트 내비게이션 — 링크 경로가 괄호로 노출된 줄(`서울지역 (/web/…`,
+# `(/web/SUP01/…)+소공인특화지원`, 빵부스러기 메뉴). 산문에는 이 형태가 나타나지 않는다.
+# 실측 836줄 중 23줄이며 전부 소진공 지원사업안내 1문서의 링크 목록이다 (가정 #61).
+_PRINT_NAV = re.compile(r"\(/web/")
 
 
 def strip_print_artifacts(text: str) -> str:
@@ -84,9 +88,15 @@ def strip_print_artifacts(text: str) -> str:
     그대로 덤프에 실으면 psql 이 NUL 주변 구간을 조용히 삼켜 DB 저장본이 원문보다
     짧아진다(실측 411자 소실) — 「인용은 검색이지 생성이 아니다」가 깨지는 지점이라,
     지우는 쪽이 오히려 verbatim 을 복원한다 (스펙 §5-4, 리뷰 #4).
+
+    **장식 줄 자리에는 빈 줄을 남긴다.** 그 줄은 실제로 페이지가 바뀐 지점이라 버릴 정보가
+    아니라 **문단 경계**다. 그냥 지우면 앞 페이지 끝 문장과 뒤 페이지 첫 문장이 한 문단으로
+    붙어, 빈 줄이 없는 문서(융자공고의 `- N -` 같은 표식이 없는 인쇄본)는 통짜 청크 하나가
+    된다 — 인용문이 문서 전체가 되던 원인이다 (가정 #60).
     """
-    kept = [ln for ln in text.replace("\x00", "").splitlines()
-            if not (_PRINT_HEADER.match(ln) or _PRINT_FOOTER.match(ln))]
+    kept = ["" if (_PRINT_HEADER.match(ln) or _PRINT_FOOTER.match(ln)
+                   or _PRINT_NAV.search(ln)) else ln
+            for ln in text.replace("\x00", "").splitlines()]
     return "\n".join(kept)
 
 
