@@ -20,11 +20,14 @@ import com.ventry.api.common.FinanceDtos.SourceQuote;
  * @param exclusiveGroup  중복수혜 제약 그룹(동일 그룹 1개만). null=제약 없음
  * @param status          "open" | "closed"
  * @param dataAsOf        상품 조건 기준일 — 화면 표기 필수 (계약 공통 규약)
+ * @param sourceQuote     공고 원문 인용. <b>null = 연결된 청크 없음</b> (BE-06 ①, 스펙 §5-4).
+ *                        유사도 검색이 아니라 {@code doc_chunk_ref} id 직접 조회 결과이므로
+ *                        상품에 1:1로 붙는 속성이다 — 조회 시점이 아니라 적재 시점에 정해진다
  */
 public record FundingProduct(String name, Eligibility eligibility, int amountMax, Double rate,
                              String rateType, String rateNote,
                              Integer termMonths, String exclusiveGroup, String status,
-                             String dataAsOf, Source source) {
+                             String dataAsOf, Source source, SourceQuote sourceQuote) {
 
     /** 확정 이율 — m을 결정적으로 계산할 수 있다. */
     public static final String RATE_FIXED = "fixed";
@@ -34,13 +37,21 @@ public record FundingProduct(String name, Eligibility eligibility, int amountMax
 
     /**
      * 확정 이율 상품용 간편 생성자 (기존 호출부·픽스처 호환).
-     * {@code rateType}은 {@link #RATE_FIXED}, {@code rateNote}는 null로 채운다.
+     * {@code rateType}은 {@link #RATE_FIXED}, {@code rateNote}·{@code sourceQuote}는 null로 채운다.
      */
     public FundingProduct(String name, Eligibility eligibility, int amountMax, double rate,
                           Integer termMonths, String exclusiveGroup, String status,
                           String dataAsOf, Source source) {
         this(name, eligibility, amountMax, rate, RATE_FIXED, null,
-                termMonths, exclusiveGroup, status, dataAsOf, source);
+                termMonths, exclusiveGroup, status, dataAsOf, source, null);
+    }
+
+    /** 인용 없는 상품용 생성자 (픽스처·합성 상품). 적재 경로는 정식 생성자로 청크를 함께 싣는다. */
+    public FundingProduct(String name, Eligibility eligibility, int amountMax, Double rate,
+                          String rateType, String rateNote, Integer termMonths,
+                          String exclusiveGroup, String status, String dataAsOf, Source source) {
+        this(name, eligibility, amountMax, rate, rateType, rateNote,
+                termMonths, exclusiveGroup, status, dataAsOf, source, null);
     }
 
     /** 월 상환액을 결정적으로 계산할 수 있는가 — 조달 검증의 1차 게이트 (assumptions #28). */
@@ -48,8 +59,11 @@ public record FundingProduct(String name, Eligibility eligibility, int amountMax
         return rate != null;
     }
 
-    /** 화면 노출용 DTO 투영. rate_type은 항상, rate_note는 변동 시에만 실린다. source_quote(RAG)는 BE-06까지 null. */
-    public Product toProduct(SourceQuote sourceQuote) {
+    /**
+     * 화면 노출용 DTO 투영. rate_type은 항상, rate_note는 변동 시에만, source_quote는 연결된 청크가
+     * 있을 때만 실린다 (non_null 직렬화라 없으면 필드 자체가 생략된다).
+     */
+    public Product toProduct() {
         return new Product(name, amountMax, rate, rateType, rateNote, dataAsOf, source, sourceQuote);
     }
 }

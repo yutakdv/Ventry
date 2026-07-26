@@ -7,7 +7,20 @@ public final class FinanceDtos {
 
     public record Source(String org, String url, String collected) {}
 
-    /** RAG 원문 인용 — 구현 전 null 허용 (P1-①, 스펙 §5-4). */
+    /**
+     * 원문 인용 (BE-06 ①, 스펙 §5-4). {@code finance_product.doc_chunk_ref} 로
+     * {@code finance_doc_chunk} 를 <b>id 직접 조회</b>한 결과이며 유사도 검색·벡터DB는 쓰지 않는다
+     * (DECISIONS §7).
+     *
+     * <p>{@code text} 는 <b>공고문 원문 그대로</b>다 — 서버는 요약·재작성은 물론 길이 자르기도 하지
+     * 않는다. "인용은 검색이지 생성이 아니다"(§5-4)는 바이트 동일성으로만 증명되기 때문이다.
+     * 적재본 기준 19자~7,688자로 편차가 크므로(문단 단위 10건 ≤583자, 문서 통짜 8건 1.5~7.7KB)
+     * <b>화면에서의 줄 수 제한은 표현 계층이 담당</b>하고 전문은 {@code source.url} 로 연결한다.
+     *
+     * <p>연결된 청크가 없으면(=doc_chunk_ref NULL) 이 객체 자체가 null 이다. 인용을 지어내지 않는다.
+     *
+     * @param org  출처 기관 · @param doc 문서명 · @param date 문서 기준일 (청크 {@code doc_meta})
+     */
     public record SourceQuote(String text, String org, String doc, String date) {}
 
     /**
