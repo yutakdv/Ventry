@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import AppShell from '../components/layout/AppShell'
 import RailCard from '../components/layout/RailCard'
 import Button from '../components/Button'
@@ -72,8 +72,15 @@ function buildRequest(f: FormState): DiagnoseRequest {
 export default function Diagnose() {
   const navigate = useNavigate()
   const { setSession, diagnoseForm, setDiagnoseForm } = useSession()
-  // 화면 2에서 "입력 정보 수정"으로 돌아오면 직전 입력값이 그대로 복원된다.
-  const [f, setF] = useState<FormState>(diagnoseForm ?? EMPTY_FORM)
+  const [params] = useSearchParams()
+  /*
+   * 화면 2에서 "입력 정보 수정"으로 돌아오면 직전 입력값이 그대로 복원된다.
+   * 랜딩의 "3분 데모 체험"은 `?demo=1`로 들어오며 데모 프로필이 채워진 상태로 시작한다 —
+   * 직전 입력이 있으면 그쪽을 우선한다(되돌아온 사용자의 입력을 덮지 않는다).
+   */
+  const [f, setF] = useState<FormState>(
+    diagnoseForm ?? (params.get('demo') === '1' ? { ...EMPTY_FORM, ...DEMO_PROFILE } : EMPTY_FORM),
+  )
   const [submitted, setSubmitted] = useState(false) // "조달 시나리오 보기" 누른 뒤 에러 노출
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<DiagnoseResponse | null>(null)
