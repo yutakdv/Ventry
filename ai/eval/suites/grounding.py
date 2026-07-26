@@ -41,11 +41,18 @@ def evaluate(gold: list[dict], docs: dict[str, str]) -> dict:
     # §5-3 정당 null(깨진 원문 → 청크 불가) vs 예상 밖 null(클린인데 근거 없음) 구분.
     # 모수는 **인용이 비어 있는 적재 상품의 문서**다 — 골드 수록 여부로 판정하던 옛 정의는
     # 골드에 없을 뿐 실제로는 인용이 붙은 문서까지 '예상 밖 null' 로 몰았다 (리뷰 #5).
+    # 세 번째 갈래: **인용 불가 문서**(브라우저 인쇄된 웹 페이지라 자격 요건 문단이 원문에
+    # 존재하지 않는다). 클린하지만 근거가 없는 것이 아니라 **근거로 삼을 문단 자체가 없어서**
+    # 비운 것이므로 '예상 밖 null' 로 세면 지표가 사실과 어긋난다 (리뷰 #4).
+    from batch.load.finance import NON_QUOTABLE_DOCS
+
     doc_of = {p.get("product_id"): p.get("doc", "") for p in common.load_reviewed_products()}
     unlinked_docs = {doc_of.get(pid, "") for pid, ref in products if not ref}
     unlinked_docs.discard("")
-    legit_null = sorted(d for d in unlinked_docs if not common.is_clean_source(d))
-    unexpected_null = sorted(d for d in unlinked_docs if common.is_clean_source(d))
+    non_quotable = sorted(d for d in unlinked_docs if d in NON_QUOTABLE_DOCS)
+    remaining = unlinked_docs - set(non_quotable)
+    legit_null = sorted(d for d in remaining if not common.is_clean_source(d))
+    unexpected_null = sorted(d for d in remaining if common.is_clean_source(d))
     n_chunks = len(chunks)
     return {
         "shipped_products": len(products),
@@ -59,6 +66,7 @@ def evaluate(gold: list[dict], docs: dict[str, str]) -> dict:
         "gold_mismatches": gold_mismatches,
         "legitimate_null_docs": legit_null,
         "unexpected_null_docs": unexpected_null,
+        "non_quotable_docs": non_quotable,
     }
 
 

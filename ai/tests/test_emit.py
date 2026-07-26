@@ -20,6 +20,18 @@ def test_to_insert_sql_null_and_bool():
     assert sql.count("NULL") == 2  # None + NaN
 
 
+def test_to_insert_sql_nullable_int_na():
+    """Int64(nullable) 컬럼의 pd.NA 가 문자열 '<NA>' 로 새지 않는다 (리뷰 #12).
+
+    rent_join·transit_join 이 Int64 를 쓰므로 한 단계만 우회하면 실제로 발생할 수 있다.
+    """
+    df = pd.DataFrame({"riders": pd.array([100, None], dtype="Int64")})
+    sql = to_insert_sql("t", df)
+    assert "<NA>" not in sql
+    assert sql.count("NULL") == 1
+    assert "100" in sql
+
+
 def test_emit_deterministic():
     df = pd.DataFrame([{"area_code": "A1", "name": "x"}])
     assert to_insert_sql("t", df) == to_insert_sql("t", df)

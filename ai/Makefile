@@ -18,7 +18,9 @@ help:
 	@echo "  make eval-model         LightGBM+SHAP 설계 교차 검증 (§12-2, 게이트 §12-3)"
 	@echo "  make collect|preprocess|load   배치 파이프라인 (AI-02~05)"
 
-eval: eval-matching eval-extraction eval-grounding eval-sensitivity eval-model
+# report 스위트가 내부에서 전 스위트를 실행한다 — 앞에 개별 타깃을 나열하면 LightGBM 학습·SHAP 이
+# 두 번 돌아 심사위원 재현 시간이 2배가 된다 (리뷰 #9). 개별 타깃은 아래에 그대로 남아 있다.
+eval:
 	$(PYTHON) -m eval.run --suite report
 
 eval-matching:
@@ -42,5 +44,7 @@ collect:
 preprocess:
 	$(PYTHON) -m batch.preprocess
 
+# core 만 돌리면 20_finance.sql 이 옛 상태로 남는다 — 적재는 두 덤프가 한 벌이다 (리뷰 #10).
 load:
-	$(PYTHON) -m batch.load
+	$(PYTHON) -m batch.load core
+	$(PYTHON) -m batch.load finance
