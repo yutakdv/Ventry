@@ -98,7 +98,8 @@ FE 검토 의견 6건은 2026-07-21 반영됨 (5건 수용 · 1건 스코프 외
 // req  — 확정값이므로 단일 금액
 { "confirmed_budget": 8000, "composition": [ { "type": "equity", "amount": 5000 }, … ] }
 // res
-{ "confirmed_budget": 8000,
+{ "data_as_of": "2026-Q1",                  // ★2026-07-27 추가 — 프리뷰 수치의 기준일
+  "confirmed_budget": 8000,
   "composition": [ … ],
   "preview": { "area_count": 3,             // 진입 후보 수 N_entry(B) — expl §2-1 계단 함수
                "rent_range": [198, 456],    // 진입 후보의 환산임대료 [최소, 최대] (만원/월)
@@ -112,11 +113,14 @@ FE 검토 의견 6건은 2026-07-21 반영됨 (5건 수용 · 1건 스코프 외
   (동일 version 공유, 스펙 §7 · expl §5).
 - `/recommend`에 `?budget=` 쿼리는 두지 않는다 — 예산의 진실 원천을 세션 하나로 유지한다.
 - 진입 후보가 0곳이면 `area_count: 0`이고 두 range 필드는 생략된다.
+- **`data_as_of`는 `/recommend`와 같은 값**(`data_source_meta.sales`)이다. 화면 3은 프리뷰로
+  환산임대료·유동인구를 보여주는데 기준일을 실을 원천이 없어 「데이터 기준일 상시 표기」(스펙 §0-4)를
+  지키지 못하는 유일한 화면이었다 (이슈 #104 ④).
 
 ### 4) `GET /api/recommend/{sid}`
 ```jsonc
 { "data_as_of": "2026-Q1",
-  "total_count": 3,                                  // 필터 통과 후보 총수 (현재 areas 길이와 동일)
+  "total_count": 3,                                  // 후보 풀 전체 수(범위 외 포함) = areas 길이. 화면 표시 건수와 다르다
   "summary": { "avg_rent": 309, "avg_sales": 2100 }, // 후보군 평균 환산임대료·월 추정매출(만원)
   "areas": [ { "area_code": "…", "name": "망원역 상권", "lat": 0, "lng": 0,
     "verdict": "FIT",
@@ -125,6 +129,7 @@ FE 검토 의견 6건은 2026-07-21 반영됨 (5건 수용 · 1건 스코프 외
     "cost": { "ex_premium": [5800, 7200], "incl_premium": [7400, 9100] },   // 구간·추정치
     "monthly_rent": 198, "est_sales": 1800, "daily_floating": 24500,
     "burden_ratio": 0.11,                            // = monthly_rent ÷ est_sales (스펙 §4-2)
+                                                     // ★추정매출 결측(0)이면 **필드 생략** — number 로만 실린다
     "reason_text": "…",
     "rent_source": { "org": "REB", "district": "…", "fallback": false },
     "transit": { "station": "망원", "line": "6", "distance_m": 320,
@@ -235,3 +240,4 @@ FE 검토 의견 6건은 2026-07-21 반영됨 (5건 수용 · 1건 스코프 외
 | D2 (7/21) | **FE 검토 의견 6건 반영** — ①diagnose 폼 3필드 ②budget 프리뷰 응답 ③recommend `score`·`total_count`·`summary`·원자재 3종 ④scenarios 예산 범위·상품 `amount_max`/`rate`/`data_as_of` ⑤explore `axis_labels`·`current_budget` ⑥결과 저장 API = 스코프 외 회신. 근거 DECISIONS.md §8~§11 | FE 제안 → 리더 반영 (D3 CP1 확인 대상) |
 | D6 (7/24) | **금융상품 `rate` nullable + `rate_type`·`rate_note` 추가** (AI 제안) — 정책자금 변동금리("기준금리+가산")를 고정 숫자로 조작하지 않고 원문 그대로 기록. `finance_product` DDL·`20_finance.sql` 반영, BE는 `rate` NULL 허용 파싱 필요. 근거 assumptions #28 | ⚠️ **AI 발의 — BE·리더 3인 합의·ratify 대기** (변동금리를 표현 못 하던 계약 공백 보완) |
 | D8 (7/25) | **위 D6 변경 ratify 완료** (BE @Jongkwang131 · FE @youngjun1227, 이슈 #73) + **FE 조건 4건 반영**: ①JSON 예시 3곳 `rate_type`·`rate_note` ②분기 키 `rate_type`(항상 존재) 명문화 ③`rate_note`·폴백 문구 서버 단일 통제 ④변동금리 `marginal_payment` 생략+`marginal_payment_note`·`matching_products` `amount_max` desc 고정(금리 정렬 금지). BE-05는 변동금리 m 미산출. 데이터 검수 게이트 2건(F-002·F-010 `fixed`+`rate` NULL, F-010 `rate_note` 비금리)은 assumptions #30 등재 | ✅ **3인 합의 완료** (BE·FE ratify · AI 반영) |
+| D9 (7/27) | **코드리뷰 조치 반영 (이슈 #104·#110~#113)**: ①`POST /budget` 응답에 **`data_as_of` 추가** — 화면 3이 기준일을 표기할 원천이 없던 유일한 화면(#104 ④) ②`total_count` 주석 정정 — 값은 그대로 두고 「후보 풀 전체 수(범위 외 포함)」로 의미를 사실에 맞춘다(값을 바꾸면 랜딩 지표 1,061까지 움직인다) ③`burden_ratio` 는 추정매출 결측 시 **필드 생략**(문자열 `"Infinity"` 가 나가던 것, #104 ⑤) ④`marginal_payment_note` **서버 송출 이행** — D8 에서 합의됐으나 미구현이던 필드 | **BE 반영 · FE/AI ratify 대기** |

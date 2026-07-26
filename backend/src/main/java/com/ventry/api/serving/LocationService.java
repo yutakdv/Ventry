@@ -83,6 +83,14 @@ public class LocationService {
                 range(entered, CandidateArea::dailyFloating));
     }
 
+    /**
+     * 프리뷰 수치의 데이터 기준일 — {@code /recommend} 와 <b>같은 원천</b>을 쓴다.
+     * 화면 3만 기준일 표기 원천이 없어 불변 원칙 4를 지키지 못했다 (이슈 #104 ④ · BE 리뷰 D-25).
+     */
+    public String previewAsOf() {
+        return meta.asOf("sales");
+    }
+
     /** 역방향 판정: 임의 클릭 상권 → 판정 4단계 + 부족분 + 자격 부합 상품. */
     public CheckAreaResponse checkArea(Profile profile, int budget, String areaCode) {
         CandidateArea area = candidates.find(profile.industry(), areaCode)
@@ -90,12 +98,14 @@ public class LocationService {
         CostEstimate cost = CostCalculator.estimate(area.costBlocks());
         ReverseResult result = ReverseCheck.evaluate(budget, cost, area.burdenRatio(),
                 ReverseCheck.DEFAULT_THETA);
-        // 계약 D8: matching_products는 amount_max 내림차순(동점 시 이름 오름차순) 고정 정렬.
-        // 금리 정렬은 하지 않는다 — rate 생략(변동) 상품의 순위를 임의로 정하지 않기 위함이다.
+        // 계약 §6·D8: matching_products는 amount_max 내림차순, 동점 시 **product_id 오름차순**.
+        // 정렬을 FundingProduct 단계에서 끝내는 이유 — Product(응답 DTO)에는 product_id 가 없다.
+        // 계약이 요구한 것은 순서이지 노출이 아니므로 ID 를 응답에 싣지 않고 순서만 지킨다
+        // (BE 리뷰 D-13). 금리 정렬은 하지 않는다 — 변동금리 상품의 순위를 임의로 정하지 않는다.
         List<Product> matching = EligibilityFilter.qualify(profile, products.all()).stream()
+                .sorted(Comparator.comparingInt(FundingProduct::amountMax).reversed()
+                        .thenComparing(FundingProduct::sortKey))
                 .map(FundingProduct::toProduct)   // rate_type은 항상, source_quote는 청크 보유 시 실림
-                .sorted(Comparator.comparingInt(Product::amountMax).reversed()
-                        .thenComparing(Product::name))
                 .toList();
         return new CheckAreaResponse(result.verdict(), result.gapAmount(), matching,
                 riskReview.forCheckArea(area.name(), result.verdict(), result.gapAmount(),
@@ -109,11 +119,20 @@ public class LocationService {
                 ReverseCheck.DEFAULT_THETA);
         return new Area(c.areaCode(), c.name(), c.lat(), c.lng(), result.verdict(),
                 score(c, weights), breakdown(c), toCost(cost),
-                c.monthlyRent(), c.estSales(), c.dailyFloating(), burdenRatio,
+                c.monthlyRent(), c.estSales(), c.dailyFloating(), serializableRatio(burdenRatio),
                 ReasonTemplate.reason(c.name(), result.verdict(), burdenRatio),
                 new RentSource(c.rentOrg(), c.rentDistrict(), c.rentFallback()),
                 new Transit(c.transitStation(), c.transitLine(), c.transitDistanceM(),
                         c.transitDailyRiders(), c.transitFallback()));
+    }
+
+    /**
+     * 계약 타입을 지키는 마지막 관문 — 비유한값은 <b>필드 생략</b>으로 내보낸다 (BE 리뷰 D-04).
+     * 추정매출이 결측(0)인 상권에서 {@code Infinity} 가 문자열로 직렬화되던 경로를 여기서 끊는다.
+     * 데이터가 고쳐져도(가정 #70) 이 가드는 계약 타입 보증으로 남는다.
+     */
+    private static Double serializableRatio(double value) {
+        return Double.isFinite(value) ? value : null;
     }
 
     /** 화면 노출 점수 = 가중 합[0,1]을 0~100 정수로 (assumptions.md #8). */

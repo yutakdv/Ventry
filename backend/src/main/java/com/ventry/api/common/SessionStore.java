@@ -7,7 +7,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
@@ -26,6 +28,18 @@ public class SessionStore {
         SessionState state = new SessionState(id, profile);
         sessions.put(id, state);
         return state;
+    }
+
+    /**
+     * 만료 세션 일괄 정리 — <b>다시 찾아오지 않는 세션</b>을 지운다 (BE 리뷰 D-16).
+     *
+     * <p>제거가 접근 시점(lazy)뿐이면 한 번 만들고 이탈한 세션은 영원히 남는다. 데모·심사 동안
+     * 인메모리 맵이 단조 증가하는 것을 막는 최소 조치다. 세션 저장소가 인메모리·단일 인스턴스
+     * 전제라는 사실 자체는 그대로다(예선 스코프).
+     */
+    @Scheduled(fixedDelay = 10, timeUnit = TimeUnit.MINUTES)
+    void evictExpired() {
+        sessions.values().removeIf(SessionState::expired);
     }
 
     /** 만료 세션은 접근 시점에 제거(lazy eviction) 후 404. */

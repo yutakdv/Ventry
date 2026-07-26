@@ -22,8 +22,11 @@ public class DbCandidateSource implements CandidateSource {
 
     // TODO(BE-02→이슈D): 캐시 키에 자치구(sigungu) 추가 — findCandidates 에 자치구 파라미터 도입 후
     // TODO(BE-04): 정렬 비용 배열 사전 정렬 보관 (프론티어 결선 최적화 — 후보 리스트 캐싱까지가 오늘 범위)
+    // condition: 캐시 키가 null 이면 Spring 이 IllegalArgumentException 을 던져 요청 전체가 500이
+    // 된다. 입력 검증(D-09)이 앞단에서 막지만, 캐시 계층이 **입력 오류를 500으로 증폭**하지
+    // 않도록 여기서도 잠근다 — 방어 지점이 둘이어야 한 곳이 뚫려도 규격이 유지된다.
     @Override
-    @Cacheable(cacheNames = "candidates", key = "#industry")
+    @Cacheable(cacheNames = "candidates", key = "#industry", condition = "#industry != null")
     public List<CandidateArea> findCandidates(String industry) {
         return repository.findCandidates(industry);
     }

@@ -1,5 +1,6 @@
 [
   {
+    "product_id": "F-000",
     "name": "KB소상공인 보증서대출",
     "org": "KB국민은행",
     "product_type": "loan",
@@ -21,6 +22,7 @@
     "existing_business_only": false
   },
   {
+    "product_id": "F-001",
     "name": "KB소상공인 신용대출",
     "org": "KB국민은행",
     "product_type": "loan",
@@ -40,6 +42,7 @@
     "existing_business_only": false
   },
   {
+    "product_id": "F-002",
     "name": "이자지원 보증서 대출",
     "org": "KB국민은행",
     "product_type": "loan",
@@ -61,6 +64,7 @@
     "existing_business_only": false
   },
   {
+    "product_id": "F-003",
     "name": "소상공인 정책자금대출",
     "org": "KB국민은행",
     "product_type": "loan",
@@ -82,6 +86,7 @@
     "existing_business_only": false
   },
   {
+    "product_id": "F-004",
     "name": "ESG 실천기업 보증",
     "org": "서울신용보증재단",
     "product_type": "guarantee",
@@ -100,9 +105,13 @@
     "notice_date": "2026-07-21",
     "source_url": "https://www.seoulshinbo.co.kr",
     "doc": "서울신보_보증상품_ESG실천기업",
-    "existing_business_only": false
+    "existing_business_only": true,
+    "target_group": [
+      "인증기업"
+    ]
   },
   {
+    "product_id": "F-005",
     "name": "서울형 자영업자 위기극복 안심통장 특별보증",
     "org": "서울신용보증재단",
     "product_type": "guarantee",
@@ -121,9 +130,10 @@
     "notice_date": "2026-07-21",
     "source_url": "https://www.seoulshinbo.co.kr",
     "doc": "서울신보_보증상품_모바일앱자동심사",
-    "existing_business_only": false
+    "existing_business_only": true
   },
   {
+    "product_id": "F-006",
     "name": "지능형 모바일 자동심사 특별보증",
     "org": "서울신용보증재단",
     "product_type": "guarantee",
@@ -142,9 +152,10 @@
     "notice_date": "2026-07-21",
     "source_url": "https://www.seoulshinbo.co.kr",
     "doc": "서울신보_보증상품_모바일앱자동심사",
-    "existing_business_only": false
+    "existing_business_only": true
   },
   {
+    "product_id": "F-007",
     "name": "미래 유망기업 성장지원 보증",
     "org": "서울신용보증재단",
     "product_type": "guarantee",
@@ -163,9 +174,10 @@
     "notice_date": "2026-07-21",
     "source_url": "https://www.seoulshinbo.co.kr",
     "doc": "서울신보_보증상품_미래성장산업",
-    "existing_business_only": false
+    "existing_business_only": true
   },
   {
+    "product_id": "F-008",
     "name": "일자리 창출 및 고용안정 우수기업 특별보증",
     "org": "서울신용보증재단",
     "product_type": "guarantee",
@@ -184,9 +196,13 @@
     "notice_date": "2026-07-21",
     "source_url": "https://www.seoulshinbo.co.kr",
     "doc": "서울신보_보증상품_일자리창출사회적기업",
-    "existing_business_only": false
+    "existing_business_only": true,
+    "target_group": [
+      "고용우수기업"
+    ]
   },
   {
+    "product_id": "F-009",
     "name": "사회적경제기업 특별보증",
     "org": "서울신용보증재단",
     "product_type": "guarantee",
@@ -205,9 +221,13 @@
     "notice_date": "2026-07-21",
     "source_url": "https://www.seoulshinbo.co.kr",
     "doc": "서울신보_보증상품_일자리창출사회적기업",
-    "existing_business_only": false
+    "existing_business_only": false,
+    "target_group": [
+      "사회적경제기업"
+    ]
   },
   {
+    "product_id": "F-010",
     "name": "장애인 기업 특별보증",
     "org": "서울신용보증재단",
     "product_type": "guarantee",
@@ -226,9 +246,13 @@
     "notice_date": "2026-07-21",
     "source_url": "https://www.seoulshinbo.co.kr",
     "doc": "서울신보_보증상품_장애인기업",
-    "existing_business_only": false
+    "existing_business_only": true,
+    "target_group": [
+      "장애인기업"
+    ]
   },
   {
+    "product_id": "F-011",
     "name": "창업자금 및 사업장 임차자금 특별보증",
     "org": "서울신용보증재단",
     "product_type": "guarantee",
@@ -250,6 +274,7 @@
     "existing_business_only": false
   },
   {
+    "product_id": "F-012",
     "name": "일반경영안정자금",
     "org": "소진공",
     "product_type": "loan",
@@ -271,6 +296,7 @@
     "existing_business_only": false
   },
   {
+    "product_id": "F-013",
     "name": "긴급경영안정자금 (재해)",
     "org": "소진공",
     "product_type": "loan",
@@ -289,9 +315,10 @@
     "notice_date": "2025-12-29",
     "source_url": "https://ols.semas.or.kr",
     "doc": "소진공_2026_소상공인정책자금_융자공고",
-    "existing_business_only": false
+    "existing_business_only": true
   },
   {
+    "product_id": "F-014",
     "name": "긴급경영안정자금 (일시적 경영애로)",
     "org": "소진공",
     "product_type": "loan",
@@ -310,9 +337,10 @@
     "notice_date": "2025-12-29",
     "source_url": "https://ols.semas.or.kr",
     "doc": "소진공_2026_소상공인정책자금_융자공고",
-    "existing_business_only": false
+    "existing_business_only": true
   },
   {
+    "product_id": "F-015",
     "name": "신용취약소상공인자금",
     "org": "소진공",
     "product_type": "loan",
@@ -334,6 +362,7 @@
     "existing_business_only": false
   },
   {
+    "product_id": "F-016",
     "name": "대환대출",
     "org": "소진공",
     "product_type": "loan",
@@ -355,6 +384,7 @@
     "existing_business_only": true
   },
   {
+    "product_id": "F-017",
     "name": "재도전특별자금 (일반형)",
     "org": "소진공",
     "product_type": "loan",
@@ -376,6 +406,7 @@
     "existing_business_only": true
   },
   {
+    "product_id": "F-018",
     "name": "재도전특별자금 (희망형)",
     "org": "소진공",
     "product_type": "loan",
@@ -397,6 +428,7 @@
     "existing_business_only": true
   },
   {
+    "product_id": "F-019",
     "name": "재도전특별자금 (도약형)",
     "org": "소진공",
     "product_type": "loan",
@@ -418,6 +450,7 @@
     "existing_business_only": true
   },
   {
+    "product_id": "F-020",
     "name": "장애인기업지원자금",
     "org": "소진공",
     "product_type": "loan",
@@ -436,9 +469,13 @@
     "notice_date": "2025-12-29",
     "source_url": "https://ols.semas.or.kr",
     "doc": "소진공_2026_소상공인정책자금_융자공고",
-    "existing_business_only": false
+    "existing_business_only": false,
+    "target_group": [
+      "장애인기업"
+    ]
   },
   {
+    "product_id": "F-021",
     "name": "청년고용연계자금",
     "org": "소진공",
     "product_type": "loan",
@@ -460,6 +497,7 @@
     "existing_business_only": false
   },
   {
+    "product_id": "F-022",
     "name": "혁신성장촉진자금",
     "org": "소진공",
     "product_type": "loan",
@@ -481,6 +519,7 @@
     "existing_business_only": false
   },
   {
+    "product_id": "F-023",
     "name": "민간투자연계형 매칭융자",
     "org": "소진공",
     "product_type": "loan",
@@ -502,6 +541,7 @@
     "existing_business_only": false
   },
   {
+    "product_id": "F-024",
     "name": "상생성장 지원자금",
     "org": "소진공",
     "product_type": "loan",
@@ -523,6 +563,7 @@
     "existing_business_only": false
   },
   {
+    "product_id": "F-025",
     "name": "소공인 특화자금(일반)",
     "org": "소진공",
     "product_type": "loan",

@@ -30,7 +30,9 @@ def test_real_gold_all_verbatim():
         pytest.skip("원문 txt 부재(ai/data/interim 미커밋) — 데이터 의존 테스트")
     m = grounding.evaluate(gold, docs)
     assert m["gold_verbatim_rate"] == 1.0, m["gold_mismatches"]
-    assert m["gold_spotcheck_n"] == 13
+    # KB 3건은 골드에서 뺐다 — 그 문서는 인용 불가 판정이라 적재본에 실리지 않는 인용을
+    # 스팟체크해도 아무것도 지키지 못한다 (리뷰 #4-4).
+    assert m["gold_spotcheck_n"] == 10
 
 
 def test_null_buckets_split_legit_vs_unexpected():
@@ -40,10 +42,13 @@ def test_null_buckets_split_legit_vs_unexpected():
     if not any(docs.values()):
         pytest.skip("원문 txt 부재(ai/data/interim 미커밋) — is_clean_source 데이터 의존")
     m = grounding.evaluate(gold, docs)
-    # 버킷 모수는 '인용이 비어 있는 적재 상품의 문서'다 (리뷰 #5). 현재 26건 전건에 인용이
-    # 붙어 있으므로 두 버킷 모두 비어야 한다. 어느 쪽이든 값이 생기면 인용이 빠진 상품이
-    # 생겼다는 뜻이고, 그때 '정당 null(원문 깨짐)'인지 '예상 밖(클린인데 근거 없음)'인지 갈린다.
-    assert m["linked_products"] == m["shipped_products"]
+    # 버킷 모수는 '인용이 비어 있는 적재 상품의 문서'이며 세 갈래다 (리뷰 #5·#4).
+    # ① 인용 불가 문서 = KB 4종(브라우저 인쇄본이라 자격 문단이 원문에 없다) — 의도된 공백
+    # ② 정당 null = 원문이 깨져 청크 불가  ③ 예상 밖 null = 클린인데 근거 없음 → 항상 0이어야 한다
+    assert m["shipped_products"] == 26
+    assert m["linked_products"] == 22
+    assert len(m["non_quotable_docs"]) == 4
+    assert all("KB" in d for d in m["non_quotable_docs"])
     assert m["legitimate_null_docs"] == []
     assert m["unexpected_null_docs"] == []
     # 서울신보 6문서는 웹 재수집(#72)으로 클린해졌다 — 되돌아가면 정당 null 로 떨어진다.

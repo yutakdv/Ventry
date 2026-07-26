@@ -1,56 +1,27 @@
 package com.ventry.api.common;
 
-import com.ventry.api.common.FinanceDtos.Product;
-import com.ventry.api.common.FinanceDtos.Source;
-import com.ventry.api.scenario.ScenarioDtos.CompositionRange;
-import com.ventry.api.scenario.ScenarioDtos.ScenarioCard;
-import java.util.List;
-
 /**
- * BE-01 목 데이터 — 데모 프로필(만 32세 / 자기자본 5,000만 / 마포 망원 카페) 기준.
- * 결정공간 탐색(/explore) 목은 BE-05에서 실계산({@code ExploreService}·{@code InsightBuilder})으로
- * 교체되어 삭제됐다. 남은 목은 recommend·diagnose·check-area·scenarios 골격뿐이다.
+ * BE-01 목 데이터의 잔여 — <b>상수 2개</b>만 남았다.
+ *
+ * <p>목 시나리오 카드({@code scenarios()})와 그 상품 상수는 삭제했다. {@code ScenarioBuilder} 가
+ * 실상품으로 카드를 만든 뒤로 호출부가 없었고, 死코드는 "아직 목을 쓰는 경로가 있나"라는
+ * 오해를 남긴다 (BE 리뷰 D-21). 결정공간 탐색 목은 BE-05 실계산으로 이미 교체됐다.
  */
 public final class MockData {
 
+    /** 픽스처 프로파일의 데이터 기준일. DB 프로파일은 {@code data_source_meta} 를 읽는다. */
     public static final String DATA_AS_OF = "2026-Q1";
 
+    /**
+     * 고지 문구의 <b>정본</b> (CLAUDE.md 절대 불변 원칙 3).
+     *
+     * <p>현재 응답은 {@code disclaimer: true} 플래그만 싣고 문구는 FE 가 표기한다. 그래서 이
+     * 상수는 서빙 경로에서 참조되지 않지만, <b>문구가 바뀔 때 어디를 고쳐야 하는지</b>를 남기기
+     * 위해 유지한다 — 서버가 문구까지 통제할지는 팀 결정 사항이다.
+     */
     public static final String DISCLAIMER =
             "본 정보는 공개 자료 기반 정보 제공이며 대출 권유·중개·자문이 아닙니다. "
                     + "실제 한도·금리·승인 여부는 해당 기관의 심사에 따릅니다.";
 
     private MockData() {}
-
-    // ── 조달 시나리오 (화면 2) ───────────────────────────────────────────
-
-    /** 자기자본 — 심사와 무관한 확정 재원이므로 두 카드의 예산 하한을 이룬다. */
-    private static final int EQUITY = 5000;
-
-    // rate_type="fixed"(항상 존재), rate_note=null(fixed라 응답에서 생략) — 계약 D8
-    private static final Product GUARANTEE_PRODUCT = new Product(
-            "서울신용보증재단 창업보증", 1500, 2.5, "fixed", null, DATA_AS_OF,
-            new Source("서울신용보증재단", "https://www.seoulshinbo.co.kr", "2026-07-19"),
-            null);
-
-    private static final Product POLICY_LOAN_PRODUCT = new Product(
-            "소진공 청년 전용 창업자금", 3000, 2.5, "fixed", null, DATA_AS_OF,
-            new Source("소상공인시장진흥공단", "https://www.semas.or.kr", "2026-07-19"),
-            null);
-
-    /**
-     * 조달 시나리오 2장. 예산은 [자기자본, 자기자본 + Σ 상품 한도] 범위로 제시한다 —
-     * 한도는 공고상 상한일 뿐 승인 금액이 아니므로 단일값 노출은 보장 어감을 만든다(§0-4).
-     * 실 시나리오 생성(자격 필터 통과 상품 조합)은 BE-04에서 교체.
-     */
-    public static List<ScenarioCard> scenarios() {
-        return List.of(
-                new ScenarioCard("보수", 6500, EQUITY, 6500,
-                        List.of(new CompositionRange("equity", EQUITY, EQUITY),
-                                new CompositionRange("guarantee", 0, 1500)),
-                        List.of(GUARANTEE_PRODUCT)),
-                new ScenarioCard("적극", 8000, EQUITY, 8000,
-                        List.of(new CompositionRange("equity", EQUITY, EQUITY),
-                                new CompositionRange("policy_loan", 0, 3000)),
-                        List.of(POLICY_LOAN_PRODUCT, GUARANTEE_PRODUCT)));
-    }
 }

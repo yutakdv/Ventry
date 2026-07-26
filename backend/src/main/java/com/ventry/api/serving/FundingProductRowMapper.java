@@ -38,9 +38,11 @@ public class FundingProductRowMapper implements RowMapper<FundingProduct> {
                 textArray(rs, "industries"),
                 textArray(rs, "regions"),
                 rs.getBoolean("pre_startup_only"),
-                rs.getBoolean("existing_business_only"));
+                rs.getBoolean("existing_business_only"),
+                textArray(rs, "target_group"));
 
         return new FundingProduct(
+                rs.getString("product_id"),
                 rs.getString("name"), eligibility, rs.getInt("amount_max"),
                 nullableDouble(rs, "rate"), rs.getString("rate_type"), rs.getString("rate_note"),
                 nullableInt(rs, "term_months"), rs.getString("exclusive_group"),
