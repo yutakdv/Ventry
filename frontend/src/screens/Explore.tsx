@@ -335,10 +335,13 @@ export default function Explore() {
               ))
             )}
 
+            {/*
+              「문장을 다듬는 중」이라고 쓰지 않는다 — `refine` 이벤트는 서버가 아직 송출하지
+              않으므로(ExploreController:55) 일어나지 않을 일을 예고하는 문구가 된다
+              (docs/QA_REPORT_INTEGRATION_CM.md F-7). 실제로 진행 중인 것은 시나리오 수신이다.
+            */}
             {loading && ordered.length > 0 && (
-              <p className={`t-caption ${styles.refineNote}`}>
-                ↻ 문장을 다듬는 중… (LLM 장애 시 위 템플릿이 최종본입니다)
-              </p>
+              <p className={`t-caption ${styles.refineNote}`}>↻ 시나리오를 받는 중…</p>
             )}
           </section>
         </div>
