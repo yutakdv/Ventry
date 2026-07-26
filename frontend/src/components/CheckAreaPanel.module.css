@@ -66,19 +66,6 @@
   color: var(--color-text-primary);
 }
 
-.risk {
-  padding: var(--space-12);
-  border-radius: var(--radius-md);
-  background: var(--color-bg-page);
-  color: var(--color-text-secondary);
-}
-
-.riskTitle {
-  display: block;
-  margin-bottom: var(--space-4);
-  color: var(--color-text-primary);
-}
-
 .note {
   color: var(--color-text-tertiary);
 }

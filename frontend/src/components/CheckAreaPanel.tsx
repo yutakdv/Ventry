@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import VerdictBadge from './VerdictBadge'
 import SourceQuoteBlock from './SourceQuoteBlock'
+import RiskReviewPanel from './RiskReviewPanel'
 import { formatAmount, formatRate, formatRateNote } from '../lib/format'
+import { VERDICT_LABEL } from '../lib/verdict'
 import type { CheckAreaResponse } from '../api/types'
 import styles from './CheckAreaPanel.module.css'
 
@@ -83,15 +85,19 @@ export default function CheckAreaPanel({
         </button>
       )}
 
-      {!result.risk_review.skipped && result.risk_review.objection_text && (
-        <div className={`t-caption ${styles.risk}`}>
-          <span className={`t-label ${styles.riskTitle}`}>리스크 검증 의견</span>
-          {result.risk_review.objection_text}
-        </div>
-      )}
-      {result.risk_review.skipped && (
-        <p className={`t-caption ${styles.note}`}>리스크 검증 생략 — 판정은 결정적 계산 결과입니다.</p>
-      )}
+      {/*
+        상시 노출에서 클릭 전개로 바꿨다 — 스펙 §5-3은 반박 왕복을 "왜?" 클릭 시 전개로 규정하고,
+        같은 성격의 내용을 추천 화면과 이 모달이 다른 방식으로 보여줄 이유가 없다.
+      */}
+      <RiskReviewPanel
+        review={result.risk_review}
+        claim={
+          result.gap_amount > 0
+            ? `${areaName}을 ${VERDICT_LABEL[result.verdict]}으로 판정했고, 확정 예산 대비 부족분은 ${formatAmount(result.gap_amount)}입니다.`
+            : `${areaName}을 ${VERDICT_LABEL[result.verdict]}으로 판정했고, 확정 예산 내입니다.`
+        }
+        label={areaName}
+      />
     </section>
   )
 }
