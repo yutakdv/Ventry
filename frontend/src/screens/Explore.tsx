@@ -211,7 +211,7 @@ export default function Explore() {
     [sessionId, selectedScenario, effectiveBudget, applyExploreBudget, bumpVersion],
   )
 
-  if (!sessionId) return <Navigate to="/" replace />
+  if (!sessionId) return <Navigate to="/diagnose" replace />
   if (budget == null) return <Navigate to="/budget" replace />
 
   const plan = cached?.plan

@@ -178,3 +178,10 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* 프리뷰 수치의 출처 — 카드 4장 아래 한 줄로 묶는다(카드별 캡션 길이를 균일하게 유지). */
+.previewSource {
+  margin: calc(var(--space-8) * -1) 0 0;
+  color: var(--color-text-tertiary);
+  word-break: keep-all;
+}
