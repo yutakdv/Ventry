@@ -12,8 +12,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * POST /api/diagnose — 목 파싱 (BE-01). 자유 텍스트는 키워드 매칭으로 concerns를 추출한다.
- * LLM 실파싱(claude-haiku-4-5)은 BE-05에서 교체 — 장애 시 폼 값만 사용(parse_source=form_only).
+ * POST /api/diagnose — 진단 폼 + 자유 텍스트 처리 (BE-01).
+ *
+ * <p>자유 텍스트는 <b>키워드 매칭</b>으로 concerns 를 추출한다. LLM 실파싱은 아직 붙지 않았고,
+ * 그래서 {@code parse_source} 는 <b>항상 {@code "form_only"}</b> 다 — 하지 않은 일을 했다고
+ * 말하지 않기 위해서다 (BE-07 통합 QA 지적).
  */
 @RestController
 public class DiagnoseController {
@@ -41,7 +44,11 @@ public class DiagnoseController {
             concerns.add("traffic");
         }
 
-        String parseSource = freeText.isBlank() ? "form_only" : "llm";
+        // 항상 form_only 다 — 위 concerns 추출은 키워드 매칭이고 LLM 호출이 아니다 (BE-07).
+        // 구 구현은 free_text 가 비어 있지 않으면 "llm" 을 실었는데, API 키를 지운 스택에서도
+        // 그대로 "llm" 이 나갔다. 하지 않은 일을 했다고 말하는 필드가 되어 있었다.
+        // LLM 실파싱을 붙이는 시점에 그 호출의 성공 여부로 이 값을 정한다.
+        String parseSource = "form_only";
         ParsedProfile profile = new ParsedProfile(form.age(), form.capital(),
                 form.isExistingBusiness(), form.collateralAvailable(), form.monthlyInvestable(),
                 form.industry(), form.regionHint(), concerns, parseSource);
