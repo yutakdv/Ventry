@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import { ChevronDown } from 'lucide-react'
+import SourceQuoteBlock from './SourceQuoteBlock'
+import type { SourceQuote } from '../api/types'
 import styles from './FundingItem.module.css'
 
 export interface FundingDetail {
@@ -33,7 +35,7 @@ export default function FundingItem({
   dataAsOf?: string
   note?: string
   details?: FundingDetail[]
-  quote?: string | null
+  quote?: SourceQuote | null
 }) {
   const [open, setOpen] = useState(false)
   const panelId = useId()
@@ -97,7 +99,11 @@ export default function FundingItem({
                 </div>
               ))}
             </dl>
-            {quote && <blockquote className={`t-caption ${styles.quote}`}>{quote}</blockquote>}
+            {quote && (
+              <div className={styles.quote}>
+                <SourceQuoteBlock quote={quote} />
+              </div>
+            )}
           </div>
         </div>
       )}

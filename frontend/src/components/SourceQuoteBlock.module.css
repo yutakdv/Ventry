@@ -1,0 +1,31 @@
+/* Figma "source-quote" — 좌측 강조 바 + 원문 + 출처 줄 */
+.block {
+  display: flex;
+  gap: var(--space-12);
+  margin: 0;
+  padding: var(--space-12) var(--space-16);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-page);
+}
+
+.bar {
+  flex: none;
+  width: 3px;
+  border-radius: var(--radius-full);
+  background: var(--color-brand-primary);
+}
+
+.texts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.text {
+  color: var(--color-text-primary);
+}
+
+.attribution {
+  color: var(--color-text-tertiary);
+}

@@ -1,0 +1,96 @@
+/* 네이티브 <dialog> — 포커스 트랩·Esc 닫기·inert 배경을 브라우저가 처리한다 */
+/*
+ * `dialog.dialog`로 특이도를 올린다(요소+클래스). 화면 쪽 레이아웃 리셋(예: `.surface > *`)이
+ * margin을 0으로 덮으면 <dialog>의 중앙 정렬(margin: auto)이 죽어 좌상단에 붙는다.
+ * 모달은 최상위 레이어에 뜨므로 어느 컨테이너 안에 마운트되든 이 규칙이 이겨야 한다.
+ */
+dialog.dialog {
+  margin: auto;
+  width: min(680px, calc(100vw - 48px));
+  max-height: calc(100vh - 96px);
+  padding: 0;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-xl);
+  background: var(--color-bg-surface);
+  box-shadow: var(--shadow-float);
+  overflow: hidden;
+}
+
+.dialog::backdrop {
+  background: rgba(15, 18, 26, 0.32);
+}
+
+/* Figma motion-spec: transform/opacity만 · 200ms cubic-bezier(0.23, 1, 0.32, 1) */
+.dialog[open] {
+  animation: pop 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.dialog[open]::backdrop {
+  animation: fade 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-16) var(--space-20);
+  border-bottom: 1px solid var(--color-border-default);
+}
+
+.title {
+  color: var(--color-text-primary);
+}
+
+.close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.close:hover {
+  background: var(--color-bg-page);
+  color: var(--color-text-primary);
+}
+
+.close:active {
+  transform: scale(0.97);
+}
+
+.body {
+  max-height: calc(100vh - 200px);
+  padding: var(--space-20);
+  overflow-y: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog[open],
+  .dialog[open]::backdrop {
+    animation-duration: 0ms;
+  }
+
+  .close:active {
+    transform: none;
+  }
+}

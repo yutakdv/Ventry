@@ -163,12 +163,9 @@
   color: var(--color-text-accent);
 }
 
+/* 인용 본문 스타일은 SourceQuoteBlock이 갖는다 — 여기서는 들여쓰기만 맞춘다. */
 .quote {
   margin: 0 var(--space-16) var(--space-16) 68px;
-  padding: var(--space-12);
-  border-radius: var(--radius-md);
-  background: var(--color-bg-page);
-  color: var(--color-text-secondary);
 }
 
 @media (prefers-reduced-motion: reduce) {
