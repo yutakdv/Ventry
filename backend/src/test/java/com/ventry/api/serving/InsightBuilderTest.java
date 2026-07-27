@@ -12,9 +12,11 @@ import com.ventry.api.engine.SustainFilter;
 import com.ventry.api.engine.SustainInput;
 import com.ventry.api.explore.ExploreDtos.InsightEvent;
 import com.ventry.api.scenario.ScenarioDtos.CompositionItem;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -30,6 +32,9 @@ class InsightBuilderTest {
 
     private final Profile demo = new Profile(32, 5000, false, "cafe", "서울 마포구");
     private static final FundingInput ROOMY = new FundingInput(250, true);
+
+    /** 월 투자 가능액 1만 원 — 어떤 상품으로도 큰 갭을 덮을 수 없다(커버 실패 경계 재현용). */
+    private static final FundingInput TIGHT = new FundingInput(1, false);
 
     private static Optional<InsightEvent> of(InsightBuilder.Result result, String type) {
         return result.insights().stream().filter(i -> i.type().equals(type)).findFirst();
@@ -265,6 +270,90 @@ class InsightBuilderTest {
         assertThat(of(full, "T1")).isEmpty();
         assertThat(of(full, "T2")).isPresent();                  // B_safe 7,950 < 8,000
         assertThat(full.scenariosExplored()).isZero();           // 위로 남은 경계가 없다
+    }
+
+    // ── 문장 안의 곳수 표기 — 네 자리는 실데이터에서만 나온다 ────────────────
+
+    /**
+     * 데모 픽스처는 후보가 3곳이라 곳수가 <b>세 자리를 넘지 않는다</b>. 실데이터(카페 1,059곳)
+     * 에서만 네 자리가 되므로, 곳수 표기를 `%d` 로 되돌려도 기존 테스트는 전부 초록이었다 —
+     * 실기동 화면에서만 「1018곳」이 드러났고 README 도슨트 대본(「1,018곳」)과 글자가 어긋났다.
+     *
+     * <p>그래서 픽스처를 <b>곳수만 늘려</b> 같은 판정 성질로 복제하고, T1 의 진입 전·후·지속
+     * 세 자리를 한 번에 잠근다. 계약의 숫자 필드는 그대로 정수임을 함께 확인한다.
+     */
+    @Test
+    void t1AndT2Headlines_useThousandSeparator_onFourDigitCounts() {
+        List<CandidateArea> pool = new ArrayList<>();
+        pool.addAll(copies(fixture("A-1103"), 1000, "H-"));   // 포함 7,500 → B₀에서 진입 (유의)
+        pool.addAll(copies(fixture("A-1101"), 1000, "M-"));   // 포함 7,750 → B₀에서 진입 (적합)
+        pool.addAll(copies(fixture("A-1102"), 1010, "J-"));   // 포함 7,950 → 상향 경계 (갭 150)
+
+        InsightBuilder.Result result = builderOf(pool).build(demo, 7800, ROOMY, null);
+
+        InsightEvent t1 = of(result, "T1").orElseThrow();
+        assertThat(t1.headline())
+                .contains("2,000곳에서 3,010곳으로")
+                .contains("지속 안정 후보는 3,010곳");
+        // 계약 필드는 문자열이 아니라 정수 그대로다 — 포맷은 화면 몫이다
+        assertThat(t1.delta().nEntryBefore()).isEqualTo(2000);
+        assertThat(t1.delta().nEntryAfter()).isEqualTo(3010);
+        assertThat(t1.delta().nSustainAfter()).isEqualTo(3010);
+
+        assertThat(of(result, "T2").orElseThrow().headline()).contains("현재 후보 2,000곳");
+    }
+
+    /** T5 의 조건부 곳수도 같은 규칙을 따른다 — 상향 경계가 조달 미커버라 T1 없이 T5·T2만 남는다. */
+    @Test
+    void t5Headline_usesThousandSeparator_onFourDigitCount() {
+        List<CandidateArea> pool = new ArrayList<>();
+        pool.addAll(copies(fixture("A-1103"), 1000, "H-"));   // 포함 7,500 → 진입
+        pool.addAll(copies(fixture("A-9999"), 1010, "Y-"));   // 무권리 7,700 ≤ B₀ < 포함 9,320 → 조건부
+
+        InsightBuilder.Result result = builderOf(pool).build(demo, 7800, TIGHT, null);
+
+        assertThat(of(result, "T1")).isEmpty();               // 갭 1,520 은 월 1만원으로 못 덮는다
+        InsightEvent t5 = of(result, "T5").orElseThrow();
+        assertThat(t5.headline()).contains("무권리 매물을 확보하면 1,010곳이");
+        assertThat(t5.delta().nEntryAfter()).isEqualTo(2010);
+        assertThat(of(result, "T2").orElseThrow().headline()).contains("현재 후보 1,000곳");
+    }
+
+    /** 데모 픽스처 원본 1건 — 비용 구간·부담률·판정 성질을 그대로 쓰기 위해 조회해서 복제한다. */
+    private static CandidateArea fixture(String areaCode) {
+        return new DemoCandidates().find("cafe", areaCode).orElseThrow();
+    }
+
+    /** 같은 원자재를 상권 코드만 바꿔 복제한다 — 곳수만 늘리고 판정은 원본과 동일하다. */
+    private static List<CandidateArea> copies(CandidateArea template, int count, String prefix) {
+        return IntStream.range(0, count)
+                .mapToObj(i -> new CandidateArea(prefix + i, template.name() + " " + i,
+                        template.lat(), template.lng(), template.costBlocks(), template.axisScores(),
+                        template.monthlyRent(), template.estSales(), template.dailyFloating(),
+                        template.rentOrg(), template.rentDistrict(), template.rentFallback(),
+                        template.transitStation(), template.transitLine(),
+                        template.transitDistanceM(), template.transitDailyRiders(),
+                        template.transitFallback()))
+                .toList();
+    }
+
+    private static InsightBuilder builderOf(List<CandidateArea> pool) {
+        CandidateSource source = new ScaledCandidates(List.copyOf(pool));
+        return new InsightBuilder(source, new DemoProducts(), new FrontierService(source));
+    }
+
+    /** 곳수만 늘린 후보 공급원. 업종은 데모와 같이 단일이라 무시한다. */
+    private record ScaledCandidates(List<CandidateArea> areas) implements CandidateSource {
+
+        @Override
+        public List<CandidateArea> findCandidates(String industry) {
+            return areas;
+        }
+
+        @Override
+        public Optional<CandidateArea> find(String industry, String areaCode) {
+            return areas.stream().filter(a -> a.areaCode().equals(areaCode)).findFirst();
+        }
     }
 
     private static FundingProduct product(String name, int amountMax, Source source) {
