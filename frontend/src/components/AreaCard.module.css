@@ -143,6 +143,10 @@
 .statValue {
   color: var(--color-text-primary);
 }
+/* 평당 단가 — 값의 부연이라 한 단계 흐리게 두고 값과 붙인다. */
+.statNote {
+  color: var(--color-text-tertiary);
+}
 
 /* 근거 — 접히지 않는다 */
 .evidence {

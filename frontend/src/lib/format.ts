@@ -2,6 +2,8 @@
  * 표시 형식 유틸 — 계약 금액 단위는 전부 **만원 정수**다 (API_CONTRACT 공통 규약).
  * 화면 2·3이 같은 규칙을 쓰도록 한곳에 모아 둔다.
  */
+import type { Industry } from '../api/types'
+import { rentAreaBasis } from './rentArea'
 
 /** 만원 정수 → 표시용 값·단위. 1억(10,000만원) 이상은 억 단위로 축약. */
 export function splitAmount(manwon: number): { value: string; unit: string } {
@@ -38,20 +40,29 @@ export function formatPeople(n: number): string {
 const ORG_LABEL: Record<string, string> = { REB: '한국부동산원' }
 
 /**
- * 임대료 출처 줄 — "임대료: 한국부동산원 ○○상권 분기 평균 (추정)".
+ * 임대료 출처 줄 — "임대료: 한국부동산원 ○○상권 분기 평균 (추정) · 카페 대표면적 29.2㎡(8.8평) 기준".
  * 라벨을 "분기 평균"으로 고정하는 건 하드 룰이다 (CLAUDE.md §4 — 권리금의 "연간 조사"와 혼동 금지).
  * `fallback`이면 상권 단위 매칭에 실패해 자치구 평균으로 대체된 값이므로 그 사실을 함께 밝힌다.
+ *
+ * 면적 근거는 하드 룰 문구를 건드리지 않고 **뒤에만 덧붙인다** (이슈 #151). 출처 줄은 이미
+ * 어느 상권·어느 주기·추정 여부까지 밝히는데 정작 어느 면적의 금액인지가 빠져 있었다.
+ * 업종을 모르면 붙이지 않는다 — 화면이 없는 근거를 지어내지 않는다.
  */
-export function formatRentSource(src: { org: string; district: string; fallback: boolean }): string {
+export function formatRentSource(
+  src: { org: string; district: string; fallback: boolean },
+  industry?: Industry | null,
+): string {
   const org = ORG_LABEL[src.org] ?? src.org
-  return src.fallback
+  const base = src.fallback
     ? `임대료: ${org} 자치구 평균 (추정 · 상권 단위 미매칭)`
     : `임대료: ${org} ${src.district} 분기 평균 (추정)`
+  const basis = rentAreaBasis(industry)
+  return basis ? `${base} · ${basis}` : base
 }
 
 /**
  * 도보 소요 시간(분). 계약에는 `distance_m`만 있어 결정적 계수로 환산한다 —
- * 보행 속도 4km/h ≈ 분속 67m (docs/assumptions.md 등재 대상). 최소 1분.
+ * 보행 속도 4km/h ≈ 분속 67m (docs/assumptions.md #85). 최소 1분.
  */
 export function walkMinutes(distanceM: number): number {
   return Math.max(1, Math.round(distanceM / 67))

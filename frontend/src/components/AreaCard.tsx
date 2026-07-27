@@ -1,7 +1,8 @@
 import { ClipboardCheck } from 'lucide-react'
 import VerdictBadge from './VerdictBadge'
 import { formatBurdenRatio, formatRentSource, formatTransit } from '../lib/format'
-import type { Area } from '../api/types'
+import { rentAreaShort, rentPerPyeong } from '../lib/rentArea'
+import type { Area, Industry } from '../api/types'
 import styles from './AreaCard.module.css'
 
 /** 점수 등급 구간(90+/80/70/60) 매핑은 프론트 소관 (API_CONTRACT §4). */
@@ -25,6 +26,7 @@ export default function AreaCard({
   selected,
   onSelect,
   onCheck,
+  industry,
 }: {
   area: Area
   selected: boolean
@@ -32,7 +34,11 @@ export default function AreaCard({
   onSelect: () => void
   /** 하단 버튼 — 역방향 판정을 연다. 선택과 분리해 둔 이유는 목록을 훑는 동안 모달이 뜨지 않게 하기 위함. */
   onCheck: () => void
+  /** 임대료 금액의 면적 조건 표기용 (이슈 #151). 모르면 면적을 적지 않는다. */
+  industry?: Industry | null
 }) {
+  const areaUnit = rentAreaShort(industry)
+  const perPyeong = rentPerPyeong(area.monthly_rent, industry)
   return (
     <article
       className={`${styles.card} ${selected ? styles.selected : ''}`}
@@ -51,8 +57,12 @@ export default function AreaCard({
 
       <span className={styles.stats}>
         <span className={styles.stat}>
-          <span className={`t-caption ${styles.statLabel}`}>환산 임대료 (월, 추정)</span>
+          <span className={`t-caption ${styles.statLabel}`}>
+            환산 임대료 (월{areaUnit ? `, ${areaUnit}` : ', 추정'})
+          </span>
           <span className={`t-label ${styles.statValue}`}>{won(area.monthly_rent)}</span>
+          {/* 대표면적과 다른 평수를 생각 중인 사용자가 곧바로 환산할 수 있게 (이슈 #151). */}
+          {perPyeong && <span className={`t-caption ${styles.statNote}`}>{perPyeong}</span>}
         </span>
         <span className={styles.stat}>
           <span className={`t-caption ${styles.statLabel}`}>추정 매출 (월)</span>
@@ -82,7 +92,9 @@ export default function AreaCard({
 
       {/* 근거 — 임대료 출처·교통은 상시 표기 (스펙 §7) */}
       <span className={styles.evidence}>
-        <span className={`t-caption ${styles.evidenceLine}`}>{formatRentSource(area.rent_source)}</span>
+        <span className={`t-caption ${styles.evidenceLine}`}>
+          {formatRentSource(area.rent_source, industry)}
+        </span>
         <span className={`t-caption ${styles.evidenceLine}`}>{formatTransit(area.transit)}</span>
         <span className={`t-caption ${styles.evidenceLine}`}>
           권리금: 연간 조사(전년 기준) · 실제 금액은 개별 물건에 따라 다릅니다

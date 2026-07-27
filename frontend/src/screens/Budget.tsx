@@ -10,6 +10,7 @@ import StatCard from '../components/StatCard'
 import { postBudget } from '../api/client'
 import { useSession } from '../store/session'
 import { formatAmount, formatBudgetRange, formatPeople } from '../lib/format'
+import { rentAreaShort, rentAreaBasis } from '../lib/rentArea'
 import { buildComposition } from '../lib/composition'
 import type { BudgetCompositionItem, BudgetPreview, Scenario } from '../api/types'
 import styles from './Budget.module.css'
@@ -33,6 +34,9 @@ export default function Budget() {
   const { sessionId, parsedProfile, selectedScenario, setBudget, bumpVersion } = useSession()
 
   const scenario = selectedScenario
+  /** 임대료 금액의 면적 조건 (이슈 #151) — 라벨엔 ㎡만, 근거 줄엔 평까지. */
+  const rentUnit = rentAreaShort(parsedProfile?.industry)
+  const rentBasis = rentAreaBasis(parsedProfile?.industry)
   const [value, setValue] = useState(() => scenario?.budget ?? 0)
   const [preview, setPreview] = useState<BudgetPreview | null>(null)
   const [dataAsOf, setDataAsOf] = useState<string | null>(null)
@@ -203,7 +207,7 @@ export default function Budget() {
           <StatCard
             icon={Receipt}
             tone="green"
-            label="환산 임대료 (월, 추정)"
+            label={`환산 임대료 (월${rentUnit ? `, ${rentUnit}` : ', 추정'})`}
             value={
               preview?.rent_range
                 ? formatBudgetRange(preview.rent_range[0], preview.rent_range[1], '')
@@ -234,7 +238,7 @@ export default function Budget() {
         {dataAsOf && (
           <p className={`t-caption ${styles.previewSource}`}>
             {preview?.rent_range &&
-              '임대료는 한국부동산원 상권 분기 평균(추정), 유동인구는 서울 열린데이터광장 분기 집계입니다. '}
+              `임대료는 한국부동산원 상권 분기 평균(추정)${rentBasis ? ` · ${rentBasis}` : ''}, 유동인구는 서울 열린데이터광장 분기 집계입니다. `}
             데이터 기준일 {dataAsOf}.
           </p>
         )}

@@ -2,7 +2,8 @@ import { useEffect, useRef } from 'react'
 import { useKakaoLoader } from '../lib/useKakaoLoader'
 import { MAP_LEGEND, VERDICT_LABEL, VERDICT_MARKER_COLOR } from '../lib/verdict'
 import { formatBurdenRatio, formatTransit } from '../lib/format'
-import type { Area } from '../api/types'
+import { rentAreaShort, rentPerPyeong } from '../lib/rentArea'
+import type { Area, Industry } from '../api/types'
 import styles from './KakaoMap.module.css'
 
 /** 후보 전체를 담을 때 위쪽에 남길 여백(px) — 말풍선이 잘리지 않을 만큼. */
@@ -12,7 +13,7 @@ const FIT_PADDING = 190
  * 선택된 상권의 말풍선.
  * 문자열 HTML 대신 DOM으로 만들어 textContent만 쓴다 — 상권명이 그대로 마크업이 되지 않도록.
  */
-function buildOverlay(area: Area): HTMLElement {
+function buildOverlay(area: Area, industry?: Industry | null): HTMLElement {
   const box = document.createElement('div')
   box.className = styles.overlay
 
@@ -36,7 +37,14 @@ function buildOverlay(area: Area): HTMLElement {
     rows.append(dt, dd)
   }
   add('추천 점수', `${area.score}점`)
-  add('환산 임대료', `${area.monthly_rent.toLocaleString('ko-KR')}만원/월`)
+  // 말풍선은 dt/dd 한 줄이라 라벨이 길어지면 값이 밀린다 — 면적은 ㎡만 붙인다 (이슈 #151).
+  const rentUnit = rentAreaShort(industry)
+  add(
+    `환산 임대료 (월${rentUnit ? `, ${rentUnit}` : ''})`,
+    `${area.monthly_rent.toLocaleString('ko-KR')}만원`,
+  )
+  const perPyeong = rentPerPyeong(area.monthly_rent, industry)
+  if (perPyeong) add('임대료 단가', perPyeong)
   add('부담률', formatBurdenRatio(area.burden_ratio))
 
   const transit = document.createElement('p')
@@ -83,11 +91,14 @@ export default function KakaoMap({
   selectedCode,
   onSelect,
   dataAsOf,
+  industry,
 }: {
   areas: Area[]
   selectedCode: string | null
   onSelect: (areaCode: string) => void
   dataAsOf: string
+  /** 말풍선 임대료의 면적 조건 표기용 (이슈 #151). */
+  industry?: Industry | null
 }) {
   const status = useKakaoLoader()
   const boxRef = useRef<HTMLDivElement>(null)
@@ -199,13 +210,13 @@ export default function KakaoMap({
     if (!overlayRef.current) {
       overlayRef.current = new kakao.maps.CustomOverlay({
         position: pos,
-        content: buildOverlay(area),
+        content: buildOverlay(area, industry),
         yAnchor: 1.35, // 마커 위로 띄운다
         zIndex: 20,
       })
     } else {
       overlayRef.current.setPosition(pos)
-      overlayRef.current.setContent(buildOverlay(area))
+      overlayRef.current.setContent(buildOverlay(area, industry))
     }
     overlayRef.current.setMap(map)
 
@@ -217,7 +228,7 @@ export default function KakaoMap({
     const latSpan = b.getNorthEast().getLat() - b.getSouthWest().getLat()
     const overlayClipped = area.lat > b.getNorthEast().getLat() - latSpan * 0.28
     if (!b.contain(pos) || overlayClipped) map.panTo(pos)
-  }, [status, areas, selectedCode])
+  }, [status, areas, selectedCode, industry])
 
   return (
     <div className={styles.panel}>
