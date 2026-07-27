@@ -44,16 +44,29 @@ public final class ReasonTemplate {
     public static RiskReview recommendReview(int entered, int caution, int conditional) {
         String text;
         if (entered == 0) {
-            text = "현재 예산으로 진입하는 후보가 없어 제시된 " + conditional + "곳은 전부 조건부 적합입니다. "
+            text = "현재 예산으로 진입하는 후보가 없어 제시된 " + count(conditional) + "곳은 전부 조건부 적합입니다. "
                     + "무권리 매물 확보를 전제로 한 판정이므로, 그 전제가 성립하지 않으면 진입 가능 구간이 아닙니다.";
         } else if (caution > 0) {
             text = "수요 상위 상권일수록 경쟁밀도가 높아, 추정매출 하위 시나리오에서는 부담률이 임계를 "
-                    + "넘을 수 있습니다. 유의 판정 " + caution + "곳이 그 구간에 있습니다.";
+                    + "넘을 수 있습니다. 유의 판정 " + count(caution) + "곳이 그 구간에 있습니다.";
         } else {
-            text = "진입 후보 " + entered + "곳이 전부 부담률 임계 이내이나, 추정매출은 분기 평균 기준이라 "
+            text = "진입 후보 " + count(entered) + "곳이 전부 부담률 임계 이내이나, 추정매출은 분기 평균 기준이라 "
                     + "하위 시나리오에서는 임계를 넘을 수 있습니다.";
         }
         return new RiskReview(text, true, false);
+    }
+
+    /**
+     * 문장 안의 <b>곳수</b> 표기 — 금액과 같은 천단위 구분을 쓴다.
+     *
+     * <p>한 문장에 「2,770만 원」과 「1018곳」이 섞이면 README 도슨트 대본(「1,018곳」)과 글자가
+     * 어긋난다. 심사위원이 대본을 들고 화면을 보는 동선이라 표기가 갈리면 안 된다.
+     *
+     * <p>바꾸는 것은 <b>문장뿐</b>이다. 계약의 숫자 필드({@code delta.n_entry_after} 등)는 JSON
+     * 숫자이므로 여기서 건드리지 않는다 — 포맷은 화면 몫이고, 서버가 문자열로 바꾸면 타입이 깨진다.
+     */
+    static String count(int places) {
+        return String.format("%,d", places);
     }
 
     public static RiskReview checkAreaReview() {
