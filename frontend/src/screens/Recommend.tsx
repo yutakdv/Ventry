@@ -13,6 +13,7 @@ import Modal from '../components/Modal'
 import { getRecommend, postBudget, postCheckArea } from '../api/client'
 import { useSession } from '../store/session'
 import { formatAmount } from '../lib/format'
+import { rentAreaShort } from '../lib/rentArea'
 import { buildComposition } from '../lib/composition'
 import { prefersReducedMotion } from '../lib/motion'
 import { VERDICT_LABEL } from '../lib/verdict'
@@ -22,7 +23,7 @@ import styles from './Recommend.module.css'
 type SortKey = 'score' | 'rent' | 'sales' | 'floating'
 
 /**
- * 지도 마커 상한. 실데이터는 1,000건대가 한 번에 오는데(실측 1,061건) 전량을 마커로 그리면
+ * 지도 마커 상한. 실데이터는 1,000건대가 한 번에 오는데(실측 1,059건) 전량을 마커로 그리면
  * 카카오맵이 버티지 못한다. 목록에서 나머지를 볼 수 있으므로 상위 점수만 지도에 올린다.
  */
 const MAP_MARKER_LIMIT = 100
@@ -42,8 +43,23 @@ const VERDICT_FILTERS: (Verdict | 'ALL')[] = ['ALL', 'FIT', 'CONDITIONAL', 'CAUT
 
 export default function Recommend() {
   const navigate = useNavigate()
-  const { sessionId, version, budget, budgetPreview, selectedScenario, setBudget, bumpVersion } =
-    useSession()
+  const {
+    sessionId,
+    version,
+    budget,
+    budgetPreview,
+    selectedScenario,
+    parsedProfile,
+    setBudget,
+    bumpVersion,
+  } = useSession()
+  /**
+   * 임대료 금액이 어느 면적 기준인지 밝히기 위해 지도·카드·슬라이더 바로 내린다 (이슈 #151).
+   * 상단 KPI(평균 환산 임대료)도 같은 곱셈의 결과라 `rentUnit` 을 직접 쓴다 — 이슈가 지목한
+   * 5개 지점에는 없었지만, 면적 조건 없이 임대료를 노출하는 자리라는 점에서 같은 결함이다.
+   */
+  const industry = parsedProfile?.industry ?? null
+  const rentUnit = rentAreaShort(industry)
 
   const [data, setData] = useState<RecommendResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -291,7 +307,7 @@ export default function Recommend() {
             <StatCard
               icon={Receipt}
               tone="green"
-              label="평균 환산 임대료 (월)"
+              label={`평균 환산 임대료 (월${rentUnit ? `, ${rentUnit}` : ''})`}
               value={formatAmount(data.summary.avg_rent)}
             />
             <StatCard
@@ -315,6 +331,7 @@ export default function Recommend() {
                 selectedCode={selected}
                 onSelect={setSelected}
                 dataAsOf={data.data_as_of}
+                industry={industry}
               />
               {areas.length > mapAreas.length && (
                 <p className={`t-caption ${styles.mapNote}`}>
@@ -372,6 +389,7 @@ export default function Recommend() {
                         selected={a.area_code === selected}
                         onSelect={() => setSelected(a.area_code)}
                         onCheck={() => openVerdict(a.area_code)}
+                        industry={industry}
                       />
                     ))}
                     {areas.length > listAreas.length && (
@@ -405,6 +423,7 @@ export default function Recommend() {
             preview={budgetPreview}
             conditionalCount={counts.CONDITIONAL}
             pending={budgetPending || refreshing}
+            industry={industry}
           />
         )}
 

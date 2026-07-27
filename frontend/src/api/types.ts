@@ -123,6 +123,12 @@ export interface BudgetPreview {
 }
 
 export interface BudgetResponse {
+  /**
+   * 프리뷰 수치의 기준일. `/recommend`와 **같은 값**(`data_source_meta.sales`)이다.
+   * 계약 D9(2026-07-27)에서 추가됐다 — 그 전까지 화면 3은 기준일을 실을 원천이 없어
+   * 「데이터 기준일 상시 표기」(스펙 §0-4)를 못 지키는 유일한 화면이었다 (이슈 #104 ④).
+   */
+  data_as_of: string
   confirmed_budget: number
   composition: BudgetCompositionItem[]
   preview: BudgetPreview
@@ -176,10 +182,11 @@ export interface Area {
   daily_floating: number // 명/일
   /**
    * monthly_rent ÷ est_sales.
-   * ⚠️ `est_sales = 0` 인 상권에서 서버가 문자열 `"Infinity"` 를 보낸다(실측 1,061건 중 1건).
-   * 표시할 때는 `formatBurdenRatio` 로 감싼다 — 타입만 믿고 계산하면 화면에 `Infinity%` 가 찍힌다.
+   * 추정매출이 결측(0)인 상권에서는 **필드 자체가 생략된다** — 계약 D9(2026-07-27), 이슈 #104 ⑤.
+   * 그 전에는 문자열 `"Infinity"` 가 실려 와 화면에 `Infinity%` 가 찍혔다.
+   * 표시는 `formatBurdenRatio` 로 감싼다 (생략·비유한값을 한자리에서 대체 표시한다).
    */
-  burden_ratio: number
+  burden_ratio?: number
   reason_text: string
   rent_source: RentSource
   transit: Transit
@@ -198,7 +205,7 @@ export interface RecommendResponse {
   summary: { avg_rent: number; avg_sales: number }
   /**
    * `score` 내림차순으로 정렬되어 온다. 정렬·필터 쿼리는 없으며 프론트가 처리한다.
-   * ⚠️ 실데이터에서는 1,000건대가 한 번에 온다(실측 1,061건·770KB). 전량을 마커·목록으로
+   * ⚠️ 실데이터에서는 1,000건대가 한 번에 온다(실측 1,059건·748KB). 전량을 마커·목록으로
    * 그리면 지도가 버티지 못하므로 표시 상한은 프론트가 건다 (`MAP_MARKER_LIMIT`).
    * `OUT_OF_SCOPE`도 섞여 오는데 마커는 3종 고정이라(스펙 §0-4) 화면에서 제외한다.
    */

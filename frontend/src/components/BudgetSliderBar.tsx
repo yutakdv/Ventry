@@ -1,6 +1,7 @@
 import Slider from './Slider'
 import { formatAmount } from '../lib/format'
-import type { BudgetPreview } from '../api/types'
+import { rentAreaShort } from '../lib/rentArea'
+import type { BudgetPreview, Industry } from '../api/types'
 import styles from './BudgetSliderBar.module.css'
 
 /**
@@ -21,6 +22,7 @@ export default function BudgetSliderBar({
   preview,
   conditionalCount,
   pending,
+  industry,
 }: {
   min: number
   max: number
@@ -37,7 +39,10 @@ export default function BudgetSliderBar({
   conditionalCount: number
   /** 재계산 진행 중 — 값을 지우지 않고 흐리게만 만든다. */
   pending: boolean
+  /** 임대료 금액의 면적 조건 표기용 (이슈 #151). */
+  industry?: Industry | null
 }) {
+  const areaUnit = rentAreaShort(industry)
   const noCandidate = preview?.area_count === 0
 
   return (
@@ -83,7 +88,9 @@ export default function BudgetSliderBar({
               <span className={`t-caption ${styles.statNote}`}>권리금 포함 기준</span>
             </div>
             <div className={styles.stat}>
-              <span className={`t-caption ${styles.statLabel}`}>환산 임대료 (월, 추정)</span>
+              <span className={`t-caption ${styles.statLabel}`}>
+                환산 임대료 (월{areaUnit ? `, ${areaUnit}` : ', 추정'})
+              </span>
               <span className={`t-body-strong ${styles.statValue}`}>
                 {preview?.rent_range
                   ? `${formatAmount(preview.rent_range[0])} ~ ${formatAmount(preview.rent_range[1])}`
