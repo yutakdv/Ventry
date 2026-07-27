@@ -148,7 +148,7 @@ export const DATA_SOURCES = [
 export const HERO_OVERLAY = [
   { label: '확정 예산', value: '6,600만원' },
   { label: '추천 상권', value: '403곳' },
-  { label: '평균 추정 매출', value: '1,041만원' },
+  { label: '평균 추정 매출', value: '1,042만원' },
 ]
 
 /**
