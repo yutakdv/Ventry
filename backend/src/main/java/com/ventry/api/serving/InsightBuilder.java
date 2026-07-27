@@ -306,9 +306,12 @@ public class InsightBuilder {
         return ReasonTemplate.count(places);
     }
 
-    /** 만원 단위 정수를 천단위 구분해 표기 (계약 공통 규약: 금액은 만원 단위 정수). */
+    /**
+     * 만원 단위 정수를 천단위 구분해 표기 (계약 공통 규약: 금액은 만원 단위 정수).
+     * 로케일을 고정하는 이유는 {@link ReasonTemplate#NUMBER_LOCALE} 참조.
+     */
     private static String won(int amount) {
-        return String.format("%,d", amount);
+        return String.format(ReasonTemplate.NUMBER_LOCALE, "%,d", amount);
     }
 
     /** 연 이율 표기 — 2.50 같은 잉여 0을 붙이지 않는다. */

@@ -2,7 +2,6 @@ package com.ventry.api.serving;
 
 import java.util.List;
 import java.util.Optional;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
@@ -25,15 +24,15 @@ public class DbCandidateSource implements CandidateSource {
     // (#136 · docs/심사_QA.md), CandidateRepository 의 조건은 업종뿐이다. 조회 축이 하나이므로
     // 키(업종)는 이미 완전하다 — 자치구를 넣으면 같은 결과를 자치구 수만큼 중복 적재하게 된다.
     // TODO(BE-04): 정렬 비용 배열 사전 정렬 보관 (프론티어 결선 최적화 — 후보 리스트 캐싱까지가 오늘 범위)
-    // condition: 캐시 키가 null 이면 Spring 이 IllegalArgumentException 을 던져 요청 전체가 500이
-    // 된다. 입력 검증(D-09)이 앞단에서 막지만, 캐시 계층이 **입력 오류를 500으로 증폭**하지
-    // 않도록 여기서도 잠근다 — 방어 지점이 둘이어야 한 곳이 뚫려도 규격이 유지된다.
+    //
+    // 캐시(@Cacheable)는 CandidateRepository.findCandidates 에 있다. 여기에 걸면 아래 find 가
+    // **프록시를 우회**해 같은 리스트를 매번 다시 읽는다 (리포지토리 주석 참조).
     @Override
-    @Cacheable(cacheNames = "candidates", key = "#industry", condition = "#industry != null")
     public List<CandidateArea> findCandidates(String industry) {
         return repository.findCandidates(industry);
     }
 
+    /** 두 메서드가 같은 캐시 항목을 공유한다 — 단건 조회도 조회는 업종 1회다. */
     @Override
     public Optional<CandidateArea> find(String industry, String areaCode) {
         return repository.findCandidates(industry).stream()

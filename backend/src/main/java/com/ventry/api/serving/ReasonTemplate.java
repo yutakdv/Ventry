@@ -2,6 +2,7 @@ package com.ventry.api.serving;
 
 import com.ventry.api.common.FinanceDtos.RiskReview;
 import com.ventry.api.common.Verdict;
+import java.util.Locale;
 
 /**
  * reason_text·risk_review 템플릿 (f-string 상당) — LLM 의존성 0 (BE-03f).
@@ -9,6 +10,16 @@ import com.ventry.api.common.Verdict;
  * BE-05에서 LLM refine이 도착 시 교체되며, 장애 시 이 템플릿이 최종본.
  */
 public final class ReasonTemplate {
+
+    /**
+     * 표기 로케일 — 천단위 구분자를 코드에 고정한다.
+     *
+     * <p>{@code String.format(String, ...)} 은 JVM 기본 로케일을 쓰는데, 컨테이너는 베이스
+     * 이미지의 기본값을 그대로 물려받는다({@code backend/Dockerfile} 은 {@code LANG} 을 지정하지
+     * 않는다). 기본값이 달라지면 같은 코드가 「1.018곳」·「1,01,018곳」을 내보내고, 그것이
+     * 화면에 나가는 최종 문자열이라 프론트에서 되돌릴 수 없다.
+     */
+    static final Locale NUMBER_LOCALE = Locale.KOREA;
 
     private ReasonTemplate() {}
 
@@ -66,7 +77,7 @@ public final class ReasonTemplate {
      * 숫자이므로 여기서 건드리지 않는다 — 포맷은 화면 몫이고, 서버가 문자열로 바꾸면 타입이 깨진다.
      */
     static String count(int places) {
-        return String.format("%,d", places);
+        return String.format(NUMBER_LOCALE, "%,d", places);
     }
 
     public static RiskReview checkAreaReview() {
