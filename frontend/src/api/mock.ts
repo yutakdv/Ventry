@@ -147,8 +147,12 @@ const THETA = 0.15
 const median = ([low, high]: [number, number]) => (low + high) / 2
 const range = (xs: number[]): [number, number] => [Math.min(...xs), Math.max(...xs)]
 
-/** 판정·근거문은 예산에 따라 달라지므로 고정 데이터에서 뺀다. */
-type MockAreaBase = Omit<Area, 'verdict' | 'reason_text'>
+/**
+ * 판정·근거문은 예산에 따라 달라지므로 고정 데이터에서 뺀다.
+ * `burden_ratio` 는 실 계약에서 생략될 수 있지만(추정매출 결측) 목 픽스처 4곳은 전건 매출이
+ * 있으므로 필수로 좁힌다 — 목 판정 규칙이 결측 분기를 떠안지 않아도 된다.
+ */
+type MockAreaBase = Omit<Area, 'verdict' | 'reason_text'> & { burden_ratio: number }
 
 /**
  * 목 후보 4곳 — BE 데모 픽스처와 같은 3곳(망원·합정·홍대입구)에 조건부 적합 1곳(상수)을 더했다.

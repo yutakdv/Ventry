@@ -182,10 +182,11 @@ export interface Area {
   daily_floating: number // 명/일
   /**
    * monthly_rent ÷ est_sales.
-   * ⚠️ `est_sales = 0` 인 상권에서 서버가 문자열 `"Infinity"` 를 보낸다(실측 1,061건 중 1건).
-   * 표시할 때는 `formatBurdenRatio` 로 감싼다 — 타입만 믿고 계산하면 화면에 `Infinity%` 가 찍힌다.
+   * 추정매출이 결측(0)인 상권에서는 **필드 자체가 생략된다** — 계약 D9(2026-07-27), 이슈 #104 ⑤.
+   * 그 전에는 문자열 `"Infinity"` 가 실려 와 화면에 `Infinity%` 가 찍혔다.
+   * 표시는 `formatBurdenRatio` 로 감싼다 (생략·비유한값을 한자리에서 대체 표시한다).
    */
-  burden_ratio: number
+  burden_ratio?: number
   reason_text: string
   rent_source: RentSource
   transit: Transit

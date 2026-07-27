@@ -125,14 +125,14 @@ export function formatRateNote(p: { rate?: number; rate_note?: string }): string
 }
 
 /**
- * 부담률 표기 — 값이 유한한 수가 아니면 대체 표시한다.
+ * 부담률 표기 — 계산할 수 없는 경우를 한자리에서 대체 표시한다.
  *
- * **임시 가드다.** 계약·타입 선언은 `burden_ratio: number` 인데, 실데이터에 `est_sales = 0` 인
- * 상권이 1건 있어(동대문역 1번) 서버가 **문자열 `"Infinity"`** 를 보낸다. 그대로 계산하면 화면에
- * `Infinity%` 가 찍힌다. `Number.isFinite` 는 문자열도 무한대도 전부 false 라 한 번에 걸린다.
+ * 추정매출이 결측(0)인 상권은 부담률이 정의되지 않는다. 계약 D9 이후 서버는 그런 상권에서
+ * **필드를 생략**하므로 `undefined` 가 정상 입력이다 (이슈 #104 ⑤).
  *
- * 근본 수정은 BE 몫이다(0 매출 상권의 부담률을 어떻게 정의할지). 그때 이 가드는 지워도 된다.
+ * `Number.isFinite` 검사는 D9 이전 서버가 보내던 문자열 `"Infinity"` 에 대한 방어로 남겨 둔다.
+ * 컨테이너가 구버전이면 그대로 계산돼 화면에 `Infinity%` 가 찍혔던 자리다.
  */
-export function formatBurdenRatio(ratio: number): string {
-  return Number.isFinite(ratio) ? `${Math.round(ratio * 100)}%` : '—'
+export function formatBurdenRatio(ratio?: number): string {
+  return ratio != null && Number.isFinite(ratio) ? `${Math.round(ratio * 100)}%` : '—'
 }
