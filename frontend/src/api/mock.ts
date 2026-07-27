@@ -117,6 +117,7 @@ export async function mockBudget(req: BudgetRequest): Promise<BudgetResponse> {
   const entering = MOCK_AREAS.filter((a) => median(a.cost.incl_premium) <= mockConfirmedBudget)
 
   return {
+    data_as_of: '2026-Q1', // mockRecommend와 같은 값 — 계약상 둘은 같은 원천이다
     confirmed_budget: mockConfirmedBudget,
     composition: req.composition,
     preview:

@@ -123,6 +123,12 @@ export interface BudgetPreview {
 }
 
 export interface BudgetResponse {
+  /**
+   * 프리뷰 수치의 기준일. `/recommend`와 **같은 값**(`data_source_meta.sales`)이다.
+   * 계약 D9(2026-07-27)에서 추가됐다 — 그 전까지 화면 3은 기준일을 실을 원천이 없어
+   * 「데이터 기준일 상시 표기」(스펙 §0-4)를 못 지키는 유일한 화면이었다 (이슈 #104 ④).
+   */
+  data_as_of: string
   confirmed_budget: number
   composition: BudgetCompositionItem[]
   preview: BudgetPreview
