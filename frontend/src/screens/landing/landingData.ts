@@ -27,13 +27,13 @@ export interface Kpi {
   note: string
 }
 
-/** 근거: `commercial_area` 1,650행 · `/api/recommend` total_count 1,061 · `finance_product` 26행 */
+/** 근거: `commercial_area` 1,650행 · `/api/recommend` total_count 1,059 · `finance_product` 26행 */
 export const KPIS: Kpi[] = [
   {
     icon: Building2,
     label: '분석 대상 서울 상권',
     value: '1,650',
-    note: '업종 필터 후 후보 1,061곳',
+    note: '업종 필터 후 후보 1,059곳',
   },
   {
     icon: Landmark,

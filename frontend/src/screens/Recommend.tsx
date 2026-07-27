@@ -22,7 +22,7 @@ import styles from './Recommend.module.css'
 type SortKey = 'score' | 'rent' | 'sales' | 'floating'
 
 /**
- * 지도 마커 상한. 실데이터는 1,000건대가 한 번에 오는데(실측 1,061건) 전량을 마커로 그리면
+ * 지도 마커 상한. 실데이터는 1,000건대가 한 번에 오는데(실측 1,059건) 전량을 마커로 그리면
  * 카카오맵이 버티지 못한다. 목록에서 나머지를 볼 수 있으므로 상위 점수만 지도에 올린다.
  */
 const MAP_MARKER_LIMIT = 100
