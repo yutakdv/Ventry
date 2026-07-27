@@ -129,6 +129,22 @@ class RiskReviewAgentTest {
         assertThat(allFit).contains("진입 후보 193곳").doesNotContain("유의 판정");
     }
 
+    /**
+     * 문장 안의 곳수는 금액과 같은 천단위 구분을 쓴다.
+     *
+     * <p>실데이터 후보는 네 자리다(카페 1,059곳). 「2,770만 원」과 「1018곳」이 한 문장에 섞이면
+     * README 도슨트 대본(「1,018곳」)과 글자가 어긋나고, 심사위원은 대본을 들고 화면을 본다.
+     */
+    @Test
+    void counts_useThousandSeparator_likeAmounts() {
+        assertThat(ReasonTemplate.recommendReview(0, 0, 1018).objectionText()).contains("1,018곳");
+        assertThat(ReasonTemplate.recommendReview(1234, 1234, 0).objectionText()).contains("1,234곳");
+
+        // 세 자리 이하는 구분자가 붙지 않는다 — "0,070곳" 같은 표기가 나오면 안 된다.
+        assertThat(ReasonTemplate.recommendReview(0, 0, 70).objectionText()).contains(" 70곳");
+        assertThat(ReasonTemplate.recommendReview(999, 0, 0).objectionText()).contains(" 999곳");
+    }
+
     /** D-11 — 사실 문자열의 판정은 한글 판정어다. 영문 enum 은 "분류" 메타 표현을 유도한다. */
     @Test
     void facts_useKoreanVerdictLabel() {

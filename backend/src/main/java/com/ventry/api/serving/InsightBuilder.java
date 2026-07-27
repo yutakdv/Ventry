@@ -190,11 +190,11 @@ public class InsightBuilder {
                 : "분기별 변동금리, %d개월 상환%s".formatted(lead.termMonths(),
                         lead.termAssumed() ? " 가정" : "");
         String paymentClause = fixedRate
-                ? "월 상환 부담 %s만 원을 반영하면 지속 안정 후보는 %d곳입니다. "
-                        .formatted(won(payment), eval.nSustainAfter())
-                : "상환 부담을 반영하면 지속 안정 후보는 %d곳입니다. ".formatted(eval.nSustainAfter());
-        String headline = "%s만 원을 추가 확보하면 진입 가능 후보는 %d곳에서 %d곳으로 늘어납니다. "
-                .formatted(won(eval.gap()), eval.nEntryBefore(), eval.nEntryAfter())
+                ? "월 상환 부담 %s만 원을 반영하면 지속 안정 후보는 %s곳입니다. "
+                        .formatted(won(payment), count(eval.nSustainAfter()))
+                : "상환 부담을 반영하면 지속 안정 후보는 %s곳입니다. ".formatted(count(eval.nSustainAfter()));
+        String headline = "%s만 원을 추가 확보하면 진입 가능 후보는 %s곳에서 %s곳으로 늘어납니다. "
+                .formatted(won(eval.gap()), count(eval.nEntryBefore()), count(eval.nEntryAfter()))
                 + "다만 해당 금액을 %s(%s)으로 조달할 경우 ".formatted(product.name(), rateClause)
                 + paymentClause
                 + QUALIFICATION_TAIL;
@@ -228,11 +228,11 @@ public class InsightBuilder {
         int entered = greenOrEnteredCount(pool, budget);
         int sustain = SustainFilter.nSustain(sustainPool, budget, 0.0);  // m=0 → 필터2와 동일 (#26)
         String headline = marginNonZero
-                ? "%s만 원까지 낮춰도 현재 후보 %d곳이 전부 유지됩니다. "
-                        .formatted(won(safeBudget), entered)
+                ? "%s만 원까지 낮춰도 현재 후보 %s곳이 전부 유지됩니다. "
+                        .formatted(won(safeBudget), count(entered))
                         + "차액을 예비 운영자금으로 두면 지속 여력 지표가 개선됩니다."
-                : "현재 예산은 후보 %d곳의 진입 하한과 정확히 일치합니다. "
-                        .formatted(entered)
+                : "현재 예산은 후보 %s곳의 진입 하한과 정확히 일치합니다. "
+                        .formatted(count(entered))
                         + "여기서 예산을 낮추면 진입 가능 후보가 줄어듭니다.";
         return new InsightEvent(id, "T2", headline,
                 new Delta(entered, entered, sustain, 0.0), null, null, null, null, true);
@@ -251,8 +251,8 @@ public class InsightBuilder {
                 pool.stream().mapToInt(CandidateArea::inclusiveCostMedian).toArray(), budget);
         int after = before + conditionalCount;   // 무권리 전제 상한 — 조건부 후보만 더해진다
         int sustainAfter = SustainFilter.nSustain(sustainPool, budget, 0.0);
-        String headline = "무권리 매물을 확보하면 %d곳이 추가로 진입 가능합니다. "
-                .formatted(conditionalCount)
+        String headline = "무권리 매물을 확보하면 %s곳이 추가로 진입 가능합니다. "
+                .formatted(count(conditionalCount))
                 + "권리금 포함 비용 기준으로는 현재 예산을 넘어서는 상권입니다.";
         return new InsightEvent(id, "T5", headline,
                 new Delta(before, after, sustainAfter, null),
@@ -299,6 +299,11 @@ public class InsightBuilder {
 
     private static String nextId(List<InsightEvent> issued) {
         return "i-" + (issued.size() + 1);
+    }
+
+    /** 곳수 표기 — 문장 안에서 금액과 같은 천단위 구분을 쓴다 (근거는 {@link ReasonTemplate#count}). */
+    private static String count(int places) {
+        return ReasonTemplate.count(places);
     }
 
     /** 만원 단위 정수를 천단위 구분해 표기 (계약 공통 규약: 금액은 만원 단위 정수). */

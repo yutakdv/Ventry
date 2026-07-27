@@ -76,9 +76,19 @@ python3 scripts/qa_integration.py --only F2       # LLM 전면 차단 폴백
 [docs/QA_REPORT_INTEGRATION_CM.md](docs/QA_REPORT_INTEGRATION_CM.md) 입니다 — 화면에 실제로
 그려지는 값의 사실성까지 확인하고, 미해결 항목마다 해결 절차를 제안했습니다.
 
-실데이터(`db` 프로파일) 경로에서 계약·불변 원칙이 지켜지는지 경계 조건까지 타격해 본 BE 리뷰는
-[docs/BE_CODE_REVIEW_2026-07-26.md](docs/BE_CODE_REVIEW_2026-07-26.md) 입니다 — 픽스처 테스트가
-통과시키는 결함 22건과 각각의 해결 방안, 재발을 막는 CI 게이트 7종을 제안했습니다.
+실데이터(`db` 프로파일) 경로에서 계약·불변 원칙이 지켜지는지 경계 조건까지 타격해 본 코드리뷰는
+**픽스처 테스트가 통과시키는 결함 27건**(P0 9 · P1 8 · P2 10)과 배치 산출물 정의 결함 9건을
+찾았습니다. 조치는 전건 이슈로 분해해 처리했고([#112](https://github.com/yutakdv/Ventry/issues/112)
+· [#113](https://github.com/yutakdv/Ventry/issues/113) · [#110](https://github.com/yutakdv/Ventry/issues/110)
+· [#111](https://github.com/yutakdv/Ventry/issues/111)), 재발은 **실데이터 계약 게이트 9종(G1~G9)**
+이 막습니다 — 매 push 마다 `develop-ci` 의 compose 스모크 단계에서 실행됩니다.
+
+```bash
+python3 scripts/qa_integration.py --contract-gate   # G1~G9 (실데이터 계약 게이트)
+```
+
+> 리뷰 원본 2건은 내용을 이슈와 [docs/assumptions.md](docs/assumptions.md)(#68~#82)로 옮긴 뒤
+> 폐기했습니다 — 같은 사실을 두 곳에 두면 한쪽이 낡습니다.
 
 > 이 가이드는 **비개발자 외부 1인이 3분 안에 위 ★ 지점에 도달하는지**로 검증합니다.
 > 실행 대본·기록지·실패 시 조정 순서: [docs/tasks/CM-04_도슨트_테스트_프로토콜.md](docs/tasks/CM-04_도슨트_테스트_프로토콜.md)
