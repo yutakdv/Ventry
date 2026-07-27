@@ -1,7 +1,10 @@
 package com.ventry.api.llm;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.NavigableSet;
 import java.util.Optional;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -100,15 +103,57 @@ public final class ReviewPrompt {
         return usesOnlyGivenNumbers(text, facts) ? Optional.of(text) : Optional.empty();
     }
 
-    /** 입력 사실에 없는 숫자가 하나라도 있으면 false — 지어낸 수치로 반박하는 것을 막는다. */
+    /**
+     * 입력 사실에 없는 숫자가 하나라도 있으면 false — 지어낸 수치로 반박하는 것을 막는다.
+     *
+     * <p><b>문자열이 아니라 값으로 대조한다.</b> 구 구현은 {@code facts.contains(토큰)} 이라
+     * 부분 문자열이 통과했다: 사실이 「추정매출 2400만원」이면 출력의 <b>240</b>·<b>40</b> 이,
+     * 「환산임대료 155만원」이면 <b>55</b> 가 전부 통과했다. 지어낸 수치를 막는 것이 이 함수의
+     * 유일한 존재 이유인데 그 구멍이 바로 그 자리에 있었다.
+     *
+     * <p>반대 방향도 틀렸다. 모델이 한국어 관행대로 「2,400만원」이라 쓰거나 「0.110」을
+     * 「0.11」로 줄이면 <b>내용이 정확한 반박문이 통째로 폐기</b>돼 화면에 「검증 생략」이 떴다.
+     * 값 비교는 그 둘을 같은 수로 본다.
+     */
     private static boolean usesOnlyGivenNumbers(String text, String facts) {
+        NavigableSet<BigDecimal> allowed = numberValues(facts);
         Matcher matcher = NUMBER.matcher(text);
         while (matcher.find()) {
-            if (!facts.contains(matcher.group())) {
+            Optional<BigDecimal> value = parse(matcher.group());
+            if (value.isEmpty() || !allowed.contains(value.get())) {
                 return false;
             }
         }
         return true;
+    }
+
+    /**
+     * 사실에 등장하는 수치의 값 집합. {@code TreeSet} 은 {@code compareTo} 로 원소를 보므로
+     * {@code 0.110} 과 {@code 0.11} 이 같은 값으로 잡힌다 ({@code BigDecimal.equals} 는 소수
+     * 자릿수까지 보기 때문에 {@code HashSet} 을 쓰면 안 된다).
+     */
+    private static NavigableSet<BigDecimal> numberValues(String facts) {
+        NavigableSet<BigDecimal> values = new TreeSet<>();
+        Matcher matcher = NUMBER.matcher(facts);
+        while (matcher.find()) {
+            parse(matcher.group()).ifPresent(values::add);
+        }
+        return values;
+    }
+
+    /**
+     * 숫자 토큰 → 값. 천단위 쉼표는 지운다.
+     *
+     * <p>정규식은 {@code 2026.07.27} 처럼 구분자가 여럿인 토큰도 잡는데 이는 수치가 아니다.
+     * 파싱 실패를 empty 로 돌려 <b>출력 쪽에서는 거부, 사실 쪽에서는 제외</b>로 흘린다 —
+     * 어느 쪽이든 「사실에 없는 숫자」로 취급되므로 가드가 느슨해지지 않는다.
+     */
+    private static Optional<BigDecimal> parse(String token) {
+        try {
+            return Optional.of(new BigDecimal(token.replace(",", "")));
+        } catch (NumberFormatException e) {
+            return Optional.empty();
+        }
     }
 
     /**

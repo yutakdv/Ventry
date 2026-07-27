@@ -36,6 +36,46 @@ class ReviewPromptTest {
         assertThat(ReviewPrompt.sanitize(Optional.of(invented), FACTS)).isEmpty();
     }
 
+    /**
+     * 지어낸 수치가 <b>사실의 부분 문자열</b>이면 통과하던 구멍 — 대조가 문자열이었기 때문이다.
+     *
+     * <p>사실의 「추정매출 1800만원」·「환산임대료 198만원」에서 180·80·98 은 전부 다른 수인데,
+     * {@code facts.contains("180")} 은 참이었다. 반박문에 없는 금액이 실린 채 검증 적용으로
+     * 나가는 경로라 §0-1 위반이 그대로 화면에 오른다.
+     */
+    @Test
+    void rejectsObjection_whoseNumberIsOnlyASubstringOfAFact() {
+        String substring = "추정매출이 180만원만 흔들려도 부담률 임계를 넘길 수 있습니다.";
+        String tail = "환산임대료가 98만원 오르면 같은 구간에 들어갑니다.";
+
+        assertThat(ReviewPrompt.sanitize(Optional.of(substring), FACTS)).isEmpty();
+        assertThat(ReviewPrompt.sanitize(Optional.of(tail), FACTS)).isEmpty();
+    }
+
+    /**
+     * 표기 차이는 다른 수가 아니다 — 값으로 대조한다.
+     *
+     * <p>모델은 한국어 관행대로 「1,800만원」이라 쓰고 「0.110」을 「0.11」로 줄인다. 구 구현은
+     * 문자열 대조라 이런 응답을 통째로 버렸고, 사용자에게는 <b>내용이 멀쩡한데도</b> 검증
+     * 패널이 「검증 생략」으로 떴다.
+     */
+    @Test
+    void acceptsObjection_thatWritesTheSameNumberDifferently() {
+        String comma = "추정매출 1,800만원은 분기 평균이라 하위 시나리오에서는 더 낮아질 수 있습니다.";
+        String trimmed = "부담률 0.11 은 추정매출이 유지된다는 전제에 기대고 있습니다.";
+
+        assertThat(ReviewPrompt.sanitize(Optional.of(comma), FACTS)).contains(comma);
+        assertThat(ReviewPrompt.sanitize(Optional.of(trimmed), FACTS)).contains(trimmed);
+    }
+
+    /** 날짜처럼 구분자가 여럿인 토큰은 수치가 아니다 — 예외로 요청을 깨지 말고 거부한다. */
+    @Test
+    void rejectsObjection_withNonNumericTokenInsteadOfThrowing() {
+        String dated = "2026.07.27 기준 추정매출은 분기 평균이라 하위 시나리오를 덮지 못합니다.";
+
+        assertThat(ReviewPrompt.sanitize(Optional.of(dated), FACTS)).isEmpty();
+    }
+
     @Test
     void rejectsObjection_withBannedTerminology() {
         String banned = "이 상권은 자금 조건이 좋아 대출 승인 가능성이 높으니 권장할 만합니다.";
