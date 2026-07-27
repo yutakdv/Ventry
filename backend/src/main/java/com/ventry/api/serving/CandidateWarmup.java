@@ -25,6 +25,7 @@ public class CandidateWarmup {
 
     @EventListener(ApplicationReadyEvent.class)
     public void warmUp() {
-        INDUSTRIES.forEach(candidates::findCandidates);   // 다른 빈 경유 호출이라 @Cacheable 프록시가 동작
+        // 다른 빈 경유 호출이라 CandidateRepository 의 @Cacheable 프록시가 동작한다
+        INDUSTRIES.forEach(candidates::findCandidates);
     }
 }
