@@ -54,6 +54,49 @@ FOOD_TYPES = {
 
 KNOWN_TYPES = CAFE_TYPES | NON_FOOD_TYPES | FOOD_TYPES
 
+AREA_COL = "소재지면적"
+
+
+def parse_area_m2(series):
+    """`소재지면적` 열 → 실수 ㎡. **천 단위 쉼표를 먼저 지운다.**
+
+    `1,496.01` 형태가 283건 있고, 쉼표를 남긴 채 `to_numeric` 하면 전부 결측으로
+    탈락한다. 쉼표가 붙는다는 건 네 자리 이상이라는 뜻이라 탈락분이 **전부 대형 점포**이며,
+    그만큼 중앙값이 아래로 밀린다 (음식점 51.52 → 51.69). 채움률도 99.56% → 99.74% 로 바뀐다.
+    """
+    import pandas as pd
+
+    return pd.to_numeric(
+        series.astype(str).str.replace(",", "", regex=False), errors="coerce"
+    )
+
+
+def representative_area_m2(interim_dir=None) -> dict[str, float]:
+    """업종 대표면적 = 영업중 인허가 `소재지면적`(>0)의 **`category` 별 중앙값** (가정 #41 ①).
+
+    분모는 `classify_category()` 가 정한 KSIC I56 업종이지 인허가 **대장 구분**이 아니다.
+    두 축은 서로 가로지른다 — 휴게음식점 대장에는 분식·패스트푸드가 13,624건 섞여 있고,
+    일반음식점 대장에 카페로 신고된 1,269건은 빠진다. 대장으로 나누면 카페 대표면적이
+    29.3㎡(=cafe 면적 분포의 p28.5)로 앉아 테이크아웃 키오스크 크기가 된다 (이슈 #152).
+
+    재현: `python -c "from batch.collect.permits import representative_area_m2 as f; print(f())"`
+    """
+    import pandas as pd
+
+    base = INTERIM_DIR / "permits" if interim_dir is None else interim_dir
+    frames = [
+        pd.read_csv(base / f"{suffix}_live_classified.csv", dtype=str, low_memory=False)
+        for suffix in SOURCES
+        if (base / f"{suffix}_live_classified.csv").exists()
+    ]
+    if not frames:
+        raise SystemExit(f"인허가 분류본 없음: {base} — 먼저 `python -m batch.collect permits`")
+    live = pd.concat(frames, ignore_index=True)
+    live["_area"] = parse_area_m2(live[AREA_COL])
+    sized = live[live["_area"] > 0]
+    medians = sized.groupby("category")["_area"].median()
+    return {ind: round(float(medians[ind]), 1) for ind in ("cafe", "food") if ind in medians}
+
 
 def classify_category(business_type: str) -> str:
     """업태구분명 → cafe / food / other (KSIC I56 기준, assumptions.md #20).
@@ -103,6 +146,10 @@ def run(env: dict[str, str], session: object | None = None) -> None:
             int((live["category"] == "food").sum()),
             int((live["category"] == "other").sum()),
         )
+
+    # 대표면적을 매 수집마다 찍어 둔다 — `cost.REPRESENTATIVE_AREA_M2` 가 이 값이고,
+    # 원천이 갱신되면 상수가 뒤처졌다는 사실이 로그에 먼저 드러나야 한다 (이슈 #152).
+    logger.info("대표면적(㎡, category 중앙값): %s", representative_area_m2())
 
 
 def main() -> None:

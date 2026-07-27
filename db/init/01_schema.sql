@@ -196,7 +196,7 @@ CREATE TABLE initial_cost (
 );
 
 COMMENT ON COLUMN initial_cost.monthly_rent IS
-    '업종 대표면적(카페 29.2㎡ · 음식점 55.2㎡) 기준 환산임대료. rent.monthly_rent 는 상권 단위 표기값(음식점 55.2㎡ 기준)이라 업종별 부담률 분자로 쓰면 카페가 1.89배 과대해진다 (리뷰 #2).';
+    '업종 대표면적(카페 44.0㎡ · 음식점 51.7㎡ — 인허가 소재지면적 영업중 중앙값, 가정 #41 ①·#84) 기준 환산임대료. rent.monthly_rent 는 상권 단위 표기값(음식점 대표면적 기준)이라 업종별 부담률 분자로 쓰면 카페가 과대해진다 (리뷰 #2).';
 
 -- BE 프론티어 사전 정렬 인덱스 — 예산 경계 탐색이 정렬 배열 위 이분 탐색이다 (expl §2-1)
 CREATE INDEX idx_initial_cost_sort_incl
