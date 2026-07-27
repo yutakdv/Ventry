@@ -14,7 +14,8 @@ public class CandidateRepository {
 
     private static final CandidateRowMapper ROW_MAPPER = new CandidateRowMapper();
 
-    // 뷰의 cost_ex/incl_premium_* 과 sigungu_name 은 조회하지 않는다 (이슈 A·D — RowMapper TODO 참조).
+    // 뷰의 cost_ex/incl_premium_* 과 sigungu_name 은 조회하지 않는다 — 합계는 engine 이 만들고
+    // 자치구는 조회 축이 아니다 (이슈 A·D, 근거는 CandidateRowMapper 주석).
     private static final String SELECT_BY_INDUSTRY = """
             SELECT area_code, name, lat, lng,
                    deposit_low, deposit_high, premium_low, premium_high,
