@@ -20,7 +20,10 @@ public class DbCandidateSource implements CandidateSource {
         this.repository = repository;
     }
 
-    // TODO(BE-02→이슈D): 캐시 키에 자치구(sigungu) 추가 — findCandidates 에 자치구 파라미터 도입 후
+    // 이슈 D (2026-07-27 해소): 「캐시 키에 자치구 추가」는 후보 조회가 지역으로 좁혀질 것을
+    // 전제한 메모였다. region_hint 의 사정거리는 **지역 한정 상품의 자격 판정 전용**으로 확정됐고
+    // (#136 · docs/심사_QA.md), CandidateRepository 의 조건은 업종뿐이다. 조회 축이 하나이므로
+    // 키(업종)는 이미 완전하다 — 자치구를 넣으면 같은 결과를 자치구 수만큼 중복 적재하게 된다.
     // TODO(BE-04): 정렬 비용 배열 사전 정렬 보관 (프론티어 결선 최적화 — 후보 리스트 캐싱까지가 오늘 범위)
     // condition: 캐시 키가 null 이면 Spring 이 IllegalArgumentException 을 던져 요청 전체가 500이
     // 된다. 입력 검증(D-09)이 앞단에서 막지만, 캐시 계층이 **입력 오류를 500으로 증폭**하지
