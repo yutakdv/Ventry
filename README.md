@@ -31,6 +31,9 @@
 4. 탐색 카드 자동 전개 → 헤더의 **탐색 축**은 LLM이 대화 맥락으로 고른 것입니다
    (권리금이 걱정이라고 적었으므로 예산·권리금 두 축이 선택됩니다).
    그 아래 근거 문구는 **서버 템플릿**입니다 — 수치를 만드는 자리가 아니기 때문입니다
+   · 첫 카드의 문장은 잠시 뒤 **LLM이 다듬은 문장으로 교체**됩니다. 하단 SSE 이벤트 로그에
+     `refine · 문장 교체`로 찍힙니다. 교체본의 수치가 템플릿과 하나라도 다르면 서버가
+     응답을 버리므로, 바뀌는 것은 **문장뿐이고 숫자는 그대로**입니다 .. AI [2] 언어화
                                                         .. AI [2] 결정공간 탐색
                                                               기술설명서 §6
    ★ 핵심: T1 인사이트의 진입 수와 지속 수 병기.
@@ -88,11 +91,12 @@ python3 scripts/qa_integration.py --only F2       # LLM 전면 차단 폴백
 **픽스처 테스트가 통과시키는 결함 27건**(P0 9 · P1 8 · P2 10)과 배치 산출물 정의 결함 9건을
 찾았습니다. 조치는 전건 이슈로 분해해 처리했고([#112](https://github.com/yutakdv/Ventry/issues/112)
 · [#113](https://github.com/yutakdv/Ventry/issues/113) · [#110](https://github.com/yutakdv/Ventry/issues/110)
-· [#111](https://github.com/yutakdv/Ventry/issues/111)), 재발은 **실데이터 계약 게이트 9종(G1~G9)**
-이 막습니다 — 매 push 마다 `develop-ci` 의 compose 스모크 단계에서 실행됩니다.
+· [#111](https://github.com/yutakdv/Ventry/issues/111)), 재발은 **실데이터 계약 게이트 11종**
+(G1~G10 + 도슨트 대본 수치 D1)이 막습니다 — 매 push 마다 `develop-ci` 의 compose 스모크
+단계에서 실행됩니다.
 
 ```bash
-python3 scripts/qa_integration.py --contract-gate   # G1~G9 (실데이터 계약 게이트)
+python3 scripts/qa_integration.py --contract-gate   # D1 + G1~G10 (실데이터 계약 게이트)
 ```
 
 > 리뷰 원본 2건은 내용을 이슈와 [docs/assumptions.md](docs/assumptions.md)(#68~#82)로 옮긴 뒤
@@ -126,7 +130,7 @@ python3 scripts/qa_integration.py --contract-gate   # G1~G9 (실데이터 계약
 [배치: Python]                    [저장]              [서빙: Spring Boot]            [프론트]
 서울 상권분석 API ────┐
 인허가 시가정보 CSV ──┤
-부동산원 임대동향 API ┼─ 전처리(pandas/         ┌─ 인터뷰어(파싱: 폼+자연어)      [1]
+부동산원 임대동향 API ┼─ 전처리(pandas/         ┌─ 인터뷰어(폼 + 자유텍스트 키워드) [1]
 서울 교통 데이터 ─────┘  geopandas)  →        │  오케스트레이터(tool-calling)
  (역사마스터·승하차)      PostgreSQL ─────────┼→  └ 결정적 도구 계층:            ─SSE→ React
                          (상권DB+정산테이블)  │     자격필터/비용계산/점수·부담률/    +
@@ -136,8 +140,12 @@ python3 scripts/qa_integration.py --contract-gate   # G1~G9 (실데이터 계약
                                                   + 원문 근거 인용(청크 직접 조회)
 ```
 
-- **모든 숫자는 결정적 계산**이 만든다. LLM 역할은 3개뿐: [1] 사용자 이해(파싱·탐색 계획)
-  [2] 결정공간 탐색의 해석·언어화 [3] 결과 검증(리스크 반박·원문 인용). 수치 생성 금지.
+- **모든 숫자는 결정적 계산**이 만든다. LLM 역할은 3개뿐: [1] 탐색 축 선정
+  [2] 결정공간 탐색 결과의 언어화 [3] 결과 검증(리스크 반박). 수치 생성 금지 —
+  세 경로 모두 **출력의 숫자를 입력과 대조해 어긋나면 응답을 버린다.**
+- **자유 텍스트 파싱은 LLM이 아니라 키워드 매칭**이다(`parse_source: form_only`).
+  계약이 금액을 `form`으로만 받으므로 파싱이 만들 수 있는 것은 비수치 관심사뿐이고,
+  그건 키워드로 충분하다 — 필요 없는 자리에 LLM을 두지 않는 것도 설계다.
 - **서빙 경로에 ML 없음.** LightGBM+SHAP은 오프라인 배치에서 점수 설계를 교차 검증(스펙 §12)
   — 설명 불가능한 모델을 서빙에 넣지 않기 위한 신뢰 계층 분리.
 - 실시간 외부 의존은 카카오맵 JS SDK 단 하나. LLM 장애 시 템플릿 문장이 최종본(데모 무중단).
