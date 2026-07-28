@@ -1,6 +1,7 @@
 package com.ventry.api.llm;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.TreeSet;
@@ -19,7 +20,46 @@ final class LlmResponses {
     /** 숫자 토큰 — 소수점·천단위 쉼표를 포함해 최대 길이로 끊는다. */
     private static final Pattern NUMBER = Pattern.compile("\\d+(?:[.,]\\d+)*");
 
+    /**
+     * 용어 컴플라이언스 금지어 (CLAUDE.md 절대 불변 원칙 3) — <b>두 검증기의 공용 목록</b>.
+     *
+     * <p>{@link ReviewPrompt}·{@link RefinePrompt} 가 각자 목록을 들고 있었는데, 그 결과
+     * 「추천드립」·「추천합니」만 막고 <b>「추천해 드립니다」·「권유합니다」는 통과</b>했다.
+     * 심사 감점에 직결되는 목록이 조용히 갈라지지 않도록 여기 하나만 둔다 — 이 클래스가
+     * 존재하는 이유(수치 검사 이중화 방지)와 같은 이유다.
+     *
+     * <p>어간까지만 적는다. 「추천드립니다/추천드려요」는 <b>추천드</b>, 「추천합니다/추천합시다」는
+     * <b>추천합</b> 로 활용형을 함께 걸린다. 명사 「추천 점수」·「추천 상권」은 어간 뒤에 조사가
+     * 붙지 않으므로 오탐이 아니다.
+     *
+     * <p>고지 문구의 「대출 권유·중개·자문이 아닙니다」와는 충돌하지 않는다 — 고지는 검증을
+     * 통과한 문장 <b>뒤에 서버가 붙이므로</b> LLM 출력에 들어 있을 이유가 없고, 들어 있다면
+     * 모델이 고지를 흉내 낸 것이라 폐기하는 편이 옳다.
+     */
+    static final List<String> BANNED_TERMS = List.of(
+            "승인", "권장", "보장", "조달 가능", "심사역",
+            "추천드", "추천합", "추천해", "권유", "권해");
+
     private LlmResponses() {}
+
+    /**
+     * 금지어가 하나라도 섞였으면 true — 호출부는 응답 전체를 버린다.
+     *
+     * @param extra 검증기별 추가 금지어(예: 반박문의 판정 번복 어휘). 없으면 빈 목록.
+     */
+    static boolean violatesTerminology(String text, List<String> extra) {
+        for (String word : BANNED_TERMS) {
+            if (text.contains(word)) {
+                return true;
+            }
+        }
+        for (String word : extra) {
+            if (text.contains(word)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /**
      * 문자열에 등장하는 수치의 <b>값</b> 집합.
