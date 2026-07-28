@@ -18,7 +18,10 @@ public final class EligibilityFilter {
     }
 
     private static boolean qualifies(Profile profile, Eligibility e) {
-        if (e.maxAge() != null && profile.age() > e.maxAge()) {
+        // 나이 상한이 걸린 상품은 **나이를 확인했을 때만** 통과시킨다. 진단 폼에서 나이는 필수가
+        // 아니라 미기재가 실제로 들어오는데, 예전 구현은 그것을 0으로 강등해 「만 39세 이하」를
+        // 통과시켰다 — regions·targetGroups 와 같은 하향 안전 규칙으로 통일한다 (이슈 #155 ①).
+        if (e.maxAge() != null && (profile.age() == null || profile.age() > e.maxAge())) {
             return false;
         }
         if (e.preStartupOnly() && profile.existingBusiness()) {
