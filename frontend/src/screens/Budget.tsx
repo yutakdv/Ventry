@@ -10,6 +10,7 @@ import StatCard from '../components/StatCard'
 import { postBudget } from '../api/client'
 import { useSession } from '../store/session'
 import { formatAmount, formatBudgetRange, formatPeople } from '../lib/format'
+import { rentAreaShort, rentAreaBasis } from '../lib/rentArea'
 import { buildComposition } from '../lib/composition'
 import type { BudgetCompositionItem, BudgetPreview, Scenario } from '../api/types'
 import styles from './Budget.module.css'
@@ -33,8 +34,12 @@ export default function Budget() {
   const { sessionId, parsedProfile, selectedScenario, setBudget, bumpVersion } = useSession()
 
   const scenario = selectedScenario
+  /** 임대료 금액의 면적 조건 (이슈 #151) — 라벨엔 ㎡만, 근거 줄엔 평까지. */
+  const rentUnit = rentAreaShort(parsedProfile?.industry)
+  const rentBasis = rentAreaBasis(parsedProfile?.industry)
   const [value, setValue] = useState(() => scenario?.budget ?? 0)
   const [preview, setPreview] = useState<BudgetPreview | null>(null)
+  const [dataAsOf, setDataAsOf] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
 
   const composition = useMemo(
@@ -52,6 +57,7 @@ export default function Budget() {
           composition: comp,
         })
         setPreview(res.preview)
+        setDataAsOf(res.data_as_of)
         setBudget(res.confirmed_budget, res.preview) // 세션 B₀ — 화면 4의 진실 원천
         bumpVersion() // /recommend·/explore가 공유하는 version 갱신
       } finally {
@@ -201,7 +207,7 @@ export default function Budget() {
           <StatCard
             icon={Receipt}
             tone="green"
-            label="환산 임대료 (월, 추정)"
+            label={`환산 임대료 (월${rentUnit ? `, ${rentUnit}` : ', 추정'})`}
             value={
               preview?.rent_range
                 ? formatBudgetRange(preview.rent_range[0], preview.rent_range[1], '')
@@ -225,13 +231,15 @@ export default function Budget() {
         {/*
           출처는 카드 한 장이 아니라 위 수치 전체에 걸린다. 카드 캡션에 넣으면 그 카드만
           두 줄이 되어 4장의 리듬이 깨지므로 묶어서 아래 한 줄로 낸다.
-          데이터 기준일은 `POST /budget` 응답에 없어(계약 §3) 다음 화면에 위임한다 —
-          화면이 날짜를 지어내지 않는다.
+
+          기준일은 후보가 0곳이어도 낸다 — 「0곳」 역시 그 기준일의 데이터가 만든 판정이다.
+          반면 임대료·유동인구 출처 문장은 보여줄 수치가 있을 때만 붙인다.
         */}
-        {preview?.rent_range && (
+        {dataAsOf && (
           <p className={`t-caption ${styles.previewSource}`}>
-            임대료는 한국부동산원 상권 분기 평균(추정), 유동인구는 서울 열린데이터광장 분기
-            집계입니다. 데이터 기준일은 입지 추천 화면에 표기됩니다.
+            {preview?.rent_range &&
+              `임대료는 한국부동산원 상권 분기 평균(추정)${rentBasis ? ` · ${rentBasis}` : ''}, 유동인구는 서울 열린데이터광장 분기 집계입니다. `}
+            데이터 기준일 {dataAsOf}.
           </p>
         )}
 
@@ -245,9 +253,8 @@ export default function Budget() {
         )}
 
         {/*
-          상권 수치의 데이터 기준일은 이 화면에서 표기할 수 없다 — `POST /budget` 응답에
-          `data_as_of`가 없다(계약 §3). 날짜를 화면이 지어낼 수는 없으므로 출처·추정 여부만
-          밝히고, 기준일은 다음 화면(입지 추천)에서 서버 값으로 표기한다.
+          기준일은 서버가 준 `data_as_of` 를 그대로 쓴다. 화면이 날짜를 지어내지 않으므로
+          응답에 없으면 줄 자체를 내지 않는다 (계약 D9 이전 서버와 붙어도 거짓 표기가 없다).
         */}
         <p className={`t-caption ${styles.disclaimer}`}>
           ⓘ 본 정보는 공개 자료 기반 정보 제공이며 대출 권유·중개·자문이 아닙니다. 자격 요건 부합 상품을 확인한
