@@ -31,6 +31,17 @@ public class DiagnoseController {
     /** 후보 조회 그레인이 area_code × industry 라 업종 없이는 어떤 계산도 성립하지 않는다. */
     private static final List<String> INDUSTRIES = List.of("cafe", "food");
 
+    /**
+     * 나이 허용 범위 — 만 나이 기준.
+     *
+     * <p>하한 15는 「만 15세 미만은 근로·사업 개시가 제한된다」가 아니라 <b>오타를 걸러 내는
+     * 선</b>이다. 자격 판정에 쓰는 상품 조건의 하한은 없고 상한만 있어서(청년 만 39세 이하),
+     * 이 검증이 막는 것은 음수·0 같은 값이 상한 조건을 통과해 버리는 경로다 (이슈 #155 ①).
+     * 상한 100은 같은 성격의 상식선이다 — 200이 200으로 계산되는 것을 막는다.
+     */
+    private static final int AGE_MIN = 15;
+    private static final int AGE_MAX = 100;
+
     @PostMapping("/api/diagnose")
     public DiagnoseResponse diagnose(@RequestBody DiagnoseRequest request) {
         Form form = request.form() != null ? request.form()
@@ -70,6 +81,11 @@ public class DiagnoseController {
      *
      * <p>업종은 <b>화이트리스트</b>로 검증한다 — 오타(`cafee`)가 조용히 빈 후보 목록이 되면
      * 사용자는 "우리 동네엔 후보가 없구나"로 읽는다.
+     *
+     * <p><b>필수와 규격을 구분한다.</b> {@code industry}·{@code capital} 은 없으면 계산이
+     * 성립하지 않아 필수지만, {@code age}·{@code monthly_investable} 은 폼에서 선택 입력이라
+     * 없어도 된다 — 대신 <b>들어온 값이 규격을 벗어나면</b> 막는다. 미기재와 잘못된 값은
+     * 다른 사건이고, 미기재를 0으로 바꿔 통과시킨 것이 이슈 #155 의 원인이었다.
      */
     private static void validate(Form form) {
         if (form.industry() == null || form.industry().isBlank()) {
@@ -84,6 +100,17 @@ public class DiagnoseController {
         }
         if (form.capital() < 0) {
             throw ApiException.invalidRequest("capital 은 음수일 수 없습니다.");
+        }
+        // age 미기재는 통과시킨다 — 자격 판정에서 나이 조건 상품이 빠지는 것으로 처리된다
+        // (EligibilityFilter, 가정 #86). 들어온 값이 범위 밖일 때만 막는다.
+        if (form.age() != null && (form.age() < AGE_MIN || form.age() > AGE_MAX)) {
+            throw ApiException.invalidRequest(
+                    "age 는 " + AGE_MIN + "~" + AGE_MAX + " 범위여야 합니다: " + form.age());
+        }
+        // 음수 월 투자 가능액은 상환 여력 상한을 음수로 만들어 모든 경계를 REPAYMENT_OVER 로
+        // 떨어뜨린다 — 200 + "유의미한 대안이 없습니다"로 나가 정상처럼 보인다 (이슈 #155 ②).
+        if (form.monthlyInvestable() != null && form.monthlyInvestable() < 0) {
+            throw ApiException.invalidRequest("monthly_investable 은 음수일 수 없습니다.");
         }
     }
 }

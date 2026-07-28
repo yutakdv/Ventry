@@ -90,6 +90,23 @@ FE 검토 의견 6건은 2026-07-21 반영됨 (5건 수용 · 1건 스코프 외
   전제하지 말 것 — "적극이 더 큰 예산"이라는 문구·정렬·강조는 사실과 어긋날 수 있다.
 - `composition[].type`: `equity`(자기자본) / `guarantee`(보증) / `policy_loan`(정책자금).
   판별은 상품명의 '보증' 우선, 그다음 기관명이다 (BE `ProductType`).
+- **★2026-07-28 — SSE `composition`(구간) → `POST /budget` `composition`(단일값) 변환 규칙**:
+  이 카드의 `{type, amount_min, amount_max}` 를 §3 요청의 `{type, amount}` 로 바꿀 때
+  **자기자본을 먼저 채우고, 남은 예산을 나머지 항목에 `amount_max` 한도로 순서대로 배분**한다.
+
+  ```
+  ordered  = composition 을 equity 가 앞에 오도록 안정 정렬
+  remaining = confirmed_budget
+  각 항목:  amount = max(0, min(amount_max, remaining));  remaining -= amount
+  ```
+
+  자기자본이 먼저인 이유는 **심사와 무관한 확정 재원**이기 때문이다 — 상품 한도를 먼저 채우면
+  같은 예산에서 심사 대상 금액이 부풀려진다. 이 값은 표기용이 아니라 **잔여 한도 계산에 실제로
+  쓰인다**(`UsedLimits.byProduct` → `FundingCheck`, expl §2-2 ① · 가정 #48·#55): 같은 예산
+  8,398 에서 `[{equity, 5000}]` 과 `[{policy_loan, 50000}]` 은 T1 근거 상품이 서로 달라진다.
+  규칙이 계약 밖에 있으면 클라이언트를 다시 구현할 때 결과가 조용히 갈리므로 여기 못 박는다
+  (이슈 #171 ② · #173). 참조 구현: FE `lib/composition.ts`.
+  `equity` 계열과 미지의 `type` 은 잔여 한도 계산에서 **설계상 흡수**된다(상품에 매핑되지 않음).
 
 ### 3) `POST /api/budget/{sid}`
 예산 확정(B₀ 기록) + **확정 예산 기준 프리뷰**.
@@ -156,7 +173,9 @@ FE 검토 의견 6건은 2026-07-21 반영됨 (5건 수용 · 1건 스코프 외
 // plan
 { "axes": ["A1", "A4"],
   "axis_labels": { "A1": "예산", "A4": "권리금 조건" },   // 화면 표기용 — 서버가 송출(용어 컴플라이언스)
-  "rationale": "대화 맥락 기반: 권리금 축 우선 검토" }
+  // ★2026-07-28 예시 정정 — rationale 은 서버 템플릿 상수다. LLM 이 정하는 것은 axes 이며
+  // rationale 은 (0건 사유 문장) 또는 (고정 문구) 둘 중 하나다. 아래가 실제 출력이다.
+  "rationale": "예산 축을 기준으로 인접 시나리오의 진입·지속 경계를 검토했습니다." }
 // insight (T1 예) — insight_id는 refine 이벤트의 교체 대상 키 (BE-01 구현 중 추가)
 { "insight_id": "i-1", "type": "T1", "headline": "…",
   "delta": { "n_entry_before": 3, "n_entry_after": 11, "n_sustain_after": 7, "score_delta": … },
@@ -186,6 +205,10 @@ FE 검토 의견 6건은 2026-07-21 반영됨 (5건 수용 · 1건 스코프 외
 
 - 라벨은 `plan.axis_labels`로 매 이벤트에 실려 오므로 프론트는 하드코딩 사전을 두지 않는다
   (화면 문구는 용어 컴플라이언스 대상이라 서버가 단일 통제한다).
+- **★2026-07-28 — `plan` 의 두 필드는 출처가 다르다**: `axes` 는 LLM 이 대화 맥락(`concerns`)으로
+  정한 우선순위에서 **서버가 계산 가능한 축만 남긴** 결과이고, `rationale` 은 **서버 템플릿 상수**다
+  (인사이트 0건이면 그 사유 문장, 아니면 고정 문구). 화면·문서가 `rationale` 을 LLM 산출로
+  소개하지 않는다. LLM 산출 전환은 검토 후 기각했다 — 가정 #90 · 이슈 #163.
 - **`marginal_payment`(월 상환액 증분, 만원)은 고정금리 근거일 때만 실린다.** 근거 상품이
   변동금리(`rate` 생략·`rate_type`=`variable`)면 BE-05는 월 상환액 m을 지어내지 않고(§0-1)
   `marginal_payment`를 **생략**하며, 대신 서버가 `marginal_payment_note`(대체 표기 문자열,
@@ -241,3 +264,4 @@ FE 검토 의견 6건은 2026-07-21 반영됨 (5건 수용 · 1건 스코프 외
 | D6 (7/24) | **금융상품 `rate` nullable + `rate_type`·`rate_note` 추가** (AI 제안) — 정책자금 변동금리("기준금리+가산")를 고정 숫자로 조작하지 않고 원문 그대로 기록. `finance_product` DDL·`20_finance.sql` 반영, BE는 `rate` NULL 허용 파싱 필요. 근거 assumptions #28 | ⚠️ **AI 발의 — BE·리더 3인 합의·ratify 대기** (변동금리를 표현 못 하던 계약 공백 보완) |
 | D8 (7/25) | **위 D6 변경 ratify 완료** (BE @Jongkwang131 · FE @youngjun1227, 이슈 #73) + **FE 조건 4건 반영**: ①JSON 예시 3곳 `rate_type`·`rate_note` ②분기 키 `rate_type`(항상 존재) 명문화 ③`rate_note`·폴백 문구 서버 단일 통제 ④변동금리 `marginal_payment` 생략+`marginal_payment_note`·`matching_products` `amount_max` desc 고정(금리 정렬 금지). BE-05는 변동금리 m 미산출. 데이터 검수 게이트 2건(F-002·F-010 `fixed`+`rate` NULL, F-010 `rate_note` 비금리)은 assumptions #30 등재 | ✅ **3인 합의 완료** (BE·FE ratify · AI 반영) |
 | D9 (7/27) | **코드리뷰 조치 반영 (이슈 #104·#110~#113)**: ①`POST /budget` 응답에 **`data_as_of` 추가** — 화면 3이 기준일을 표기할 원천이 없던 유일한 화면(#104 ④) ②`total_count` 주석 정정 — 값은 그대로 두고 「후보 풀 전체 수(범위 외 포함)」로 의미를 사실에 맞춘다(값을 바꾸면 랜딩 지표 1,061까지 움직인다) ③`burden_ratio` 는 추정매출 결측 시 **필드 생략**(문자열 `"Infinity"` 가 나가던 것, #104 ⑤) ④`marginal_payment_note` **서버 송출 이행** — D8 에서 합의됐으나 미구현이던 필드 | **BE 반영 · FE/AI ratify 대기** |
+| D12 (7/28) | **미기재 규격 2건 명문화 (이슈 #160~#163 · #171~#173)**: ①**§5 `plan.rationale` 예시 정정** — 예시가 「대화 맥락 기반: 권리금 축 우선 검토」라 LLM 산출을 시사했으나 실제로는 **서버 템플릿 상수 2개 중 하나**다. 실제 출력으로 교체하고, `axes`(LLM 산출)와 `rationale`(서버 템플릿)의 출처가 다르다는 사실을 본문에 명시. LLM 전환은 기각 — 가정 #90 ②**§2 SSE `composition`(구간) → §3 `POST /budget` `composition`(단일값) 변환 규칙 기재** — 「자기자본 우선 → 상품 한도 순 그리디」가 FE `lib/composition.ts` 에만 있었다. 이 값은 표기용이 아니라 `UsedLimits.byProduct` 를 거쳐 **잔여 한도 계산에 실제로 쓰이므로**(같은 예산에서 T1 근거 상품이 갈린다) 클라이언트를 다시 구현하면 결과가 조용히 달라진다 | **단독 진행** — 3인 합의 절차 미적용. 두 건 모두 **구현 동작의 성문화**이며 필드·타입·의미 변경이 없다(예시 문자열 1곳 + 규칙 서술 추가). 동결 대상인 「계약의 내용」은 바뀌지 않았다 |
