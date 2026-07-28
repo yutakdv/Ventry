@@ -7,8 +7,13 @@ from __future__ import annotations
 
 import pandas as pd
 
-# 대표면적 = 인허가 소재지면적 영업중 중앙값 (채움률 99.8%, design 2-1)
-REPRESENTATIVE_AREA_M2 = {"cafe": 29.2, "food": 55.2}
+# 대표면적 = 인허가 소재지면적 영업중 중앙값 — **`classify_category()` 업종별**, 채움률 99.7%
+# (cafe n=17,578 · food n=132,530). 산출·재현은 `collect.permits.representative_area_m2()`:
+#   python -c "from batch.collect.permits import representative_area_m2 as f; print(f())"
+# 옛 값(카페 29.2·음식점 55.2)은 인허가 **대장 구분**(휴게 29.3·일반 55.4) 중앙값이었다.
+# 대장은 KSIC 업종과 가로질러서 — 휴게 대장의 분식·패스트푸드 13,624건이 섞이고 일반 대장의
+# 카페 신고 1,269건이 빠진다 — 카페 대표면적이 cafe 분포의 p28.5(8.8평)에 앉았다 (이슈 #152).
+REPRESENTATIVE_AREA_M2 = {"cafe": 44.0, "food": 51.7}
 # 보증금 관행배수 (상가; 인허가 보증액 0% → 실측 불가라 관행, 전환율은 라벨 병기)
 DEPOSIT_MULT_LOW, DEPOSIT_MULT_HIGH = 8, 12
 # 권리금: 서울 숙박·음식점 ㎡당 평균 2025 (R-ONE A_2024_00445), 업종보정·구간비
@@ -43,8 +48,8 @@ def premium_interval(
     """권리금 구간 = ㎡당 권리금 × 대표면적 × 임대료비례 × 업종보정.
 
     임대료비례는 **단가(천원/㎡) 비**로 잡는다 — 환산임대료 비로 잡으면 대표면적이
-    center 항과 ratio 항에 두 번 들어가고, 분모(서울 중위)는 음식점 55.2㎡ 기준
-    단일값이라 카페가 구조적으로 0.53배 작아져 하한 클립에 몰린다 (리뷰 #1).
+    center 항과 ratio 항에 두 번 들어가고, 분모(서울 중위)는 음식점 대표면적 기준
+    단일값이라 카페가 구조적으로 작아져 하한 클립에 몰린다 (리뷰 #1).
     """
     ratio = (
         unit_price_1000won_m2 / seoul_median_unit_price if seoul_median_unit_price else 1.0

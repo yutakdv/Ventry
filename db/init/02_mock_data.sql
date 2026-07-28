@@ -194,7 +194,7 @@ INSERT INTO location_score (area_code, industry, w1, w2, w3, w4, w5, est_sales, 
 
 -- 초기비용 4블록 — 전 블록 구간, 권리금 이중 표기 (스펙 §4-1)
 -- monthly_rent 는 데모 픽스처라 rent 테이블 값을 업종 공통으로 둔다 — 실파이프라인은
--- 업종 대표면적(29.2/55.2㎡)으로 갈리지만, 여기서 값을 바꾸면 expl §8 데모 판정이 흔들린다
+-- 업종 대표면적(카페 44.0 · 음식점 51.7㎡)으로 갈리지만, 여기서 값을 바꾸면 expl §8 데모 판정이 흔들린다
 -- (assumptions #7·#9). 목적은 NOT NULL 충족이지 데모 수치 변경이 아니다 (리뷰 #2).
 INSERT INTO initial_cost (area_code, industry, monthly_rent, deposit_low, deposit_high, premium_low, premium_high, interior_low, interior_high, monthly_fixed_cost, cost_ex_premium_low, cost_ex_premium_high, cost_incl_premium_low, cost_incl_premium_high, based_on_quarter) VALUES
     ('A-1101', 'cafe', 198, 4000, 4800, 1400, 1700, 1000, 1400, 100, 5600, 6800, 7000, 8500, '20261'),

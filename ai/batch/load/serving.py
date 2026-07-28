@@ -133,7 +133,8 @@ def _build_rent(area_master: pd.DataFrame) -> tuple[pd.DataFrame, str]:
             continue
         rows.append({
             "area_code": r.area_code, "quarter": rent_quarter,
-            # area-level 표시·부담률 (음식점 55㎡ 기준, design 2-1)
+            # area-level 표시 (음식점 대표면적 기준, design 2-1). 업종별 부담률 분자는
+            # initial_cost.monthly_rent 다 — 이 값은 area PK 라 업종 축이 없다 (리뷰 #2).
             "monthly_rent": cost.converted_rent(px, "food"),
             "unit_price": round(px, 4),
             "convert_rate": _opt(convert, name), "vacancy_rate": _opt(vacancy, name),
@@ -283,8 +284,10 @@ def _data_source_meta(sales_quarter: str, rent_quarter: str) -> pd.DataFrame:
     rows = [
         ("sales", _as_of(sales_quarter), "서울 상권분석 추정매출 (분기)",
          "당월매출=분기합/3 환산", "2026-07-21"),
+        # 면적은 상수에서 끌어온다 — 하드코딩하면 대표면적이 갱신될 때 화면 라벨만 옛 숫자로
+        # 남는다. 실제로 그렇게 어긋난 채 적재된 전례가 있다 (이슈 #152·#151).
         ("rent", _as_of(rent_quarter), "한국부동산원 ○○상권 분기 평균 (추정)",
-         "환산임대료 음식점 55㎡ 기준", "2026-07-21"),
+         f"환산임대료 음식점 {cost.REPRESENTATIVE_AREA_M2['food']:g}㎡ 기준", "2026-07-21"),
         # 유동인구도 기준일·출처 라벨을 갖는다 — 이 행이 없어 이 지표만 라벨 없이 나갔다
         # (불변 원칙 4, BE D-22 잔여 몫).
         ("floating", _as_of(sales_quarter), "서울 열린데이터광장 상권 분기 집계 (일평균 환산)",
@@ -386,7 +389,7 @@ def assemble() -> dict[str, pd.DataFrame]:
     location_score = score.build_location_score(metrics)
 
     # initial_cost: monthly_rent 는 업종별 부담률 분자로 유지한다 (리뷰 #2).
-    # rent.monthly_rent 는 상권 단위 표기값(음식점 55.2㎡ 기준)이라 업종 부담률에 못 쓴다.
+    # rent.monthly_rent 는 상권 단위 표기값(음식점 대표면적 기준)이라 업종 부담률에 못 쓴다.
     initial_cost = initial_cost.assign(based_on_quarter=quarter)
 
     tables = {

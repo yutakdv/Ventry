@@ -40,13 +40,19 @@ def test_initial_cost_matches_ddl_columns(tables):
 def test_initial_cost_carries_industry_aware_rent(tables):
     """부담률 분자는 업종 대표면적 기준이어야 한다 (리뷰 #2).
 
-    같은 상권에서 카페 환산임대료 < 음식점 환산임대료 여야 한다 — 29.2㎡ < 55.2㎡.
+    같은 상권이면 두 업종의 환산임대료 비는 대표면적 비와 같아야 한다. 방향을
+    상수에서 끌어오는 이유는 대표면적이 갱신되면(#152 카페 29.2→44.0) 부등호가
+    뒤집힐 수도 있기 때문이다 — 검증해야 할 성질은 대소가 아니라 **면적 비례**다.
     """
+    from batch.preprocess.cost import REPRESENTATIVE_AREA_M2
+
     ic = tables["initial_cost"]
     assert "monthly_rent" in ic.columns
     pivot = ic.pivot(index="area_code", columns="industry", values="monthly_rent").dropna()
     assert len(pivot) > 100
-    assert (pivot["cafe"] < pivot["food"]).all()
+    expected = REPRESENTATIVE_AREA_M2["cafe"] / REPRESENTATIVE_AREA_M2["food"]
+    ratio = pivot["cafe"] / pivot["food"]
+    assert ((ratio - expected).abs() < 0.01).all()
 
 
 def test_gu_avg_differs_from_region_avg(tables):
