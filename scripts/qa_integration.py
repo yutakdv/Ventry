@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import time
 import urllib.error
@@ -56,6 +57,24 @@ NON_QUOTABLE_PRODUCTS = {
 # 용어 컴플라이언스 (CLAUDE.md 절대 불변 원칙 3) — 화면에 나가는 문자열에 있으면 안 되는 말.
 # "승인" 계열과 자금 권유형 술어. 심사 감점 직결이라 QA 가 매번 훑는다.
 BANNED_WORDS = ["승인", "권장", "추천드립", "조달 가능", "심사역", "대출을 받으세요"]
+
+# 상향 인사이트에 반드시 동반되는 고지 (CLAUDE.md 절대 불변 원칙 3). 언어화(refine)가 이 문구를
+# 지우면 상향이 단독 노출되므로, 서버는 LLM 에 넘기기 전에 떼어 두고 통과한 문장 뒤에 다시 붙인다.
+DISCLOSURE = "자격 요건 부합 여부만 확인된 것이며, 실제 한도와 심사 결과는 해당 기관이 정합니다."
+
+# 수치 토큰 — BE 검증기(LlmResponses.NUMBER)와 같은 규칙으로 끊는다.
+_NUMBER = re.compile(r"\d+(?:[.,]\d+)*")
+
+
+def _numbers(text: str) -> set[str]:
+    """문자열의 수치 **값** 집합. 천단위 쉼표는 지워 「1,014」와 「1014」를 같은 값으로 본다."""
+    values = set()
+    for token in _NUMBER.findall(text):
+        try:
+            values.add(str(float(token.replace(",", ""))))
+        except ValueError:
+            values.add(token)          # 날짜처럼 파싱 안 되는 토큰은 원문 그대로 비교
+    return values
 
 failures: list[str] = []
 gaps: list[str] = []
@@ -551,6 +570,53 @@ def g8_objection_scope() -> None:
     notes.append(f"G8 예산 6,000 판정 분포 {counts}")
 
 
+def g10_refine_preserves_numbers() -> None:
+    """언어화(refine)가 오면 **수치를 그대로 보존**해야 한다 (스펙 §0-1 역할 ②, BE-06 ③).
+
+    서빙 경로에서 LLM 출력이 그대로 화면 문장이 되는 유일한 자리라, 여기서 수치가 바뀌면
+    「모든 숫자는 결정적 계산이 만든다」가 그 자리에서 무너진다. 단위 테스트가 검증기를 보고
+    이 게이트는 **실제로 나간 이벤트**를 본다.
+
+    refine 은 계약상 **선택적 이벤트**다 — 무LLM 스택(CI 기본)에서는 오지 않는 것이 규격
+    준수이고, 그 경우 이 게이트는 확인할 것이 없다는 사실만 남긴다.
+    """
+    sid = new_session()
+    request("POST", f"/api/budget/{sid}",
+            {"confirmed_budget": 10000,
+             "composition": [{"type": "equity", "amount": 5000},
+                             {"type": "policy_loan", "amount": 5000}]})
+    events = sse(f"/api/explore/{sid}?v=1")
+    names = [n for n, _ in events]
+    insights = {d["insight_id"]: d for n, d in events if n == "insight"}
+    refines = [d for n, d in events if n == "refine"]
+
+    if not refines:
+        notes.append(f"G10 refine 미송출 (LLM 부재이거나 전건 폐기) · 이벤트 {names}")
+        return
+
+    # 계약 §5 순서: plan → insight → refine → done
+    check("G10", names.index("refine") > max(i for i, n in enumerate(names) if n == "insight"),
+          f"refine 이 insight 보다 먼저 왔다: {names}")
+    check("G10", names[-1] == "done", f"refine 뒤에 done 이 없다: {names}")
+
+    for refine in refines:
+        target = insights.get(refine["insight_id"])
+        if not check("G10", target is not None,
+                     f"refine 이 없는 인사이트를 지목한다: {refine['insight_id']}"):
+            continue
+        before, after = _numbers(target["headline"]), _numbers(refine["headline"])
+        check("G10", after == before,
+              f"{refine['insight_id']} 수치가 달라졌다 — 새로 생긴 {sorted(after - before)} · "
+              f"빠진 {sorted(before - after)}")
+        if DISCLOSURE in target["headline"]:
+            check("G10", DISCLOSURE in refine["headline"],
+                  f"{refine['insight_id']} 언어화본에서 고지 문구가 사라졌다")
+        for word in BANNED_WORDS:
+            check("G10", word not in refine["headline"],
+                  f"{refine['insight_id']} 언어화본에 금지 표현 '{word}'")
+    notes.append(f"G10 refine {len(refines)}건 · 수치 보존 확인 · 이벤트 {names}")
+
+
 def g9_data_as_of() -> None:
     """모든 화면이 데이터 기준일을 표기할 수 있어야 한다 (불변 원칙 4 · D-25)."""
     sid = new_session()
@@ -646,13 +712,14 @@ SCENARIOS = {
     "G7": ("게이트 · 용어 컴플라이언스", g7_terminology),
     "G8": ("게이트 · 반박 사정거리", g8_objection_scope),
     "G9": ("게이트 · 데이터 기준일 표기", g9_data_as_of),
+    "G10": ("게이트 · 언어화가 수치를 보존", g10_refine_preserves_numbers),
 }
 
 """도슨트 대본(D1)을 계약 게이트에 넣는 이유 — 이 게이트가 막는 것은 코드 회귀가 아니라
 **데이터가 바뀌었는데 대본이 안 바뀐 상태**다. 재적재는 배치 쪽 커밋 하나로 일어나는데
 README 도슨트는 CM 문서라 같은 PR 에 들어오지 않는다. 실제로 그렇게 낡아 「예산 8,000만 →
 342곳」이 6곳이 됐고, 아무 테스트도 울지 않았다 (이슈 #152·#26)."""
-CONTRACT_GATE = ["D1", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9"]
+CONTRACT_GATE = ["D1", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G10"]
 
 
 def main() -> int:

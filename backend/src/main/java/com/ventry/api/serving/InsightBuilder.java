@@ -41,8 +41,14 @@ import org.springframework.stereotype.Service;
 @Service
 public class InsightBuilder {
 
-    /** 헤드라인 말미의 자격 한정 문구. 자문성·보장성 술어를 쓰지 않는다 (용어 컴플라이언스 §7). */
-    private static final String QUALIFICATION_TAIL =
+    /**
+     * 헤드라인 말미의 자격 한정 문구. 자문성·보장성 술어를 쓰지 않는다 (용어 컴플라이언스 §7).
+     *
+     * <p>{@link ExploreService} 가 언어화(refine) 전에 이 꼬리를 <b>떼어내고</b> 통과한 문장 뒤에
+     * 다시 붙인다 — 필수 고지를 LLM 이 지울 수 있는 자리에 두지 않기 위해서다. 그래서
+     * package-private 이다.
+     */
+    static final String QUALIFICATION_TAIL =
             "자격 요건 부합 여부만 확인된 것이며, 실제 한도와 심사 결과는 해당 기관이 정합니다.";
 
     /**
