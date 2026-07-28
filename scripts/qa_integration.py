@@ -32,6 +32,20 @@ PROFILE_CAFE = {
 }
 VERDICTS = {"FIT", "CONDITIONAL", "CAUTION", "OUT_OF_SCOPE"}
 
+# README 도슨트 가이드의 기준값 사본 (시나리오 D1). 정본은 README 이며 여기는 대조용이다 —
+# 어긋나면 이 상수가 아니라 README 를 고친다. 값이 바뀌는 계기는 코드가 아니라 **재적재**다.
+DOCENT = {
+    "confirmed_budget": 10000,
+    "cards": {"보수": 7901, "적극": 10440},
+    "n_entry": 382,
+    "n_conditional": 636,
+    "top3": [("방이동먹자골목", "FIT", 94), ("잠실역", "FIT", 86),
+             ("을지로입구역", "CONDITIONAL", 85)],
+    "t1": {"gap": 3869, "n_entry_before": 382, "n_entry_after": 1014, "n_sustain_after": 244},
+    "area_code": "3120229",   # 방이동먹자골목 — 대본 6번의 역방향 판정 대상
+    "n_products": 11,
+}
+
 # 인용 불가 문서(브라우저 인쇄된 KB 웹 페이지 4종)에서 온 상품 — 원문에 자격 요건 문단이
 # 없어 인용을 비웠다. 이 4건 외에 인용이 비면 적재 연결이 끊긴 것이다 (가정 #73).
 NON_QUOTABLE_PRODUCTS = {
@@ -549,7 +563,69 @@ def g9_data_as_of() -> None:
           f"기준일 불일치: budget={budget.get('data_as_of')} recommend={recommend.get('data_as_of')}")
 
 
+def d1_docent_script() -> None:
+    """README 도슨트 대본의 수치가 기동 중인 스택에서 그대로 재현되는지 (이슈 #26·#152).
+
+    **대본이 틀리면 심사위원은 자기가 뭘 잘못했다고 생각하고 멈춘다.** 실제로 배치 재적재
+    (업종 대표면적 교정, 이슈 #152)로 도슨트 경로의 숫자가 통째로 이동해 「예산 8,000만 →
+    342곳」이 같은 예산에서 6곳이 된 적이 있다. 코드가 아니라 **데이터가 바뀔 때** 조용히
+    낡는 종류라 사람의 눈으로는 놓친다.
+
+    기준값의 정본은 README 도슨트 가이드이며, 여기 상수는 그 사본이다 — 둘이 어긋나면
+    이 게이트가 아니라 **README 를 먼저 고친다**. 대본 전체 기준값 표는
+    `docs/tasks/CM-04_도슨트_테스트_프로토콜.md` §1-1.
+    """
+    budget = DOCENT["confirmed_budget"]
+    sid = new_session()
+
+    cards = {c["label"]: c for _, c in sse(f"/api/scenarios/{sid}") if "label" in c}
+    for label, expected in DOCENT["cards"].items():
+        actual = cards.get(label, {}).get("budget")
+        check("D1", actual == expected,
+              f"화면 2 {label} 카드 기본 예산 {actual} ≠ 대본 {expected}")
+
+    _, preview = request("POST", f"/api/budget/{sid}",
+                         {"confirmed_budget": budget,
+                          "composition": [{"type": "equity", "amount": 5000},
+                                          {"type": "policy_loan", "amount": budget - 5000}]})
+    entry = preview.get("preview", {}).get("area_count")
+    check("D1", entry == DOCENT["n_entry"],
+          f"화면 3 진입 가능 후보 {entry}곳 ≠ 대본 {DOCENT['n_entry']}곳")
+
+    _, body = request("GET", f"/api/recommend/{sid}")
+    counts = {}
+    for area in body["areas"]:
+        counts[area["verdict"]] = counts.get(area["verdict"], 0) + 1
+    check("D1", counts.get("CONDITIONAL") == DOCENT["n_conditional"],
+          f"조건부 적합 {counts.get('CONDITIONAL')}곳 ≠ 대본 {DOCENT['n_conditional']}곳")
+    check("D1", counts.get("FIT", 0) + counts.get("CAUTION", 0) == entry,
+          "화면이 세는 진입 가능(적합+유의)과 /budget 프리뷰 수가 어긋난다")
+
+    # 화면은 범위 외를 걸러 내므로 대본의 「상위 후보」도 걸러낸 목록의 상위여야 한다.
+    visible = [a for a in body["areas"] if a["verdict"] != "OUT_OF_SCOPE"]
+    top = [(a["name"], a["verdict"], a["score"]) for a in visible[:3]]
+    check("D1", top == DOCENT["top3"], f"상위 후보 {top} ≠ 대본 {DOCENT['top3']}")
+
+    insights = [d for n, d in sse(f"/api/explore/{sid}?v=1") if n == "insight"]
+    t1 = next((i for i in insights if i["type"] == "T1"), None)
+    if check("D1", t1 is not None, "T1 인사이트가 없다 — 대본의 ★ 지점이 재현되지 않는다"):
+        delta, expected = t1["delta"], DOCENT["t1"]
+        check("D1", t1["gap_amount"] == expected["gap"],
+              f"T1 추가 확보액 {t1['gap_amount']} ≠ 대본 {expected['gap']}")
+        for key in ("n_entry_before", "n_entry_after", "n_sustain_after"):
+            check("D1", delta[key] == expected[key],
+                  f"T1 {key} {delta[key]} ≠ 대본 {expected[key]}")
+
+    _, area = request("POST", f"/api/check-area/{sid}", {"area_code": DOCENT["area_code"]})
+    matching = area.get("matching_products", [])
+    check("D1", len(matching) == DOCENT["n_products"],
+          f"자격 부합 상품 {len(matching)}건 ≠ 대본 {DOCENT['n_products']}건")
+    notes.append(f"D1 진입 {entry}곳 · 조건부 {counts.get('CONDITIONAL')}곳 · "
+                 f"자격 부합 {len(matching)}건 · 상위 {top[0] if top else '—'}")
+
+
 SCENARIOS = {
+    "D1": ("도슨트 · README 대본 수치 정합", d1_docent_script),
     "N1": ("정상 · 진단 폼 + 자연어 파싱", n1_diagnose),
     "N2": ("정상 · 조달 시나리오 SSE 2장", n2_scenarios),
     "N3": ("정상 · 예산 확정 + 프리뷰 단조성", n3_budget_preview),
@@ -572,7 +648,11 @@ SCENARIOS = {
     "G9": ("게이트 · 데이터 기준일 표기", g9_data_as_of),
 }
 
-CONTRACT_GATE = ["G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9"]
+"""도슨트 대본(D1)을 계약 게이트에 넣는 이유 — 이 게이트가 막는 것은 코드 회귀가 아니라
+**데이터가 바뀌었는데 대본이 안 바뀐 상태**다. 재적재는 배치 쪽 커밋 하나로 일어나는데
+README 도슨트는 CM 문서라 같은 PR 에 들어오지 않는다. 실제로 그렇게 낡아 「예산 8,000만 →
+342곳」이 6곳이 됐고, 아무 테스트도 울지 않았다 (이슈 #152·#26)."""
+CONTRACT_GATE = ["D1", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9"]
 
 
 def main() -> int:
