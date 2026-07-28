@@ -8,6 +8,7 @@ import ExploreSummary from './ExploreSummary'
 import SseEventLog from './SseEventLog'
 import { getExplore, postBudget } from '../api/client'
 import { useSession, type ExploreCache } from '../store/session'
+import { buildComposition } from '../lib/composition'
 import { formatAmount } from '../lib/format'
 import type { ExploreInsightEvent } from '../api/types'
 import styles from './Explore.module.css'
@@ -31,6 +32,7 @@ export default function Explore() {
     budget,
     baseBudget,
     selectedScenario,
+    dataAsOf,
     explore,
     setExplore,
     applyExploreBudget,
@@ -49,6 +51,15 @@ export default function Explore() {
   exploreRef.current = explore
   const versionRef = useRef(version)
   versionRef.current = version
+  /*
+   * `budget` 도 같은 이유로 ref 다. 인사이트를 적용하면 세션 예산이 바뀌는데, 그것이 의존성에
+   * 남아 있으면 effect 가 다시 돌면서 cleanup 이 **진행 중인 SSE 를 끊는다**. 재실행은 캐시
+   * 가드에 걸려 조기 return 하므로 스트림이 다시 시작되지도 않아, `done`·`refine` 이 유실되고
+   * 프론티어 차트가 빈 채로 고정됐다(첫 인사이트가 오자마자 적용을 누르면 재현). effect 가
+   * `budget` 에서 필요한 것은 진입 시점의 null 여부뿐이라 값은 ref 로 읽는다.
+   */
+  const budgetRef = useRef(budget)
+  budgetRef.current = budget
 
   const effectiveBudget = budget ?? 0
   const base = baseBudget ?? effectiveBudget
@@ -61,10 +72,15 @@ export default function Explore() {
    * 재확정) 캐시가 비워지고 다시 돈다.
    */
   useEffect(() => {
-    if (!sessionId || budget == null) return
+    if (!sessionId || budgetRef.current == null) return
     // 이미 이 기준 예산으로 돌았거나 도는 중이면 재실행하지 않는다.
     const key = `${sessionId}:${base}`
-    if (runKeyRef.current === key || exploreRef.current?.baseBudget === base) return
+    if (runKeyRef.current === key || exploreRef.current?.baseBudget === base) {
+      // 스트림을 새로 시작하지 않는 경로다 — 로딩 표시를 켠 채로 두면 "↻ 시나리오를 받는 중…"이
+      // 영영 남는다. 이미 false 면 React 가 리렌더를 생략하므로 무해하다.
+      setLoading(false)
+      return
+    }
     runKeyRef.current = key
 
     abortRef.current?.abort()
@@ -141,7 +157,7 @@ export default function Explore() {
        */
       if (runKeyRef.current === key) runKeyRef.current = null
     }
-  }, [sessionId, budget, base, setExplore])
+  }, [sessionId, base, setExplore])
 
   /** 프론티어 계단에서 특정 예산의 진입 후보 수 — 요약 스트립 기준값. */
   const frontierAt = useCallback(
@@ -197,12 +213,15 @@ export default function Explore() {
       try {
         const res = await postBudget(sessionId, {
           confirmed_budget: next,
-          composition: selectedScenario.composition.map((c) => ({
-            type: c.type,
-            amount: c.type === 'equity' ? c.amount_max : Math.max(0, next - selectedScenario.budget_min),
-          })),
+          /*
+           * 배분 규칙은 계약이 못 박은 하나뿐이다(API_CONTRACT §2 D12 — 자기자본 우선, 이후
+           * `amount_max` 한도까지 순서대로). 여기서만 직접 계산하던 구 구현은 비자기자본 항목
+           * **전부에** 잔액을 한도 없이 똑같이 넣어, 같은 금액인데 화면 2·3과 다른 구성을 보냈다.
+           * 이 구성은 표기용이 아니라 잔여 한도 계산의 입력이라 T1 의 근거 상품이 조용히 갈린다.
+           */
+          composition: buildComposition(selectedScenario, next),
         })
-        applyExploreBudget(next, appliedId, res.preview)
+        applyExploreBudget(next, appliedId, res.preview, res.data_as_of)
         bumpVersion() // recommend가 공유하는 version
       } finally {
         setApplying(false)
@@ -241,6 +260,11 @@ export default function Explore() {
           {planLine}
         </p>
 
+        {/*
+          `dataAsOf` — 기준일은 화면이 지어내지 않는다. `/explore` 응답에는 기준일이 없어서
+          이 화면이 「데이터 기준일 상시 표기」(스펙 §0-4)를 못 지키는 유일한 자리였다.
+          `POST /budget` 응답이 D9 에서 실어 보내기 시작한 값을 세션이 그대로 옮겨 온다.
+        */}
         <ExploreSummary
           budget={effectiveBudget}
           baseBudget={base}
@@ -248,6 +272,7 @@ export default function Explore() {
           baseEntryCount={frontierAt(base)}
           sustainCount={appliedInsight?.delta.n_sustain_after ?? null}
           monthlyPayment={appliedInsight?.marginal_payment ?? null}
+          dataAsOf={dataAsOf ?? undefined}
           onOpenMap={() => navigate('/map')}
           onRevert={() => void changeBudget(base, null)}
         />

@@ -10,13 +10,25 @@ import { prefersReducedMotion } from '../lib/motion'
  * 빠지는 곳이 생기므로 라우터 안에 하나만 둔다.
  *
  * `search`는 의존성에서 뺀다 — `?demo=1` 같은 쿼리 변화로 스크롤이 튀면 안 된다.
+ *
+ * `hash`는 반대로 **반드시 본다**. GNB의 "서비스 소개"·"데이터 출처"가 라우터 링크가 된 뒤로는
+ * 브라우저의 프래그먼트 이동이 일어나지 않으므로, 여기서 대상 섹션까지 데려다주지 않으면 랜딩
+ * 최상단만 보인다. 대상이 없으면(다른 화면의 해시) 기존대로 맨 위로 되돌린다.
  */
 export default function ScrollToTop() {
-  const { pathname } = useLocation()
+  const { pathname, hash } = useLocation()
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'instant' })
-  }, [pathname])
+    const reduced = prefersReducedMotion()
+    if (hash) {
+      const target = document.getElementById(hash.slice(1))
+      if (target) {
+        target.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' })
+        return
+      }
+    }
+    window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'instant' })
+  }, [pathname, hash])
 
   return null
 }
