@@ -41,7 +41,14 @@ public class RefineGenerator {
      */
     // unless: 폴백(empty)은 캐시하지 않는다. 일시적 타임아웃 한 번이 그 문장에 대해 언어화를
     // 1시간 봉인하면, 데모 중 한 번 삐끗한 것이 계속 삐끗한다 (리스크 검증 D-12 와 같은 이유).
-    @Cacheable(cacheNames = "refines", key = "#templateBody", unless = "#result.isEmpty()")
+    //
+    // ⚠️ 조건이 `#result == null` 인 것은 실수가 아니다. 스프링 캐시는 반환 타입이 Optional 이면
+    // **값을 벗겨서** SpEL 에 넘긴다 — empty 일 때 `#result` 는 빈 Optional 이 아니라 null 이다.
+    // `#result.isEmpty()` 로 쓰면 성공 경로(문자열)에서는 멀쩡히 돌다가 **폴백 경로에서만**
+    // `EL1011E: Attempted to call method isEmpty() on null context object` 로 터진다.
+    // 하필 그 폴백이 「LLM 이 죽어도 화면은 산다」를 지키는 경로라, 무LLM 스택에서 SSE 가
+    // done 을 못 보내고 끊겼다 (통합 QA F2 가 잡았다 — 단위 테스트는 캐시 프록시가 없어 못 잡는다).
+    @Cacheable(cacheNames = "refines", key = "#templateBody", unless = "#result == null")
     public Optional<String> refine(String templateBody) {
         Optional<String> refined = RefinePrompt.sanitize(
                 llm.complete(RefinePrompt.build(templateBody)), templateBody);
