@@ -24,16 +24,35 @@ public final class ReasonTemplate {
     private ReasonTemplate() {}
 
     public static String reason(String name, Verdict verdict, double burdenRatio) {
-        long pct = Math.round(burdenRatio * 100);
+        String burden = burdenPhrase(burdenRatio);
         return switch (verdict) {
-            case FIT -> name + " — 길단위 유동·배후 인구가 서울 상위 구간이며 환산임대료 부담률 "
-                    + pct + "%로 임계 이내입니다.";
-            case CAUTION -> name + " — 수요 지표는 상위 구간이나 환산임대료 부담률 "
-                    + pct + "%로 임계를 초과합니다.";
+            case FIT -> name + " — 길단위 유동·배후 인구가 서울 상위 구간이며 환산임대료 "
+                    + burden + " 임계 이내입니다.";
+            case CAUTION -> name + " — 수요 지표는 상위 구간이나 환산임대료 "
+                    + burden + " 임계를 초과합니다.";
             case CONDITIONAL -> name + " — 권리금 포함 시 예산을 초과하나, 무권리 매물 확보 시 "
                     + "진입 가능한 구간입니다.";
             case OUT_OF_SCOPE -> name + " — 현재 예산 기준으로는 진입 범위 밖입니다.";
         };
+    }
+
+    /**
+     * 부담률 어구 — <b>비유한값이면 수치를 빼고 서술만 남긴다</b>.
+     *
+     * <p>{@link com.ventry.api.engine.ReverseCheck#burdenRatio} 는 추정매출이 0·결측이면
+     * {@code POSITIVE_INFINITY} 를 센티널로 돌려주고, 그 값은 θ 를 넘으므로 <b>유의</b> 판정과
+     * 함께 이 템플릿에 그대로 들어온다. {@code Math.round(Infinity)} 는 {@code Long.MAX_VALUE}
+     * 라, 가드가 없으면 화면에 「부담률 922경%」가 찍힌다. 직렬화 쪽은 이미 필드 생략으로
+     * 막혀 있는데(계약 D9 · 이슈 #104 ⑤) <b>근거문만 통로가 열려 있었다</b> — 이 문자열은
+     * 서버가 만드는 최종본이라 프론트가 되돌릴 수 없다.
+     *
+     * <p>지금 덤프에는 {@code est_sales = 0} 인 행이 없어 발현하지 않지만, 재적재 한 번이면
+     * 조건이 갖춰진다. 판정 자체는 {@code ReverseCheck} 가 이미 옳게 내리므로 문면만 고친다.
+     */
+    private static String burdenPhrase(double burdenRatio) {
+        return Double.isFinite(burdenRatio)
+                ? "부담률 " + Math.round(burdenRatio * 100) + "%로"
+                : "부담률이";
     }
 
     /**
