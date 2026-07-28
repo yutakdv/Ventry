@@ -58,6 +58,14 @@ interface SessionState {
    * 다시 부르면 예산을 다시 쓰는 셈이라 옳지 않다. 확정한 쪽이 결과를 넘기는 것이 맞다.
    */
   budgetPreview: BudgetPreview | null
+  /**
+   * `POST /budget` 응답의 기준일(계약 D9). 프리뷰와 **같은 호출에서** 받아 같이 보관한다.
+   *
+   * 탐색 화면(/explore)이 이것을 쓴다 — 자체 응답에는 기준일이 없어, 기준일을 표기하지 못하는
+   * 유일한 화면이었다(「데이터 기준일 상시 표기」 스펙 §0-4). 화면이 지어내지 않고 서버가 준
+   * 값을 옮기기 위해 예산을 확정한 쪽에서 실어 보낸다.
+   */
+  dataAsOf: string | null
   setSession: (id: string, profile: ParsedProfile) => void
   setDiagnoseForm: (form: FormState) => void
   setSelectedScenario: (s: Scenario) => void
@@ -69,9 +77,14 @@ interface SessionState {
    * 프리뷰를 같은 호출로 받는 이유는 예산과 프리뷰가 **따로 움직이면 안 되기** 때문이다 —
    * 예산만 바뀌고 프리뷰가 남으면 화면이 옛 후보 수를 새 예산의 것처럼 말하게 된다.
    */
-  setBudget: (budget: number, preview: BudgetPreview | null) => void
+  setBudget: (budget: number, preview: BudgetPreview | null, dataAsOf: string | null) => void
   /** 탐색에서 인사이트 예산을 적용 — 기준 예산(baseBudget)은 건드리지 않는다. */
-  applyExploreBudget: (budget: number, appliedId: string | null, preview: BudgetPreview | null) => void
+  applyExploreBudget: (
+    budget: number,
+    appliedId: string | null,
+    preview: BudgetPreview | null,
+    dataAsOf: string | null,
+  ) => void
   bumpVersion: () => void
 }
 
@@ -87,6 +100,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [diagnoseForm, setDiagnoseFormState] = useState<FormState | null>(null)
   const [selectedScenario, setSelectedScenarioState] = useState<Scenario | null>(null)
   const [budgetPreview, setBudgetPreviewState] = useState<BudgetPreview | null>(null)
+  const [dataAsOf, setDataAsOfState] = useState<string | null>(null)
 
   /**
    * setter는 **신원이 고정**되어야 한다.
@@ -99,17 +113,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [])
   const setDiagnoseForm = useCallback((form: FormState) => setDiagnoseFormState(form), [])
   const setSelectedScenario = useCallback((s: Scenario) => setSelectedScenarioState(s), [])
-  const setBudget = useCallback((b: number, preview: BudgetPreview | null) => {
+  const setBudget = useCallback((b: number, preview: BudgetPreview | null, asOf: string | null) => {
     setBudgetState(b)
     setBaseBudgetState(b)
     setBudgetPreviewState(preview)
+    setDataAsOfState(asOf)
     setExploreState(null) // 기준 예산이 바뀌면 이전 탐색 결과는 더 이상 유효하지 않다
   }, [])
   const setExplore = useCallback((c: ExploreCache | null) => setExploreState(c), [])
   const applyExploreBudget = useCallback(
-    (b: number, appliedId: string | null, preview: BudgetPreview | null) => {
+    (b: number, appliedId: string | null, preview: BudgetPreview | null, asOf: string | null) => {
       setBudgetState(b)
       setBudgetPreviewState(preview)
+      setDataAsOfState(asOf)
       setExploreState((prev) => (prev ? { ...prev, appliedId } : prev))
     },
     [],
@@ -127,6 +143,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       diagnoseForm,
       selectedScenario,
       budgetPreview,
+      dataAsOf,
       setSession,
       setDiagnoseForm,
       setSelectedScenario,
@@ -145,6 +162,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       diagnoseForm,
       selectedScenario,
       budgetPreview,
+      dataAsOf,
       setSession,
       setDiagnoseForm,
       setSelectedScenario,

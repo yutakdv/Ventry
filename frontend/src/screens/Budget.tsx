@@ -58,7 +58,7 @@ export default function Budget() {
         })
         setPreview(res.preview)
         setDataAsOf(res.data_as_of)
-        setBudget(res.confirmed_budget, res.preview) // 세션 B₀ — 화면 4의 진실 원천
+        setBudget(res.confirmed_budget, res.preview, res.data_as_of) // 세션 B₀ — 화면 4의 진실 원천
         bumpVersion() // /recommend·/explore가 공유하는 version 갱신
       } finally {
         setPending(false)
@@ -93,7 +93,7 @@ export default function Budget() {
             </Button>
           </div>
           <p className={`t-body ${styles.subtitle}`}>
-            조달 시나리오를 바탕으로 설정한 예산 범위 내에서 도달 가능한 입지를 추천해 드립니다.
+            조달 시나리오를 바탕으로 설정한 예산 범위 내에서 도달 가능한 입지를 확인할 수 있습니다.
           </p>
         </div>
 
