@@ -464,6 +464,46 @@ def g6_input_validation() -> None:
                         {"confirmed_budget": -9999, "composition": []})
     check("G6", status == 400, f"음수 예산 → {status} (400 이어야 한다)")
 
+    # 이슈 #155 — 나이·월 투자 가능액이 어디서도 검증되지 않아, 음수·미기재가 「만 39세 이하」
+    # 청년 전용 상품을 통과시켰다. 픽스처 회귀(InputValidationTest)와 짝이며, 이쪽은 실적재
+    # 상품 26건에서 같은 경계를 확인한다.
+    def diagnose_with(field: str, value) -> int:
+        profile = json.loads(json.dumps(PROFILE_CAFE))
+        if value is None:
+            profile["form"].pop(field, None)
+        else:
+            profile["form"][field] = value
+        return request("POST", "/api/diagnose", profile)[0]
+
+    for bad_age in (-5, 0, 200):
+        check("G6", diagnose_with("age", bad_age) == 400,
+              f"age {bad_age} → 400 이어야 한다")
+    check("G6", diagnose_with("monthly_investable", -100) == 400,
+          "monthly_investable -100 → 400 이어야 한다")
+    # 미기재는 막지 않는다 — 폼에서 선택 입력이다. 대신 나이 조건 상품이 빠져야 한다.
+    check("G6", diagnose_with("age", None) == 200, "age 미기재는 200 이어야 한다")
+    check("G6", diagnose_with("monthly_investable", 0) == 200,
+          "monthly_investable 0 은 200 이어야 한다")
+
+    no_age = json.loads(json.dumps(PROFILE_CAFE))
+    no_age["form"].pop("age", None)
+    _, absent = request("POST", f"/api/check-area/{new_session(no_age)}",
+                        {"area_code": "3001491"})
+    absent_named = {p["name"] for p in absent.get("matching_products", [])}
+    _, known = request("POST", f"/api/check-area/{new_session()}", {"area_code": "3001491"})
+    known_named = {p["name"] for p in known.get("matching_products", [])}
+    check("G6", absent_named < known_named,
+          f"나이 미기재 {len(absent_named)}건 = 만 32세 {len(known_named)}건 — "
+          "나이 조건 상품이 미기재 사용자에게 편성됐다")
+    notes.append(f"G6 나이 미기재 {len(absent_named)}건 / 만 32세 {len(known_named)}건 · "
+                 f"탈락 {sorted(known_named - absent_named)}")
+
+    # 이슈 #172 — Tomcat maxPostSize 는 JSON 에 걸리지 않아 2천만 자 본문이 200 으로 통과했다.
+    oversized = json.loads(json.dumps(PROFILE_CAFE))
+    oversized["free_text"] = "가" * 300_000          # UTF-8 3바이트 × 30만 ≈ 900 KB
+    status, _ = request("POST", "/api/diagnose", oversized)
+    check("G6", status == 413, f"상한 초과 본문 → {status} (413 이어야 한다)")
+
 
 def g7_terminology() -> None:
     """용어 컴플라이언스 — 응답 전문 스캔 (심사 감점 직결)."""

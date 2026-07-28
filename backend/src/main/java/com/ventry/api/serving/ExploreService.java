@@ -59,10 +59,10 @@ public class ExploreService {
     /**
      * 탐색 계획: LLM이 대화 맥락으로 축 우선순위를 정하고(결정 ① C안), 서버는 <b>실제 계산 가능한
      * 축만</b> 남긴다. LLM이 A4를 요청해도 무권리 경계가 없으면 빼고, A2·A3는 미구현이라 요청돼도
-     * 뺀다(assumptions #30). LLM 부재·실패 시 폴백 축으로 떨어지므로 plan 이벤트는 항상 송출된다.
+     * 뺀다(assumptions #47). LLM 부재·실패 시 폴백 축으로 떨어지므로 plan 이벤트는 항상 송출된다.
      *
      * <p>0건 보고일 때는 사유 문장을 rationale로 싣는다 — 계약에 별도 필드가 없어 rationale이
-     * "왜 인사이트가 없는지"를 화면에 전한다 (assumptions #30).
+     * "왜 인사이트가 없는지"를 화면에 전한다 (assumptions #47).
      */
     private PlanEvent plan(Profile profile, int budget, List<String> concerns,
                            InsightBuilder.Result result) {
