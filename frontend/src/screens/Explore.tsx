@@ -376,9 +376,15 @@ export default function Explore() {
           </section>
         </div>
 
+        {/*
+          기준일은 접힘 패널이 아니라 **여기**에도 적는다. 스펙 §0-4 가 요구하는 것은
+          「상시 표기」이고, 요약 스트립의 출처 패널은 사용자가 펼쳐야 보인다 —
+          다른 화면(3·4)이 이 자리에 기준일을 적는 것과 형태를 맞춘다.
+        */}
         <p className={`t-caption ${styles.disclaimer}`}>
           ⓘ 본 정보는 공개 자료 기반 정보 제공이며 대출 권유·중개·자문이 아닙니다. 실제 한도·금리·승인
           여부는 해당 기관의 심사에 따릅니다. 현재 기준 예산은 {formatAmount(base)}입니다.
+          {dataAsOf && ` 데이터 기준일 ${dataAsOf}.`}
         </p>
       </div>
     </AppShell>
