@@ -336,9 +336,14 @@ export default function Explore() {
             )}
 
             {/*
-              「문장을 다듬는 중」이라고 쓰지 않는다 — `refine` 이벤트는 서버가 아직 송출하지
-              않으므로(ExploreController:55) 일어나지 않을 일을 예고하는 문구가 된다
-              (docs/QA_REPORT_INTEGRATION_CM.md F-7). 실제로 진행 중인 것은 시나리오 수신이다.
+              「문장을 다듬는 중」이라고 쓰지 않는다. 서버가 `refine` 을 송출하게 된 뒤에도
+              그렇다 — 계약이 refine 을 **선택적 이벤트**로 규정하므로 무LLM 스택에서는 오지
+              않고, 온다 해도 이 문구가 떠 있는 시간의 대부분은 인사이트 수신 구간이다.
+              일어날지 모르는 일을 예고하면 안 온 쪽이 고장으로 읽힌다
+              (docs/QA_REPORT_INTEGRATION_CM.md F-7).
+
+              언어화가 실제로 일어났다는 사실은 예고가 아니라 **기록**으로 남긴다 —
+              SSE 이벤트 로그에 `refine · 문장 교체` 가 찍힌다 (위 onRefine).
             */}
             {loading && ordered.length > 0 && (
               <p className={`t-caption ${styles.refineNote}`}>↻ 시나리오를 받는 중…</p>
