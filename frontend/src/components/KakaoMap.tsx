@@ -6,8 +6,27 @@ import { rentAreaShort, rentPerPyeong } from '../lib/rentArea'
 import type { Area, Industry } from '../api/types'
 import styles from './KakaoMap.module.css'
 
-/** 후보 전체를 담을 때 위쪽에 남길 여백(px) — 말풍선이 잘리지 않을 만큼. */
-const FIT_PADDING = 190
+/**
+ * 후보 전체를 담을 때 네 방향에 남길 여백(px).
+ *
+ * 위쪽만 190 을 주던 시절이 있었다 — 말풍선(≈150px)이 잘리지 않게 자리를 미리 비우는
+ * 방어였는데, 지도 높이의 30% 를 빈 공간으로 예약하는 값이라 대가가 컸다. 후보가 아래로
+ * 눌리고 중심이 북쪽으로 밀려, 1440×900 에서 지도 위쪽 1/3 이 후보가 하나도 없는
+ * **경기 북부(파주·포천·동두천)** 로 채워졌다. 「서울 상권 컨설팅」인데 서울이 화면의
+ * 작은 일부로 보였다 (이슈 #154).
+ *
+ * 그 방어는 이미 중복이었다 — 아래 선택 효과에서 말풍선이 상단에 걸리면 `panTo` 가
+ * 지도를 옮긴다. 초기 fit 에서까지 자리를 비워 둘 이유가 없어 네 방향을 같은 값으로 맞춘다.
+ */
+const FIT_PADDING = 70
+
+/**
+ * 말풍선이 마커 위로 차지하는 높이(px). 상단 잘림 판정의 기준.
+ *
+ * 1440×900 실측 170px(상권명 한 줄 · 임대료 단가 행 포함)에 여유를 둔 값이다 — 내용에 따라
+ * 몇 px 오르내리므로 판정은 넉넉한 쪽으로 틀려야 안전하다(불필요한 `panTo` < 잘린 말풍선).
+ */
+const OVERLAY_HEIGHT_PX = 180
 
 /**
  * 선택된 상권의 말풍선.
@@ -154,9 +173,10 @@ export default function KakaoMap({
     prevSelectedRef.current = selectedRef.current
 
     boundsRef.current = bounds
-    // 위쪽 여백을 크게 잡아 말풍선(≈150px)이 들어갈 자리를 미리 비워 둔다 —
-    // 그래야 마커를 눌렀을 때 지도를 옮기지 않고도 말풍선이 다 보인다.
-    if (areas.length > 0 && !bounds.isEmpty()) map.setBounds(bounds, FIT_PADDING, 70, 70, 70)
+    // 네 방향 같은 여백 — 후보 분포(서울)가 지도를 꽉 채운다. 말풍선 잘림은 아래 panTo 담당.
+    if (areas.length > 0 && !bounds.isEmpty()) {
+      map.setBounds(bounds, FIT_PADDING, FIT_PADDING, FIT_PADDING, FIT_PADDING)
+    }
   }, [status, areas])
 
   /**
@@ -170,7 +190,9 @@ export default function KakaoMap({
     const ro = new ResizeObserver(() => {
       map.relayout()
       const b = boundsRef.current
-      if (b && !b.isEmpty()) map.setBounds(b, FIT_PADDING, 70, 70, 70)
+      if (b && !b.isEmpty()) {
+        map.setBounds(b, FIT_PADDING, FIT_PADDING, FIT_PADDING, FIT_PADDING)
+      }
     })
     ro.observe(box)
     return () => ro.disconnect()
@@ -223,10 +245,17 @@ export default function KakaoMap({
     /*
      * 이미 보이는 마커를 눌렀는데 지도가 움직이면 나머지 후보가 시야에서 밀려나 비교가 끊긴다.
      * 그래서 이동은 두 경우로 한정한다 — 화면 밖이거나, 상단에 너무 붙어 말풍선이 잘릴 때.
+     *
+     * 잘림 여유는 **말풍선 픽셀을 위도 폭으로 환산해** 정한다. 예전엔 위도 폭의 0.28 로
+     * 박아 뒀는데 그건 지도 높이 560px 에서만 맞는 값이었다 — 높이를 460px 로 줄이면
+     * 같은 150px 이 위도 폭의 0.33 을 차지해 상단 마커의 말풍선이 잘린다 (이슈 #154).
+     * 컨테이너 높이에서 매번 환산하면 높이를 다시 조정해도 판정이 따라온다.
      */
     const b = map.getBounds()
     const latSpan = b.getNorthEast().getLat() - b.getSouthWest().getLat()
-    const overlayClipped = area.lat > b.getNorthEast().getLat() - latSpan * 0.28
+    const boxHeight = boxRef.current?.clientHeight ?? 0
+    const clipSpan = boxHeight > 0 ? latSpan * (OVERLAY_HEIGHT_PX / boxHeight) : latSpan * 0.33
+    const overlayClipped = area.lat > b.getNorthEast().getLat() - clipSpan
     if (!b.contain(pos) || overlayClipped) map.panTo(pos)
   }, [status, areas, selectedCode, industry])
 
