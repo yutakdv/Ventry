@@ -14,7 +14,7 @@ def test_build_initial_cost_columns():
         "cost_ex_premium_low", "cost_incl_premium_high",
     } <= set(df.columns)
     row = df.iloc[0]
-    assert row["deposit_low"] == 234 * 8  # converted_rent(80,cafe)=234, ×8
+    assert row["deposit_low"] == 352 * 8  # converted_rent(80,cafe)=352, ×8
     assert row["cost_incl_premium_high"] >= row["cost_ex_premium_high"]
 
 

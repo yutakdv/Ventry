@@ -34,7 +34,7 @@ jobs:
         working-directory: ai
         # 데이터 의존 통합 테스트는 data/ 부재 시 자동 skip — 순수 함수 산식만 게이트
         run: |
-          pip install pytest pandas
+          pip install pytest pandas requests
           pytest tests -q
 
       - name: Docker build
