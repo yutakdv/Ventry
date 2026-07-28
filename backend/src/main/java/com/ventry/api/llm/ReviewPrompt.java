@@ -1,12 +1,7 @@
 package com.ventry.api.llm;
 
-import java.math.BigDecimal;
 import java.util.List;
-import java.util.NavigableSet;
 import java.util.Optional;
-import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * BE-05 — 리스크 검증 반박문 프롬프트 조립 + <b>응답 검증기</b> (스펙 §5-3, 이슈 #96).
@@ -48,9 +43,6 @@ public final class ReviewPrompt {
             "승인", "권장", "추천드립", "추천합니", "조달 가능", "심사역", "보장",
             "재검토", "분류된 이유", "타당하지");
 
-    /** 숫자 토큰 — 소수점·천단위 쉼표를 포함해 최대 길이로 끊는다. */
-    private static final Pattern NUMBER = Pattern.compile("\\d+(?:[.,]\\d+)*");
-
     private ReviewPrompt() {}
 
     /**
@@ -91,7 +83,7 @@ public final class ReviewPrompt {
         if (response.isEmpty()) {
             return Optional.empty();
         }
-        String text = firstParagraph(response.get());
+        String text = LlmResponses.firstParagraph(response.get());
         if (text.length() < MIN_LENGTH || text.length() > MAX_LENGTH) {
             return Optional.empty();
         }
@@ -116,62 +108,6 @@ public final class ReviewPrompt {
      * 값 비교는 그 둘을 같은 수로 본다.
      */
     private static boolean usesOnlyGivenNumbers(String text, String facts) {
-        NavigableSet<BigDecimal> allowed = numberValues(facts);
-        Matcher matcher = NUMBER.matcher(text);
-        while (matcher.find()) {
-            Optional<BigDecimal> value = parse(matcher.group());
-            if (value.isEmpty() || !allowed.contains(value.get())) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * 사실에 등장하는 수치의 값 집합. {@code TreeSet} 은 {@code compareTo} 로 원소를 보므로
-     * {@code 0.110} 과 {@code 0.11} 이 같은 값으로 잡힌다 ({@code BigDecimal.equals} 는 소수
-     * 자릿수까지 보기 때문에 {@code HashSet} 을 쓰면 안 된다).
-     */
-    private static NavigableSet<BigDecimal> numberValues(String facts) {
-        NavigableSet<BigDecimal> values = new TreeSet<>();
-        Matcher matcher = NUMBER.matcher(facts);
-        while (matcher.find()) {
-            parse(matcher.group()).ifPresent(values::add);
-        }
-        return values;
-    }
-
-    /**
-     * 숫자 토큰 → 값. 천단위 쉼표는 지운다.
-     *
-     * <p>정규식은 {@code 2026.07.27} 처럼 구분자가 여럿인 토큰도 잡는데 이는 수치가 아니다.
-     * 파싱 실패를 empty 로 돌려 <b>출력 쪽에서는 거부, 사실 쪽에서는 제외</b>로 흘린다 —
-     * 어느 쪽이든 「사실에 없는 숫자」로 취급되므로 가드가 느슨해지지 않는다.
-     */
-    private static Optional<BigDecimal> parse(String token) {
-        try {
-            return Optional.of(new BigDecimal(token.replace(",", "")));
-        } catch (NumberFormatException e) {
-            return Optional.empty();
-        }
-    }
-
-    /**
-     * 첫 문단만 취하고 장식을 벗긴다. 모델이 머리말·따옴표·불릿을 붙이는 경우가 흔한데,
-     * 그 때문에 내용이 멀쩡한 응답을 통째로 버리는 것은 과하다 — 형태만 정리하고 <b>문장은
-     * 손대지 않는다</b>.
-     */
-    private static String firstParagraph(String raw) {
-        String text = raw.strip();
-        int blank = text.indexOf("\n\n");
-        if (blank > 0) {
-            text = text.substring(0, blank);
-        }
-        text = text.replace("\n", " ").strip();
-        text = text.replaceAll("^[-*•\\s]+", "").strip();
-        if (text.length() > 1 && text.startsWith("\"") && text.endsWith("\"")) {
-            text = text.substring(1, text.length() - 1).strip();
-        }
-        return text;
+        return LlmResponses.allNumbersIn(text, LlmResponses.numberValues(facts));
     }
 }
