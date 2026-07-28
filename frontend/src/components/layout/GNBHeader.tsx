@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import logo from '../../assets/brand/ventry-logo.png'
 import styles from './GNBHeader.module.css'
 
@@ -24,14 +25,19 @@ export default function GNBHeader() {
       {/*
         링크는 랜딩의 해당 섹션으로 보낸다 — 전부 `href="#"`이면 심사위원이 눌렀을 때
         아무 일도 일어나지 않는다. 서비스 화면에서 눌러도 랜딩으로 이동해 그 자리로 스크롤된다.
+
+        일반 `<a href>` 가 아니라 라우터 링크여야 한다. 세션(session_id·진단 결과·확정 예산)은
+        전부 메모리에만 있어서, 앵커가 일으키는 **전체 리로드 한 번이면 통째로 사라진다** —
+        진행 중이던 심사위원이 뒤로가기로 돌아오면 처음부터 다시 해야 하고, 그 상태의 /map 은
+        목 폴백까지 켰다. 섹션까지의 스크롤은 ScrollToTop 이 `hash` 를 보고 대신 처리한다.
       */}
       <nav className={styles.nav}>
-        <a className={`t-body ${styles.link}`} href="/#service">
+        <Link className={`t-body ${styles.link}`} to="/#service">
           서비스 소개
-        </a>
-        <a className={`t-body ${styles.link}`} href="/#sources">
+        </Link>
+        <Link className={`t-body ${styles.link}`} to="/#sources">
           데이터 출처
-        </a>
+        </Link>
       </nav>
     </header>
   )

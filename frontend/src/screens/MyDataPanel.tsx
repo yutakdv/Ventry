@@ -17,10 +17,16 @@ export default function MyDataPanel({ onImport }: { onImport: () => void }) {
     <section className={styles.panel}>
       <div className={styles.header}>
         <span className={`t-body-strong ${styles.title}`}>마이데이터로 간편하게 불러오기 (선택)</span>
-        <span className={`t-caption ${styles.badge}`}>KB 마이데이터 공식 연동 ↗</span>
+        {/*
+          배지가 "KB 마이데이터 공식 연동"이었다. 실체는 데모 프로필로 폼을 채우는 연출인데
+          주최사 이름을 걸고 사실을 단정하는 표기라, 심사위원이 눌러 보면 그 자리에서 반증된다.
+          하지 않은 일을 했다고 말하지 않는다 — 데모임을 배지 자체에 밝힌다.
+        */}
+        <span className={`t-caption ${styles.badge}`}>마이데이터 연동 (데모)</span>
       </div>
       <p className={`t-caption ${styles.desc}`}>
-        KB 마이데이터를 통해 자산·소득 정보를 안전하게 불러와 자금 진단을 더 정확하게 진행할 수 있어요.
+        마이데이터로 자산·소득 정보를 불러와 자금 진단을 더 정확하게 진행하는 흐름입니다. 이
+        프로토타입에서는 실제 연동 대신 데모 프로필 값으로 채워집니다.
       </p>
       <div className={styles.action}>
         <div className={styles.tokens}>

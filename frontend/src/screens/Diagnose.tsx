@@ -124,9 +124,11 @@ export default function Diagnose() {
         tone="brand"
         title="마이데이터 연동 안내"
         items={[
-          'KB국민은행 계정으로 안전하게 연동됩니다.',
-          '불러온 정보는 자금 진단에만 사용되며, 고객 동의 없이 저장·공유되지 않습니다.',
-          '언제든지 다시 불러와 최신 정보를 반영할 수 있습니다.',
+          // 실제 금융기관 연동은 이 프로토타입에 없다. 있다고 적으면 화면을 만져 보는 순간
+          // 반증되므로, 연동 이후를 전제한 문장이 아니라 지금 실제로 하는 일을 적는다.
+          '이 프로토타입에서는 데모 프로필 값으로 폼을 채웁니다 (실제 금융기관 연동 없음).',
+          '입력한 정보는 자금 진단 계산에만 사용되며 서버에 저장하지 않습니다.',
+          '불러온 항목은 모두 직접 수정할 수 있습니다.',
         ]}
       />
       <RailCard
@@ -155,6 +157,7 @@ export default function Diagnose() {
           '대출 KB국민은행 및 타 금융기관 상품 안내',
         ]}
         actionLabel="출처 자세히 보기"
+        onAction={() => navigate('/#sources')}
       />
     </>
   )
@@ -172,9 +175,10 @@ export default function Diagnose() {
         <div className={styles.surface}>
           <div className={styles.headerRow}>
             <h1 className="t-title1">1단계. 자금 진단</h1>
-            <a className={`t-caption ${styles.help}`} href="#">
-              ⓘ 마이데이터란?
-            </a>
+            {/*
+              "ⓘ 마이데이터란?"은 `href="#"` 이라 눌러도 아무 일이 없었다. 설명은 우측 레일의
+              「마이데이터 연동 안내」 카드가 이미 하고 있으므로 죽은 링크만 걷어낸다.
+            */}
           </div>
           <p className={`t-body ${styles.subtitle}`}>
             현재 상황을 입력하면, 정책자금·보증·대출을 조합한 조달 시나리오와 예산 범위를 안내해 드립니다.
