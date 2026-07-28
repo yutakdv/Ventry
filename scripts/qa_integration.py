@@ -56,7 +56,15 @@ NON_QUOTABLE_PRODUCTS = {
 
 # 용어 컴플라이언스 (CLAUDE.md 절대 불변 원칙 3) — 화면에 나가는 문자열에 있으면 안 되는 말.
 # "승인" 계열과 자금 권유형 술어. 심사 감점 직결이라 QA 가 매번 훑는다.
-BANNED_WORDS = ["승인", "권장", "추천드립", "조달 가능", "심사역", "대출을 받으세요"]
+#
+# **BE 검증기(`LlmResponses.BANNED_TERMS`)의 사본이며 어간까지만 적는다.** 구 목록이
+# "추천드립" 만 담아 「추천해 드립니다」·「권유합니다」를 통과시켰다 — 활용형이 빠지면
+# 목록이 있는데도 안 잡힌다. 어느 한쪽을 고치면 반드시 다른 쪽도 같이 고친다.
+BANNED_WORDS = [
+    "승인", "권장", "보장", "조달 가능", "심사역",
+    "추천드", "추천합", "추천해", "권유", "권해",
+    "대출을 받으세요",
+]
 
 # 상향 인사이트에 반드시 동반되는 고지 (CLAUDE.md 절대 불변 원칙 3). 언어화(refine)가 이 문구를
 # 지우면 상향이 단독 노출되므로, 서버는 LLM 에 넘기기 전에 떼어 두고 통과한 문장 뒤에 다시 붙인다.
@@ -138,9 +146,25 @@ def check(scenario: str, condition: bool, detail: str, gap: str | None = None) -
     return condition
 
 
+def _without_quotes(payload):
+    """`source_quote` 를 들어낸 사본.
+
+    인용문은 **공고 원문 그대로**이며 서버가 한 글자도 고치지 않는 것이 §5-4 의 전제다.
+    거기 들어 있는 「승인」·「보장」은 우리가 쓴 말이 아니라 기관이 쓴 말이라 용어 규칙의
+    대상이 아니고, 스윕에 걸린다고 고치면 그 순간 「인용은 검색이지 생성이 아니다」가
+    무너진다 (가정 #31 도 같은 판단). 실제로 F-009 의 인용에는
+    「국민기초생활보장법」이라는 법령명이 들어 있다.
+    """
+    if isinstance(payload, dict):
+        return {k: _without_quotes(v) for k, v in payload.items() if k != "source_quote"}
+    if isinstance(payload, list):
+        return [_without_quotes(v) for v in payload]
+    return payload
+
+
 def scan_terms(scenario: str, payload) -> None:
-    """응답 전체를 훑어 금지 표현을 찾는다 — 어느 필드에 섞이든 잡는다."""
-    text = json.dumps(payload, ensure_ascii=False)
+    """응답 전체를 훑어 금지 표현을 찾는다 — 인용문을 뺀 어느 필드에 섞이든 잡는다."""
+    text = json.dumps(_without_quotes(payload), ensure_ascii=False)
     for word in BANNED_WORDS:
         check(scenario, word not in text, f"금지 표현 '{word}' 노출")
 

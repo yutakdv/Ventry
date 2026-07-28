@@ -6,7 +6,8 @@ name: frontend-ci
 on:
   push:
     branches: [frontend]
-    paths: ["frontend/**", ".github/workflows/frontend-ci.yml"]
+    paths:
+      ["frontend/**", "scripts/term_sweep.sh", ".github/workflows/frontend-ci.yml"]
   pull_request:
     branches: [develop]
 
@@ -34,6 +35,12 @@ jobs:
       - name: Lint
         working-directory: frontend
         run: npm run lint
+
+      # 용어 컴플라이언스는 심사 감점에 직결되는데, 그동안 이 스윕은 사람이 생각날 때만
+      # 돌렸다 — 그래서 "가능한 자금 조달 방법"(사이드바 상시 노출)과 "추천해 드립니다"가
+      # 화면에 남아 있었다. 화면 문자열이 바뀌는 경로마다 자동으로 걸리게 CI 에 건다.
+      - name: 용어 컴플라이언스 스윕
+        run: bash scripts/term_sweep.sh frontend/src
 
       - name: Build
         working-directory: frontend
