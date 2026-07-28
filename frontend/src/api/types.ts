@@ -92,7 +92,13 @@ export type ScenarioLabel = '보수' | '적극'
 /** `GET /api/scenarios/{sid}` SSE `scenario` 이벤트 페이로드 (카드 1장). */
 export interface Scenario {
   label: ScenarioLabel
-  budget: number // 만원 — 슬라이더 초기값(= budget_max)
+  /**
+   * 만원 — 슬라이더 **초기 선택값**. `budget_min` + 필요분이며 `budget_max`가 아니다
+   * (계약 ★2026-07-26 · 이슈 #90). 상한을 기본값으로 두면 가용 상품의 최소 한도가
+   * 필요분보다 큰 경우 **과잉 조달이 기본값**이 되기 때문이다. 이 주석이 구 계약
+   * (`= budget_max`)을 그대로 달고 있어 읽는 쪽을 잘못 이끌었다.
+   */
+  budget: number
   budget_min: number // 만원 — 확정 재원 합(자기자본 등)
   budget_max: number // 만원 — budget_min + Σ 상품 한도
   composition: ScenarioComposition[]
