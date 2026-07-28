@@ -109,6 +109,25 @@ class RefinePromptTest {
             }
         }
 
+        /**
+         * 활용형까지 걸려야 한다.
+         *
+         * <p>구 목록은 「추천드립」·「추천합니」만 막아서, 한국어에서 훨씬 자연스러운
+         * <b>「추천해 드립니다」·「권유합니다」·「권해 드립니다」가 그대로 통과</b>했다.
+         * 이 문장들이 화면에 실리면 자금 관련 자문성 술어 금지(CLAUDE.md 원칙 3)를 정면으로
+         * 어기는 것이고, 심사 감점에 직결된다.
+         */
+        @Test
+        @DisplayName("자문성 술어의 활용형도 폐기한다 — 추천해/권유/권해")
+        void rejectsInflectedAdvisoryForms() {
+            for (String banned :
+                    new String[] {"추천해 드립니다", "추천드립니다", "추천합니다", "권유합니다", "권해 드립니다"}) {
+                String text = "3,869만 원을 더 마련하면 진입 가능 후보가 382곳에서 1,014곳으로 늘고, "
+                        + "96개월 상환 조건에서 지속 안정 후보는 244곳입니다. 이 구성을 " + banned;
+                assertThat(refine(text)).as("금지 활용형 '%s'", banned).isEmpty();
+            }
+        }
+
         @Test
         @DisplayName("너무 짧거나 긴 응답은 폐기한다")
         void rejectsOutOfRangeLength() {

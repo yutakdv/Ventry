@@ -3,7 +3,9 @@ import styles from './Sidebar.module.css'
 
 const STEPS = [
   { n: 1, title: '자금 진단', desc: '기본 정보 입력' },
-  { n: 2, title: '조달 시나리오', desc: '가능한 자금 조달 방법' },
+  // "가능한 자금 조달" 류의 표현은 쓰지 않는다 — 한도·승인은 기관 심사 사항이라
+  // 화면이 조달 가능 여부를 단정하면 안 된다(CLAUDE.md 용어 컴플라이언스). 전 화면 상시 노출.
+  { n: 2, title: '조달 시나리오', desc: '보수·적극 2안 비교' },
   { n: 3, title: '예산 선택', desc: '시나리오와 예산 범위' },
   { n: 4, title: '입지 추천', desc: '예산 내 가능한 입지' },
 ]

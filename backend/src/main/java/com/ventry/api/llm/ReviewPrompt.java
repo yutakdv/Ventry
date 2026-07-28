@@ -32,16 +32,14 @@ public final class ReviewPrompt {
     private static final int MAX_LENGTH = 400;
 
     /**
-     * 용어 컴플라이언스 (CLAUDE.md 절대 불변 원칙 3) + <b>판정 번복 어휘</b>.
+     * 용어 컴플라이언스 금지어(→ {@link LlmResponses#BANNED_TERMS}) <b>위에 얹는</b> 판정 번복 어휘.
      *
-     * <p>뒤 3개는 반박이 <b>판정 자체를 다투는</b> 문장을 걸러낸다 — 스펙 §5-3 은 반박이 판정을
+     * <p>이 3개는 반박이 <b>판정 자체를 다투는</b> 문장을 걸러낸다 — 스펙 §5-3 은 반박이 판정을
      * 바꾸지 않는다고 규정하는데, 실측에서 「판정이 …로 분류된 이유가 충분히 검토되지 않았을
      * 가능성이 있다… 재검토할 필요가 있다」가 나왔다. 화면에서는 시스템이 자기 판정을 부정하는
      * 것으로 읽힌다 (BE 리뷰 D-11).
      */
-    private static final List<String> BANNED = List.of(
-            "승인", "권장", "추천드립", "추천합니", "조달 가능", "심사역", "보장",
-            "재검토", "분류된 이유", "타당하지");
+    private static final List<String> EXTRA_BANNED = List.of("재검토", "분류된 이유", "타당하지");
 
     private ReviewPrompt() {}
 
@@ -64,8 +62,9 @@ public final class ReviewPrompt {
                 규칙:
                 - 위 입력에 있는 수치만 쓰세요. 입력에 없는 숫자를 새로 만들면 안 됩니다.
                 - 한 문단, 두 문장 이내, 200자 이내의 한국어 평서문으로 쓰세요.
-                - "승인", "권장", "추천", "보장" 이라는 표현을 쓰지 마세요.
-                - 대출·자금을 권유하지 말고, 판정이 놓칠 수 있는 지점만 서술하세요.
+                - "승인", "권장", "보장", "추천"(추천드립니다·추천합니다·추천해 드립니다),
+                  "권유합니다", "권해 드립니다" 같은 표현을 쓰지 마세요.
+                - 대출·자금을 부추기지 말고, 판정이 놓칠 수 있는 지점만 서술하세요.
                 - **판정 자체의 타당성을 다투지 마세요.** 판정은 결정적 계산의 결과이며 재검토
                   대상이 아닙니다. 그 판정이 낙관적으로 해석될 여지만 지적하세요.
                 - 머리말·목록·따옴표 없이 문장만 출력하세요.
@@ -87,10 +86,8 @@ public final class ReviewPrompt {
         if (text.length() < MIN_LENGTH || text.length() > MAX_LENGTH) {
             return Optional.empty();
         }
-        for (String word : BANNED) {
-            if (text.contains(word)) {
-                return Optional.empty();
-            }
+        if (LlmResponses.violatesTerminology(text, EXTRA_BANNED)) {
+            return Optional.empty();
         }
         return usesOnlyGivenNumbers(text, facts) ? Optional.of(text) : Optional.empty();
     }

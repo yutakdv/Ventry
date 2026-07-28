@@ -83,6 +83,23 @@ class ReviewPromptTest {
         assertThat(ReviewPrompt.sanitize(Optional.of(banned), FACTS)).isEmpty();
     }
 
+    /**
+     * 자문성 술어는 <b>활용형까지</b> 걸려야 한다. 구 목록은 「추천드립」·「추천합니」만 막아
+     * 한국어에서 더 흔한 「추천해 드립니다」·「권유합니다」·「권해 드립니다」가 통과했다
+     * (전 리뷰 지적). 반박문은 화면에 그대로 실리는 문장이라 여기서 막지 못하면 끝이다.
+     */
+    @Test
+    void rejectsObjection_withInflectedAdvisoryForms() {
+        for (String banned :
+                new String[] {"추천해 드립니다", "추천드립니다", "추천합니다", "권유합니다", "권해 드립니다"}) {
+            String text = "추정매출이 분기 평균이라 계절 변동이 큰 업종에서는 부담률이 달라질 수 있으니 "
+                    + "여유 자금 확보를 " + banned;
+            assertThat(ReviewPrompt.sanitize(Optional.of(text), FACTS))
+                    .as("금지 활용형 '%s'", banned)
+                    .isEmpty();
+        }
+    }
+
     @Test
     void rejectsTooShortAndTooLong() {
         assertThat(ReviewPrompt.sanitize(Optional.of("글쎄요."), FACTS)).isEmpty();

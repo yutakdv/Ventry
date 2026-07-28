@@ -37,14 +37,14 @@ public final class RefinePrompt {
     private static final int MAX_LENGTH = 400;
 
     /**
-     * 용어 컴플라이언스 (CLAUDE.md 절대 불변 원칙 3).
+     * 용어 컴플라이언스 금지어는 {@link LlmResponses#BANNED_TERMS} 하나로 모았다 — 두 검증기가
+     * 각자 목록을 들고 있다가 「추천해 드립니다」를 함께 놓친 적이 있다.
      *
-     * <p>{@link ReviewPrompt} 의 목록과 달리 판정 번복 어휘("재검토" 등)는 넣지 않는다 —
+     * <p>{@link ReviewPrompt} 와 달리 판정 번복 어휘("재검토" 등)는 <b>추가하지 않는다</b> —
      * 언어화는 판정을 다투는 자리가 아니라 이미 확정된 결과를 옮겨 적는 자리라 그 어휘가
      * 나올 맥락 자체가 없고, 넣으면 정상 문장을 걸러낼 위험만 늘어난다.
      */
-    private static final List<String> BANNED =
-            List.of("승인", "권장", "추천드립", "추천합니", "조달 가능", "심사역", "보장");
+    private static final List<String> EXTRA_BANNED = List.of();
 
     private RefinePrompt() {}
 
@@ -70,8 +70,9 @@ public final class RefinePrompt {
                 - 위 문장에 없는 숫자를 새로 만들지 마세요.
                 - 위 문장에 있는 숫자를 빼먹지 마세요. 특히 후보 수는 전부 남겨야 합니다.
                 - 한 문단, 200자 이내의 한국어 평서문으로 쓰세요.
-                - "승인", "권장", "추천", "보장" 이라는 표현을 쓰지 마세요.
-                - 자금 조달을 권유하지 말고, 사실만 서술하세요.
+                - "승인", "권장", "보장", "추천"(추천드립니다·추천합니다·추천해 드립니다),
+                  "권유합니다", "권해 드립니다" 같은 표현을 쓰지 마세요.
+                - 자금 조달을 부추기지 말고, 사실만 서술하세요.
                 - 머리말·목록·따옴표 없이 문장만 출력하세요.
                 """.formatted(templateBody);
     }
@@ -91,10 +92,8 @@ public final class RefinePrompt {
         if (text.length() < MIN_LENGTH || text.length() > MAX_LENGTH) {
             return Optional.empty();
         }
-        for (String word : BANNED) {
-            if (text.contains(word)) {
-                return Optional.empty();
-            }
+        if (LlmResponses.violatesTerminology(text, EXTRA_BANNED)) {
+            return Optional.empty();
         }
         return keepsEveryNumber(text, templateBody) ? Optional.of(text) : Optional.empty();
     }

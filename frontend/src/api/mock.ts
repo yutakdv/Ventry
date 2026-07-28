@@ -46,7 +46,13 @@ export async function mockDiagnose(req: DiagnoseRequest): Promise<DiagnoseRespon
     parsed_profile: {
       ...req.form,
       concerns,
-      parse_source: t.trim() ? 'llm' : 'form_only',
+      /*
+       * 항상 `form_only` 다 — 위 관심사 추출은 키워드 매칭이고 LLM 호출이 아니다. 실서버도
+       * 같은 이유로 항상 이 값을 보낸다(API_CONTRACT ★2026-07-26 · 가정 #63). 구 구현은
+       * 자유 텍스트가 있으면 `'llm'` 을 세워 화면에 「AI 파싱 반영」 배지를 띄웠는데,
+       * 하지 않은 일을 했다고 말하는 배지였다.
+       */
+      parse_source: 'form_only',
     },
   }
 }

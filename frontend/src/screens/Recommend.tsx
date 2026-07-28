@@ -96,11 +96,20 @@ export default function Recommend() {
   const hasDataRef = useRef(false)
 
   useEffect(() => {
+    /*
+     * 세션이 없으면 **조회 자체를 하지 않는다.** 아래 렌더 분기가 /diagnose 로 돌려보내지만
+     * effect 는 그 전에 한 번 돈다 — 이 화면에서 새로고침만 해도 `getRecommend('mock', 0)` 이
+     * 404 를 받고 목 폴백 플래그(api/fallback.ts)가 켜졌다. 그 플래그는 **되돌리지 않는 설계**라
+     * 이후 처음부터 다시 진행해 실데이터를 받아도 "예시 데이터" 배너가 진짜 수치 위에 남는다.
+     * /budget·/explore 에는 이미 있는 가드가 여기만 빠져 있었다.
+     */
+    if (!sessionId || budget == null) return
+
     let cancelled = false
     if (hasDataRef.current) setRefreshing(true)
     else setLoading(true)
 
-    getRecommend(sessionId ?? 'mock', version)
+    getRecommend(sessionId, version)
       .then((res) => {
         if (cancelled) return
         setData(res)
@@ -125,7 +134,7 @@ export default function Recommend() {
     return () => {
       cancelled = true
     }
-  }, [sessionId, version])
+  }, [sessionId, version, budget])
 
   const areas = useMemo(() => {
     if (!data) return []
@@ -256,7 +265,7 @@ export default function Recommend() {
       })
         .then((res) => {
           setSliderValue(res.confirmed_budget)
-          setBudget(res.confirmed_budget, res.preview)
+          setBudget(res.confirmed_budget, res.preview, res.data_as_of)
           bumpVersion() // /recommend·/explore가 공유하는 version
         })
         .finally(() => setBudgetPending(false))
@@ -414,10 +423,17 @@ export default function Recommend() {
           하단 고정 슬라이더 (스펙 §7). 시나리오 없이 이 화면에 올 수 없지만, 없으면 가동 범위를
           정할 근거가 사라지므로 바를 내지 않는다 — 범위를 화면이 지어내지 않는다.
         */}
+        {/*
+          가동 상한은 시나리오 상한과 **지금 적용된 예산 중 큰 값**이다. 탐색 화면의 T1(기회 경계)은
+          카드 구성 밖 상품을 근거로 삼으므로 적용 예산이 `budget_max` 를 넘는 경우가 실데이터에서
+          흔한데, 상한을 카드 값으로 고정하면 슬라이더가 그 예산을 표현하지 못한다. 그 상태에서
+          바를 한 번 건드리면 클램프된 값이 확정 예산으로 전송돼 **방금 적용한 인사이트가 소리 없이
+          해제**된다. 범위를 지어내는 것이 아니라 이미 확정된 값을 표현 가능하게 만드는 것이다.
+        */}
         {selectedScenario && (
           <BudgetSliderBar
             min={selectedScenario.budget_min}
-            max={selectedScenario.budget_max}
+            max={Math.max(selectedScenario.budget_max, budget)}
             value={sliderValue}
             onChange={setSliderValue}
             preview={budgetPreview}
