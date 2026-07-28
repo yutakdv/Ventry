@@ -20,8 +20,13 @@ import styles from './KakaoMap.module.css'
  */
 const FIT_PADDING = 70
 
-/** 말풍선이 마커 위로 차지하는 대략 높이(px). 상단 잘림 판정의 기준 — CSS `.overlay` 와 함께 본다. */
-const OVERLAY_HEIGHT_PX = 150
+/**
+ * 말풍선이 마커 위로 차지하는 높이(px). 상단 잘림 판정의 기준.
+ *
+ * 1440×900 실측 170px(상권명 한 줄 · 임대료 단가 행 포함)에 여유를 둔 값이다 — 내용에 따라
+ * 몇 px 오르내리므로 판정은 넉넉한 쪽으로 틀려야 안전하다(불필요한 `panTo` < 잘린 말풍선).
+ */
+const OVERLAY_HEIGHT_PX = 180
 
 /**
  * 선택된 상권의 말풍선.
