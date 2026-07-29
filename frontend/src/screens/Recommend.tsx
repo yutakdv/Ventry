@@ -18,8 +18,8 @@ import { rentAreaShort } from '../lib/rentArea'
 import { useAreaScope } from '../hooks/useAreaScope'
 import { buildComposition } from '../lib/composition'
 import { prefersReducedMotion } from '../lib/motion'
-import { VERDICT_LABEL } from '../lib/verdict'
-import type { CheckAreaResponse, RecommendResponse, Verdict } from '../api/types'
+import { ENTRY_VERDICTS, VERDICT_LABEL, matchVerdict, type VerdictFilter } from '../lib/verdict'
+import type { CheckAreaResponse, RecommendResponse } from '../api/types'
 import styles from './Recommend.module.css'
 
 type SortKey = 'score' | 'rent' | 'sales' | 'floating'
@@ -40,8 +40,24 @@ const SORT_LABEL: Record<SortKey, string> = {
   floating: '유동인구 많은 순',
 }
 
-/** 판정 필터 — 계약에 필터 쿼리가 없어 전부 클라이언트에서 처리한다 (API_CONTRACT §4). */
-const VERDICT_FILTERS: (Verdict | 'ALL')[] = ['ALL', 'FIT', 'CONDITIONAL', 'CAUTION']
+/**
+ * 판정 필터 — 계약에 필터 쿼리가 없어 전부 클라이언트에서 처리한다 (API_CONTRACT §4).
+ *
+ * 기본값이 「진입 가능」인 것이 이 화면의 전제다 (2026-07-30). 종전 기본값은 「전체」였고,
+ * 그래서 확정 예산 1억에서 지도 마커 100개 중 36개만 실제로 갈 수 있는 곳이었다 —
+ * 조건부 적합 636곳이 점수순으로 섞여 들어와 나머지를 채웠다. 「내 한도로 어디까지
+ * 가능한가」를 답하는 화면이 한도와 무관한 후보를 같은 무게로 보여 주고 있었던 셈이다.
+ *
+ * 조건부 적합을 숨기는 것이 아니라 **자리를 나눈다** — 지도 아래 전용 패널이 개수·상위
+ * 후보·전환 버튼을 항상 노출하고, 칩 한 번으로 지도와 목록에 되돌아온다.
+ */
+const VERDICT_FILTERS: { value: VerdictFilter; label: string }[] = [
+  { value: 'ENTRY', label: '진입 가능' },
+  { value: 'FIT', label: VERDICT_LABEL.FIT },
+  { value: 'CAUTION', label: VERDICT_LABEL.CAUTION },
+  { value: 'CONDITIONAL', label: VERDICT_LABEL.CONDITIONAL },
+  { value: 'ALL', label: '전체' },
+]
 
 /**
  * 상권 구분 필터 (실사용 점검 2026-07-29).
@@ -100,7 +116,7 @@ export default function Recommend() {
   const [sessionGone, setSessionGone] = useState(false)
   const [selected, setSelected] = useState<string | null>(null)
   const [sort, setSort] = useState<SortKey>('score')
-  const [verdictFilter, setVerdictFilter] = useState<Verdict | 'ALL'>('ALL')
+  const [verdictFilter, setVerdictFilter] = useState<VerdictFilter>('ENTRY')
   /** 상권 구분 필터 — 서울시 공식 구분값 그대로. 'ALL'이면 좁히지 않는다. */
   const [areaTypeFilter, setAreaTypeFilter] = useState<string>('ALL')
   const [listLimit, setListLimit] = useState(LIST_PAGE)
@@ -144,16 +160,8 @@ export default function Recommend() {
         if (ac.signal.aborted) return
         setData(res)
         hasDataRef.current = true
-        /*
-         * 예산이 바뀌어도 보고 있던 상권은 그대로 둔다 — 슬라이더를 한 칸 움직였다고 선택이
-         * 1위로 튀면, 정작 비교하려던 상권의 판정 변화를 볼 수 없다. 후보에서 빠진 경우에만
-         * 1위로 되돌린다.
-         */
-        setSelected((prev) =>
-          prev && res.areas.some((a) => a.area_code === prev)
-            ? prev
-            : (res.areas[0]?.area_code ?? null),
-        )
+        // 선택 유지·복구는 아래 「선택은 항상 보이는 후보 안에」 효과가 전담한다 —
+        // 여기서 `res.areas[0]` 로 되돌리면 판정 필터에 걸려 보이지도 않는 상권이 선택된다.
         setVerdictOf(null) // 예산이 바뀌면 이전 판정은 더 이상 유효하지 않다
       })
       .catch((e: unknown) => {
@@ -183,8 +191,7 @@ export default function Recommend() {
     const out = new Map<string, number>()
     if (!data || !scope) return out
     const base = data.areas.filter((a) => a.verdict !== 'OUT_OF_SCOPE')
-    const afterVerdict =
-      verdictFilter === 'ALL' ? base : base.filter((a) => a.verdict === verdictFilter)
+    const afterVerdict = base.filter((a) => matchVerdict(a.verdict, verdictFilter))
     for (const a of afterVerdict) {
       const t = scope.areas.get(a.area_code)?.type
       if (t) out.set(t, (out.get(t) ?? 0) + 1)
@@ -200,8 +207,7 @@ export default function Recommend() {
      * 총계(total_count)에는 남아 있으니 수치가 사라지는 것은 아니다.
      */
     const inScope = data.areas.filter((a) => a.verdict !== 'OUT_OF_SCOPE')
-    const byVerdict =
-      verdictFilter === 'ALL' ? inScope : inScope.filter((a) => a.verdict === verdictFilter)
+    const byVerdict = inScope.filter((a) => matchVerdict(a.verdict, verdictFilter))
     // 상권 구분(골목·발달·전통시장·관광특구)은 서울시 공식 값이며 정적 자산에서 온다.
     const filtered =
       areaTypeFilter === 'ALL' || !scope
@@ -233,12 +239,28 @@ export default function Recommend() {
   }, [data, sort, verdictFilter, areaTypeFilter])
 
   /**
+   * 선택은 항상 **보이는 후보 안에** 있어야 한다.
+   *
+   * 판정 필터 기본값이 「진입 가능」이 되면서 생긴 요구다 — 선택된 상권이 필터 밖으로 나가면
+   * 지도에 마커도, 목록에 카드도 없는데 근거 문장(`scopeNote`·`overlapNote`)만 그 상권을
+   * 가리키는 상태가 된다. 예산을 바꿔 판정이 옮겨 갈 때도 같은 일이 일어난다.
+   *
+   * 보이는 동안에는 건드리지 않는다 — 슬라이더를 한 칸 움직였다고 선택이 1위로 튀면
+   * 정작 비교하려던 상권의 판정 변화를 볼 수 없다. 사라졌을 때만 1위로 되돌린다.
+   */
+  useEffect(() => {
+    setSelected((prev) =>
+      prev && areas.some((a) => a.area_code === prev) ? prev : (areas[0]?.area_code ?? null),
+    )
+  }, [areas])
+
+  /**
    * 판정별 개수.
    *
-   * **`/budget`의 "진입 후보"와 목록에 보이는 수가 다른 이유가 여기에 있다.** 진입 후보는
-   * 권리금 포함 비용 중앙값이 예산 이하인 곳(적합·유의)이고, 조건부 적합은 무권리 매물을 잡아야
-   * 열리는 구간이라 진입 후보에 들어가지 않는다. 그런데 마커 3종은 조건부 적합을 포함하므로
-   * (스펙 §0-4) 목록에는 남는다. 두 숫자를 나란히 두면서 관계를 말하지 않으면 모순으로 읽힌다.
+   * `entry`(적합+유의)가 `/budget` 프리뷰의 "진입 후보"와 같은 정의다 — 권리금 포함 비용
+   * 중앙값이 예산 이하인 곳. 조건부 적합은 무권리 매물을 잡아야 열리는 구간이라 여기 들어가지
+   * 않으며, 그래서 화면에서도 지도·목록의 기본 표시에서 빠지고 전용 패널로 분리된다
+   * (2026-07-30). 판정 어휘 3종은 필터 칩과 그 패널이 계속 노출한다 (스펙 §0-4).
    *
    * 서버가 준 판정을 세는 것이지 판정을 다시 계산하는 것이 아니다 (§0-1).
    */
@@ -247,7 +269,7 @@ export default function Recommend() {
     data?.areas.forEach((a) => {
       c[a.verdict] += 1
     })
-    return { ...c, entry: c.FIT + c.CAUTION, inScope: c.FIT + c.CAUTION + c.CONDITIONAL }
+    return { ...c, entry: c.FIT + c.CAUTION }
   }, [data])
 
   /**
@@ -259,18 +281,35 @@ export default function Recommend() {
    *
    * 그래서 판정 분포를 먼저 말하고, 이름은 **표시되는 후보**의 상위에서 가져온다.
    * 여기 수치는 전부 서버가 준 `verdict`를 센 것이지 판정을 다시 만든 것이 아니다 (§0-1).
+   *
+   * 2026-07-30 — 그 「표시되는 후보」를 **진입 가능(적합+유의)** 으로 좁혔다. 종전에는 조건부
+   * 적합까지 포함한 상위 3곳을 썼는데, 확정 예산 1억에서 1순위로 호명되던 신림역 8번(조건부
+   * 84점)은 **무권리 매물을 잡지 않으면 갈 수 없는 곳**이었다. 지도에서 고치려는 것과 같은
+   * 문제가 문장으로 남아 있었던 셈이라, 목록 기본값을 옮기면서 이쪽도 함께 옮긴다.
    */
   const riskClaim = useMemo(() => {
     if (!data) return ''
-    const visible = data.areas.filter((a) => a.verdict !== 'OUT_OF_SCOPE')
+    const entryVisible = data.areas.filter((a) => ENTRY_VERDICTS.includes(a.verdict))
     const head = `확정 예산 기준으로 진입 가능 ${counts.entry.toLocaleString('ko-KR')}곳 · 조건부 적합 ${counts.CONDITIONAL.toLocaleString('ko-KR')}곳으로 판정했습니다.`
-    if (visible.length === 0) return `${head} 현재 예산에서 표시 가능한 후보는 없습니다.`
-    const top = visible
+    if (entryVisible.length === 0) return `${head} 현재 예산으로 진입 가능한 후보는 없습니다.`
+    const top = entryVisible
       .slice(0, 3)
       .map((a) => `${a.name}(${VERDICT_LABEL[a.verdict]}·${a.score}점)`)
       .join(', ')
     return `${head} 종합점수 상위는 ${top}입니다.`
   }, [data, counts])
+
+  /**
+   * 조건부 적합 상위 3곳 — 지도 아래 전용 패널에 싣는다.
+   *
+   * 서버 응답 순서(종합점수 내림차순)를 그대로 쓴다. 목록의 정렬(`sort`)을 따르지 않는 것은
+   * 이 패널이 목록의 일부가 아니라 **분리된 자리**이기 때문이다 — 임대료순으로 정렬한 상태에서
+   * 이 패널만 다른 기준으로 바뀌면 두 목록의 관계가 읽히지 않는다.
+   */
+  const conditionalTop = useMemo(
+    () => (data?.areas ?? []).filter((a) => a.verdict === 'CONDITIONAL').slice(0, 3),
+    [data],
+  )
   const mapAreas = useMemo(() => areas.slice(0, MAP_MARKER_LIMIT), [areas])
   const listAreas = useMemo(() => areas.slice(0, listLimit), [areas, listLimit])
   const verdictArea = useMemo(
@@ -446,16 +485,17 @@ export default function Recommend() {
           <div className={styles.summaryBar}>
             <StatCard icon={Wallet} tone="blue" label="확정 예산" value={budget != null ? formatAmount(budget) : '—'} />
             {/*
-              `total_count`에는 범위 외까지 포함돼 온다. 화면에서 범위 외를 제외하므로
-              카드의 큰 숫자는 실제로 보이는 후보 수를 쓰고, 내역을 캡션에서 갈라 준다 —
-              큰 숫자 하나만 두면 하단 슬라이더의 "진입 가능 N곳"과 어긋나 보인다.
+              큰 숫자는 **진입 가능**(적합+유의)이다 (2026-07-30). 종전에는 범위 외만 제외한
+              수(실측 1,018곳)를 실었는데, 그중 636곳은 무권리 매물을 잡아야 열리는 구간이라
+              확정 예산으로 갈 수 있는 곳의 수가 아니었다. 하단 슬라이더의 「진입 가능 N곳」·
+              서버 프리뷰의 `area_count` 와 이제 같은 정의를 쓴다.
             */}
             <StatCard
               icon={MapPin}
               tone="purple"
-              label="추천 상권 수"
-              value={`${counts.inScope.toLocaleString('ko-KR')}곳`}
-              caption={`진입 가능 ${counts.entry.toLocaleString('ko-KR')}곳 · 조건부 적합 ${counts.CONDITIONAL.toLocaleString('ko-KR')}곳 (무권리 매물 기준)`}
+              label="진입 가능 상권"
+              value={`${counts.entry.toLocaleString('ko-KR')}곳`}
+              caption={`조건부 적합 ${counts.CONDITIONAL.toLocaleString('ko-KR')}곳은 무권리 매물 기준으로 아래에 따로 표시됩니다`}
             />
             {/*
               후보가 0곳이면 서버가 `summary` 를 생략한다 — 그때는 「—」로 둔다
@@ -491,12 +531,107 @@ export default function Recommend() {
                 dataAsOf={data.data_as_of}
                 industry={industry}
                 scope={scope}
+                /* 판정을 갈아타면 후보 분포가 통째로 달라진다 — 그때만 뷰포트를 다시 맞춘다. */
+                fitToken={verdictFilter}
+                /*
+                 * 범례에서 바로 조건부 적합으로 건너뛴다 — 지도를 보다가 「노란 마커는 어디
+                 * 갔나」가 될 자리라, 답을 그 자리에 둔다. 필터를 옮기는 것이므로 지도·목록·
+                 * 구분별 개수가 한꺼번에 따라온다(표시 상태가 두 벌로 갈라지지 않는다).
+                 */
+                legendAction={
+                  counts.CONDITIONAL > 0
+                    ? verdictFilter === 'CONDITIONAL'
+                      ? { label: '← 진입 가능 보기', onClick: () => setVerdictFilter('ENTRY') }
+                      : {
+                          label: `조건부 적합 ${counts.CONDITIONAL.toLocaleString('ko-KR')}곳 보기`,
+                          onClick: () => setVerdictFilter('CONDITIONAL'),
+                        }
+                    : undefined
+                }
               />
-              {areas.length > mapAreas.length && (
-                <p className={`t-caption ${styles.mapNote}`}>
-                  지도에는 추천 점수 상위 {MAP_MARKER_LIMIT}곳의 마커만 표시됩니다 (조건 충족{' '}
-                  {areas.length.toLocaleString('ko-KR')}곳). 나머지는 목록에서 확인할 수 있습니다.
-                </p>
+              {/*
+                지도가 무엇을 그리고 있는지 한 줄로 말한다 — 상한(100곳)만 알리던 종전 문구는
+                「상위 100곳」이 무엇 중의 상위인지를 말하지 않아, 갈 수 없는 후보가 섞여 있다는
+                사실이 화면 어디에도 없었다.
+              */}
+              <p className={`t-caption ${styles.mapNote}`}>
+                {areas.length === 0
+                  ? '지금 지도에 표시할 후보가 없습니다.'
+                  : verdictFilter === 'ENTRY'
+                    ? `확정 예산으로 지금 갈 수 있는 ${areas.length.toLocaleString('ko-KR')}곳${
+                        areas.length > mapAreas.length
+                          ? ` 중 추천 점수 상위 ${MAP_MARKER_LIMIT}곳`
+                          : ''
+                      }입니다.`
+                    : `${VERDICT_FILTERS.find((f) => f.value === verdictFilter)?.label} ${areas.length.toLocaleString('ko-KR')}곳${
+                        areas.length > mapAreas.length
+                          ? ` 중 추천 점수 상위 ${MAP_MARKER_LIMIT}곳`
+                          : ''
+                      }입니다.`}
+                {areas.length > mapAreas.length && ' 나머지는 목록에서 확인할 수 있습니다.'}
+              </p>
+
+              {/*
+                조건부 적합 분리 패널 (2026-07-30).
+
+                「숨긴다」가 아니라 **자리를 나눈다** 는 것이 이 패널의 뜻이다 — 개수·상위 후보·
+                전환 버튼이 지도 바로 아래에 항상 있으므로, 조건부 적합이 화면에서 사라지지
+                않으면서도 진입 가능과 같은 무게로 섞이지도 않는다.
+
+                문구는 **무권리 매물이라는 조건**만 서술한다. 「예산을 올리면 열립니다」로 쓰는
+                순간 상향 인사이트가 되어 지속 후보 수·하향 안전 마진·고지 문구를 함께 달아야
+                하며(CLAUDE.md 원칙 3), 그 서사는 세 요소를 이미 갖춘 탐색 화면의 몫이다.
+              */}
+              {counts.CONDITIONAL > 0 && (
+                <div className={styles.conditionalPanel}>
+                  <p className={`t-body-strong ${styles.conditionalHead}`}>
+                    조건 붙는 후보 {counts.CONDITIONAL.toLocaleString('ko-KR')}곳
+                  </p>
+                  <p className={`t-caption ${styles.conditionalDesc}`}>
+                    권리금이 없는 매물을 잡아야 열리는 구간입니다. 확정 예산만으로 지금 갈 수 있는
+                    곳은 아니어서 지도와 목록에서 분리해 두었습니다.
+                  </p>
+                  {conditionalTop.length > 0 && (
+                    <ul className={styles.conditionalList}>
+                      {conditionalTop.map((a) => (
+                        <li key={a.area_code}>
+                          <button
+                            type="button"
+                            className={`t-caption ${styles.conditionalItem}`}
+                            /* 고르면 필터까지 옮긴다 — 그러지 않으면 지도에 마커가 없다. */
+                            onClick={() => {
+                              setVerdictFilter('CONDITIONAL')
+                              setSelected(a.area_code)
+                            }}
+                          >
+                            <span className={styles.conditionalName}>{a.name}</span>
+                            <span className={styles.conditionalScore}>{a.score}점</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <div className={styles.conditionalActions}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() =>
+                        setVerdictFilter(verdictFilter === 'CONDITIONAL' ? 'ENTRY' : 'CONDITIONAL')
+                      }
+                    >
+                      {verdictFilter === 'CONDITIONAL'
+                        ? '진입 가능으로 돌아가기'
+                        : '지도·목록에서 보기'}
+                    </Button>
+                    <button
+                      type="button"
+                      className={`t-caption ${styles.conditionalLink}`}
+                      onClick={() => navigate('/explore')}
+                    >
+                      결정공간 탐색에서 보기 →
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
 
@@ -520,15 +655,17 @@ export default function Recommend() {
               </div>
 
               <div className={styles.filters}>
-                {VERDICT_FILTERS.map((v) => (
+                {VERDICT_FILTERS.map((f) => (
                   <button
-                    key={v}
+                    key={f.value}
                     type="button"
-                    className={`t-label ${styles.chip} ${verdictFilter === v ? styles.chipActive : ''}`}
-                    aria-pressed={verdictFilter === v}
-                    onClick={() => setVerdictFilter(v)}
+                    className={`t-label ${styles.chip} ${verdictFilter === f.value ? styles.chipActive : ''}`}
+                    aria-pressed={verdictFilter === f.value}
+                    // 「진입 가능」은 판정이 아니라 두 판정의 합이라, 무엇의 합인지 밝혀 둔다.
+                    title={f.value === 'ENTRY' ? '적합 + 유의 — 확정 예산으로 갈 수 있는 곳' : undefined}
+                    onClick={() => setVerdictFilter(f.value)}
                   >
-                    {v === 'ALL' ? '전체' : VERDICT_LABEL[v]}
+                    {f.label}
                   </button>
                 ))}
               </div>

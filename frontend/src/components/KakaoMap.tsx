@@ -159,6 +159,8 @@ export default function KakaoMap({
   dataAsOf,
   industry,
   scope,
+  legendAction,
+  fitToken,
 }: {
   areas: Area[]
   selectedCode: string | null
@@ -168,6 +170,22 @@ export default function KakaoMap({
   industry?: Industry | null
   /** 상권·구획 경계 (가정 #96). 없으면 경계 없이 오늘과 같은 화면이 된다. */
   scope?: AreaScope | null
+  /**
+   * 범례 옆에 붙는 전환 버튼 (조건부 적합 보기 등). 없으면 범례만 나온다.
+   * ReactNode 가 아니라 라벨+동작으로 받는다 — 버튼이 범례 상자 안에 사는 이상 그 스타일은
+   * 이 컴포넌트가 가져야 하고, 호출부가 자기 CSS 모듈의 클래스를 넘기게 두면 갈라진다.
+   */
+  legendAction?: { label: string; onClick: () => void }
+  /**
+   * 값이 바뀌면 후보 전체가 보이도록 뷰포트를 다시 맞춘다.
+   *
+   * 초기 fit 은 의도적으로 1회뿐이다 — 예산 슬라이더가 `areas` 를 매번 새로 만들기 때문에,
+   * `areas` 변화마다 맞추면 자치구를 확대해 둔 시야가 한 칸 움직일 때마다 파괴된다(이슈 #154).
+   * 하지만 **판정 필터를 옮기는 것은 다른 종류의 사건**이다: 진입 가능 6곳에서 조건부 적합
+   * 542곳으로 갈아타면 후보 분포 자체가 달라져, 확대해 둔 자리에 마커가 하나도 없을 수 있다.
+   * 그래서 「같은 후보군을 다시 계산했다」와 「후보군을 갈아탔다」를 이 토큰으로 가른다.
+   */
+  fitToken?: string
 }) {
   const status = useKakaoLoader()
   /** 지도 컨테이너가 가리키는 대체 경로 안내의 id (m-4). */
@@ -197,6 +215,8 @@ export default function KakaoMap({
   const districtPolyRef = useRef<kakao.maps.Polygon | null>(null)
   /** 초기 1회만 후보 전체에 맞춘다 — 아래 fit 효과 주석 참조. */
   const fitDoneRef = useRef(false)
+  /** 마지막으로 뷰포트를 맞춘 후보군. 초기값은 첫 렌더의 토큰이라 진입 직후에는 돌지 않는다. */
+  const fitTokenRef = useRef(fitToken)
 
   /**
    * 선택된 상권의 경계와, 그 임대료가 **실제로 조사된** 부동산원 구획의 경계 (가정 #96).
@@ -208,6 +228,19 @@ export default function KakaoMap({
    * 상권 경계를 못 찾으면 구획도 그리지 않는다. 둘 중 하나만 뜨면 「이 선이 무엇의
    * 경계인지」가 화면에서 사라진다.
    */
+  /**
+   * 범례는 **지금 지도에 실제로 찍힌 판정만** 싣는다 (2026-07-30).
+   *
+   * 종전에는 `MAP_LEGEND` 3종을 항상 그렸는데, 판정 필터가 붙은 뒤로는 그것이 거짓말이 된다 —
+   * 「진입 가능」으로 좁혀 적합·유의만 찍힌 지도에 조건부 적합 범례가 남으면, 노란 마커를
+   * 찾다가 없는 것을 화면 탓으로 돌리게 된다. 어휘 3종(스펙 §0-4)은 필터 칩과 아래
+   * 조건부 패널이 항상 노출하므로 화면에서 사라지지 않는다.
+   */
+  const drawnLegend = useMemo(() => {
+    const present = new Set(areas.map((a) => a.verdict))
+    return MAP_LEGEND.filter((v) => present.has(v))
+  }, [areas])
+
   const boundary = useMemo(() => {
     if (!SCOPE_BOUNDARY || !scope || !selectedCode) return null
     const area = areas.find((a) => a.area_code === selectedCode)
@@ -272,6 +305,20 @@ export default function KakaoMap({
       fitDoneRef.current = true
     }
   }, [status, areas])
+
+  /*
+   * 후보군을 갈아탔을 때만 다시 맞춘다 (`fitToken` 주석 참조). 위 마커 효과가 `boundsRef` 를
+   * 먼저 갱신하므로 — 선언 순서가 곧 실행 순서다 — 여기서는 그 결과를 그대로 쓴다.
+   */
+  useEffect(() => {
+    const map = mapRef.current
+    const b = boundsRef.current
+    if (status !== 'ready' || !map || fitTokenRef.current === fitToken) return
+    fitTokenRef.current = fitToken
+    if (b && !b.isEmpty()) {
+      map.setBounds(b, FIT_PADDING, FIT_PADDING, FIT_PADDING, FIT_PADDING)
+    }
+  }, [status, fitToken, areas])
 
   /**
    * 경계 윤곽선 2개 (가정 #96). 인스턴스는 만들어 두고 `setPath` 로만 갈아 끼운다 —
@@ -473,13 +520,23 @@ export default function KakaoMap({
         </div>
       )}
 
-      <div className={styles.legend}>
-        {MAP_LEGEND.map((v) => (
+      {/* 찍힌 마커도 없고 붙일 버튼도 없으면 빈 상자만 뜬다 — 그때는 범례를 내지 않는다. */}
+      <div className={styles.legend} hidden={drawnLegend.length === 0 && !legendAction}>
+        {drawnLegend.map((v) => (
           <span key={v} className={`t-caption ${styles.legendItem}`}>
             <span className={styles.legendDot} style={{ background: VERDICT_MARKER_COLOR[v] }} />
             {VERDICT_LABEL[v]}
           </span>
         ))}
+        {legendAction && (
+          <button
+            type="button"
+            className={`t-caption ${styles.legendBtn}`}
+            onClick={legendAction.onClick}
+          >
+            {legendAction.label}
+          </button>
+        )}
       </div>
 
       {/* 판정 범례(3종)는 그대로 두고, 경계가 실제로 떠 있을 때만 선 뜻풀이를 덧붙인다. */}

@@ -192,6 +192,73 @@
   color: var(--color-text-tertiary);
 }
 
+/*
+ * 조건부 적합 분리 패널 — 지도 바로 아래. 노란 계열 배경(--color-bg-tip)을 쓰는 것은
+ * 마커 색과 같은 축을 유지하기 위해서다. 「여기가 조건부 적합 자리」가 색으로도 읽힌다.
+ */
+.conditionalPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding: var(--space-16) var(--space-20);
+  border: 1px solid var(--yellow-100);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-tip);
+}
+.conditionalHead {
+  margin: 0;
+  color: var(--color-text-primary);
+}
+.conditionalDesc {
+  margin: 0;
+  color: var(--color-text-secondary);
+  word-break: keep-all;
+}
+.conditionalList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.conditionalItem {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--pill-pad-lg);
+  border: 1px solid var(--yellow-100);
+  border-radius: var(--radius-full);
+  background: var(--color-bg-surface);
+  cursor: pointer;
+}
+.conditionalItem:hover {
+  border-color: var(--yellow-500);
+}
+.conditionalName {
+  color: var(--color-text-primary);
+}
+.conditionalScore {
+  color: var(--color-text-tertiary);
+}
+.conditionalActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-12);
+  margin-top: var(--space-4);
+}
+.conditionalLink {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text-accent);
+  cursor: pointer;
+}
+.conditionalLink:hover {
+  text-decoration: underline;
+}
+
 /* 탐색 진입 CTA (Figma Bottom CTA Bar) */
 .exploreCta {
   display: flex;

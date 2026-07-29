@@ -44,8 +44,12 @@ DOCENT = {
     "cards": {"보수": 8000, "적극": 10500},
     "n_entry": 382,
     "n_conditional": 636,
-    "top3": [("신림역 8번", "CONDITIONAL", 84), ("방이동먹자골목", "FIT", 83),
-             ("잠실 관광특구", "FIT", 83)],
+    # 2026-07-30 — 지도·목록 기본 표시를 진입 가능(적합+유의)으로 좁히면서 「상위 후보」의
+    # 모집단이 바뀌었다. 조건부 적합은 분리 패널의 상위로 따로 잰다.
+    "top3": [("방이동먹자골목", "FIT", 83), ("잠실 관광특구", "FIT", 83),
+             ("화곡역 4번", "FIT", 82)],
+    "top3_conditional": [("신림역 8번", 84), ("사당역 4번", 81),
+                         ("구로디지털단지역", 80)],
     "t1": {"gap": 3869, "n_entry_before": 382, "n_entry_after": 1014, "n_sustain_after": 244},
     "area_code": "3120229",   # 방이동먹자골목 — 대본 6번의 역방향 판정 대상
     "n_products": 11,
@@ -695,10 +699,19 @@ def d1_docent_script() -> None:
     check("D1", counts.get("FIT", 0) + counts.get("CAUTION", 0) == entry,
           "화면이 세는 진입 가능(적합+유의)과 /budget 프리뷰 수가 어긋난다")
 
-    # 화면은 범위 외를 걸러 내므로 대본의 「상위 후보」도 걸러낸 목록의 상위여야 한다.
-    visible = [a for a in body["areas"] if a["verdict"] != "OUT_OF_SCOPE"]
-    top = [(a["name"], a["verdict"], a["score"]) for a in visible[:3]]
+    # 화면의 기본 표시는 **진입 가능(적합+유의)** 이므로 대본의 「상위 후보」도 그 안의
+    # 상위여야 한다 (2026-07-30). 종전엔 범위 외만 걸러 조건부 적합까지 포함했는데, 그러면
+    # 1순위가 신림역 8번(조건부 84점) — **무권리 매물 없이는 갈 수 없는 곳**이었다.
+    entry = [a for a in body["areas"] if a["verdict"] in ("FIT", "CAUTION")]
+    top = [(a["name"], a["verdict"], a["score"]) for a in entry[:3]]
     check("D1", top == DOCENT["top3"], f"상위 후보 {top} ≠ 대본 {DOCENT['top3']}")
+
+    # 분리 패널의 조건부 적합 상위 3곳도 대본에 있다 — 화면이 두 목록을 나눠 보여 주므로
+    # 게이트도 둘 다 확인해야 한 쪽만 조용히 낡는 일이 없다.
+    cond = [a for a in body["areas"] if a["verdict"] == "CONDITIONAL"]
+    top_cond = [(a["name"], a["score"]) for a in cond[:3]]
+    check("D1", top_cond == DOCENT["top3_conditional"],
+          f"조건부 적합 상위 {top_cond} ≠ 대본 {DOCENT['top3_conditional']}")
 
     insights = [d for n, d in sse(f"/api/explore/{sid}?v=1") if n == "insight"]
     t1 = next((i for i in insights if i["type"] == "T1"), None)
