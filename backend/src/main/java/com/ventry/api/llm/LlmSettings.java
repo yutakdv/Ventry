@@ -24,11 +24,22 @@ public record LlmSettings(String apiKey, Duration timeout, int maxConcurrent) {
      * <b>기존 폴백과 완전히 같다</b> — {@code skipped=true} + 템플릿이 최종본. 새 실패 모드가
      * 생기지 않으므로 상한만 짧게 주는 것이 가장 싼 해소다.
      *
-     * <p>1.2초는 저장소의 기존 실측(캐시 히트 수 밀리초 / 미스 약 1.9초)에서, <b>빠른 왕복은
-     * 살리고 느린 왕복만 버리는</b> 자리로 잡았다. 반박문은 있으면 좋은 것이지 없으면 화면이
-     * 깨지는 것이 아니므로, 지연과 맞바꾸지 않는다.
+     * <p><b>1.2초 → 3초 (2026-07-29 실사용 점검).</b> 1.2초는 "빠른 왕복은 살리고 느린 왕복만
+     * 버리는" 자리로 잡은 값이었지만, 실측에서 <b>살아남는 왕복이 하나도 없었다</b> —
+     * 기동 중인 스택 로그에서 {@code limit_ms=1200} 호출 33건이 <b>전건 timeout</b>이었고,
+     * {@code limit_ms=5000} 호출 6건은 전건 성공했다(elapsed 812·1557·1734·1844·2212·2347ms,
+     * 중앙값 약 1.79초). 즉 이 상한은 느린 왕복만이 아니라 <b>모든 왕복</b>을 버리고 있었다.
+     *
+     * <p>더 나쁜 것은 캐시와의 상호작용이다. {@code ReviewGenerator} 는
+     * {@code unless="#result.skipped()"} 로 <b>성공만 캐시</b>하므로, 전건 타임아웃이면 캐시가
+     * 영원히 비어 있고 매 요청이 상한을 꽉 채워 실패한다 — 지연은 지연대로 내면서 결과는
+     * 항상 템플릿이었다. 화면에서는 「리스크 검증 생략」이 조건과 무관하게 상시 노출된다.
+     *
+     * <p>3초는 실측 최대치(2.35초)에 여유를 둔 값이다. 슬라이더 재호출 우려는 성립하지 않는다 —
+     * {@code RiskReviewAgent} 가 예산을 캐시 키(사실 문자열)에서 <b>의도적으로 제외</b>해,
+     * 한 번 성공하면 상위 3곳 판정이 바뀌기 전까지 왕복 자체가 사라진다.
      */
-    public static final Duration SYNC_TIMEOUT = Duration.ofMillis(1200);
+    public static final Duration SYNC_TIMEOUT = Duration.ofMillis(3000);
 
     public LlmSettings {
         if (timeout == null || timeout.isNegative() || timeout.isZero()) {

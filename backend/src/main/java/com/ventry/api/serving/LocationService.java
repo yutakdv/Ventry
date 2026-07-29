@@ -3,6 +3,7 @@ package com.ventry.api.serving;
 import com.ventry.api.checkarea.CheckAreaDtos.CheckAreaResponse;
 import com.ventry.api.common.ApiException;
 import com.ventry.api.common.FinanceDtos.Product;
+import com.ventry.api.common.Verdict;
 import com.ventry.api.engine.CostCalculator;
 import com.ventry.api.engine.CostEstimate;
 import com.ventry.api.engine.EligibilityFilter;
@@ -68,7 +69,7 @@ public class LocationService {
                         (CandidateArea c) -> ScoreLookup.score(c.axisScores(), weights)).reversed())
                 .map(c -> toArea(c, budget, weights))
                 .toList();
-        return new RecommendResponse(meta.asOf("sales"), areas.size(), summary(pool), areas,
+        return new RecommendResponse(meta.asOf("sales"), areas.size(), summary(areas), areas,
                 riskReview.forRecommend(profile.industry(), areas));
     }
 
@@ -147,12 +148,34 @@ public class LocationService {
         return (int) Math.round(ScoreLookup.score(c.axisScores(), weights) * 100);
     }
 
-    private static Summary summary(List<CandidateArea> pool) {
-        return new Summary(average(pool, CandidateArea::monthlyRent),
-                average(pool, CandidateArea::estSales));
+    /**
+     * 화면에 남는 후보의 평균 — <b>범위 외를 제외한다</b> (실사용 점검 2026-07-29).
+     *
+     * <p>종전에는 후보 풀 전체를 평균해서, 예산을 5,000만원으로 내려 <b>추천 상권이 0곳</b>인
+     * 화면에서도 「평균 환산 임대료 221만원 · 평균 추정 매출 1,042만원」이 그대로 떴다.
+     * 실측상 예산을 5,000~15,000만원 어디로 옮겨도 이 두 값이 미동도 하지 않았다 — 예산이
+     * 판정만 바꾸고 집계에는 닿지 않았기 때문이다. 「내 한도로 어디까지」를 말하는 화면에서
+     * 한도와 무관한 평균을 한도의 결과처럼 보여 주는 것이라, 범위를 화면과 일치시킨다.
+     *
+     * <p>기준은 <b>목록에 실제로 남는 집합</b>(범위 외 제외)이다. 진입 후보만으로 좁히지 않는
+     * 이유는 헤더가 세는 「추천 상권 N곳」이 조건부 적합까지 포함하기 때문이다 — 개수와 평균의
+     * 모집단이 갈리면 같은 줄의 두 숫자가 서로 다른 것을 말한다.
+     *
+     * <p>남는 후보가 없으면 {@code null} 을 돌려 <b>필드를 생략</b>한다(계약 {@code non_null}).
+     * 0곳의 평균은 0이 아니라 정의되지 않는 값이고, 0을 실어 보내면 화면이 「평균 0만원」을
+     * 사실처럼 적는다.
+     */
+    private static Summary summary(List<Area> areas) {
+        List<Area> visible = areas.stream()
+                .filter(a -> a.verdict() != Verdict.OUT_OF_SCOPE)
+                .toList();
+        if (visible.isEmpty()) {
+            return null;
+        }
+        return new Summary(average(visible, Area::monthlyRent), average(visible, Area::estSales));
     }
 
-    private static int average(List<CandidateArea> areas, java.util.function.ToIntFunction<CandidateArea> field) {
+    private static int average(List<Area> areas, java.util.function.ToIntFunction<Area> field) {
         return (int) Math.round(areas.stream().mapToInt(field).average().orElse(0));
     }
 

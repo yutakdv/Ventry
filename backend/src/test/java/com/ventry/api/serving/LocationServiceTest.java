@@ -32,6 +32,35 @@ class LocationServiceTest {
         assertThat(res.areas().get(2).verdict()).isEqualTo(Verdict.CAUTION);
     }
 
+    /**
+     * 실사용 점검(2026-07-29) — 요약 평균의 모집단은 <b>화면에 남는 후보</b>다.
+     *
+     * <p>종전에는 후보 풀 전체를 평균해서, 예산을 내려 추천이 0곳이 된 화면에서도 평균
+     * 임대료·매출이 그대로 떴다(실측: 5,000~15,000만원 전 구간에서 221/1,042 고정).
+     * 기대값을 상수로 박지 않고 응답 자체에서 유도하는 이유는, 픽스처가 바뀌어도 이
+     * 단언이 지키려는 성질(모집단 일치)이 그대로 남게 하기 위해서다.
+     */
+    @Test
+    void recommend_summaryAveragesVisibleAreasOnly() {
+        RecommendResponse res = svc.recommend(demo, 8000);
+        var visible = res.areas().stream()
+                .filter(a -> a.verdict() != Verdict.OUT_OF_SCOPE).toList();
+        assertThat(visible).isNotEmpty();
+        assertThat(res.summary().avgRent()).isEqualTo(
+                (int) Math.round(visible.stream().mapToInt(Area::monthlyRent).average().orElseThrow()));
+        assertThat(res.summary().avgSales()).isEqualTo(
+                (int) Math.round(visible.stream().mapToInt(Area::estSales).average().orElseThrow()));
+    }
+
+    /** 남는 후보가 없으면 평균은 0이 아니라 <b>정의되지 않는다</b> — 필드를 생략한다. */
+    @Test
+    void recommend_omitsSummaryWhenNothingVisible() {
+        RecommendResponse res = svc.recommend(demo, 0);
+        assertThat(res.areas()).isNotEmpty();
+        assertThat(res.areas()).allMatch(a -> a.verdict() == Verdict.OUT_OF_SCOPE);
+        assertThat(res.summary()).isNull();
+    }
+
     @Test
     void recommend_costIsDualIntervalComputedByEngine() {
         RecommendResponse res = svc.recommend(demo, 8000);
