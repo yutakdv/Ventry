@@ -18,11 +18,16 @@
 from __future__ import annotations
 
 import json
-
-import geopandas as gpd
+from typing import TYPE_CHECKING
 
 from batch.paths import REPO_ROOT, logger
-from batch.preprocess.crs import CRS_METRIC, CRS_WGS84, load_area_polygons, load_reb_districts
+
+if TYPE_CHECKING:  # geopandas 는 런타임에만 필요하다 (아래 주석 참조)
+    import geopandas as gpd
+
+# geopandas·shapely 는 **함수 안에서** 임포트한다. ai-ci 는 pytest·pandas·requests 만 깔기
+# 때문에, 상수(OUT_PATH·SCHEMA·SIMPLIFY_M)를 읽으려고 이 모듈을 임포트하는 것만으로
+# ModuleNotFoundError 가 나면 테스트 수집 단계에서 전체가 멈춘다.
 
 OUT_PATH = REPO_ROOT / "frontend" / "public" / "geo" / "area-scope.v1.json"
 
@@ -65,6 +70,8 @@ def _simplify(gdf: gpd.GeoDataFrame) -> gpd.GeoSeries:
     위경도에서 바로 simplify 하면 허용 오차의 단위가 도(degree)라 위도에 따라 실제 거리가
     달라진다 — 거리 계산을 5179 에서 하는 `preprocess/crs.py` 와 같은 이유다.
     """
+    from batch.preprocess.crs import CRS_METRIC, CRS_WGS84
+
     return (
         gdf.to_crs(epsg=CRS_METRIC)
         .geometry.simplify(SIMPLIFY_M, preserve_topology=True)
@@ -77,6 +84,8 @@ def _pack(gdf: gpd.GeoDataFrame, key_col: str, area_col: str | None) -> dict[str
 
     면적은 **단순화 전** 투영 면적을 쓴다. 근거 문장의 배수가 표시용 왜곡을 타면 안 된다.
     """
+    from batch.preprocess.crs import CRS_METRIC
+
     metric_area = gdf.to_crs(epsg=CRS_METRIC).geometry.area
     simplified = _simplify(gdf)
     out: dict[str, dict] = {}
@@ -93,6 +102,8 @@ def _pack(gdf: gpd.GeoDataFrame, key_col: str, area_col: str | None) -> dict[str
 
 
 def run() -> None:
+    from batch.preprocess.crs import load_area_polygons, load_reb_districts
+
     areas = _pack(load_area_polygons(), "area_code", None)
     districts = _pack(load_reb_districts(), "reb_district_name", "reb_area_m2")
 
