@@ -60,6 +60,45 @@ export function formatRentSource(
   return basis ? `${base} · ${basis}` : base
 }
 
+/** ㎢ 표기 — 상권은 0.07 수준, 구획은 2 수준이라 소수 둘째 자리면 둘 다 읽힌다. */
+function km2(areaM2: number): string {
+  return `${(areaM2 / 1_000_000).toFixed(2)}㎢`
+}
+
+/**
+ * 임대료 **근거 범위** 줄 (가정 #96) — 출처 줄 다음에 오는 4번째 근거 줄.
+ *
+ * 출처 줄은 「어느 기관의 어느 상권 분기 평균인지」까지 밝히지만, 그 값이 **얼마나 넓은
+ * 범위의 평균인지**는 말하지 않는다. 실제로는 판정이 계산되는 단위(상권, 중앙 0.07㎢)와
+ * 임대료가 조사된 단위(부동산원 구획, 중앙 0.58㎢)가 약 8배 차이 난다. 그 사실을 숨기는
+ * 대신 지도의 두 경계선과 같은 내용을 문장으로 적는다.
+ *
+ * 배수는 배치가 구운 면적의 나눗셈 1회다 — 화면이 수치를 새로 만들지 않는다 (§0-1).
+ * 권유·추천 술어를 쓰지 않고 사실만 서술한다 (CLAUDE.md §3).
+ */
+export function formatRentScope(
+  src: { district: string; fallback: boolean },
+  areaM2: number,
+  districtM2: number | null,
+): string {
+  if (src.fallback || !districtM2) {
+    return '임대료 근거 범위: 이 상권은 한국부동산원 조사 구획에 속하지 않아 자치구 평균을 적용했습니다 — 표시할 구획 경계가 없습니다.'
+  }
+  /*
+   * 세 갈래로 나눈다. 대부분(78%)은 구획이 3배 이상 넓지만, 두 구획이 서로 다른 분할이라
+   * **구획이 더 좁은 경우도 2.2% 있다** — 명동 관광특구가 그 구획의 3배다(실측, 가정 #96).
+   * 그걸 "비슷한 넓이"로 뭉개면 화면이 사실보다 안전하게 들린다.
+   */
+  const ratio = districtM2 / areaM2
+  const comp =
+    ratio < 0.8
+      ? `이 상권 ${km2(areaM2)}보다 좁은`
+      : ratio < 1.3
+        ? `이 상권 ${km2(areaM2)}와 비슷한`
+        : `이 상권 ${km2(areaM2)}보다 약 ${ratio < 10 ? ratio.toFixed(1) : Math.round(ratio)}배 넓은`
+  return `임대료 근거 범위: 한국부동산원 '${src.district}' 구획 ${km2(districtM2)} — ${comp} 범위의 분기 평균 (추정)입니다.`
+}
+
 /**
  * 도보 소요 시간(분). 계약에는 `distance_m`만 있어 결정적 계수로 환산한다 —
  * 보행 속도 4km/h ≈ 분속 67m (docs/assumptions.md #85). 최소 1분.
