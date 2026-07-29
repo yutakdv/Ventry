@@ -24,18 +24,28 @@ VERIFY_KEYWORD = "강남역"
 def build(areas: gpd.GeoDataFrame, permits: gpd.GeoDataFrame) -> pd.DataFrame:
     """상권×업종 업소 수 + 면적 정규화 밀도."""
     joined = gpd.sjoin(permits, areas[["area_code", "geometry"]], how="left", predicate="within")
-    # 상권 폴리곤 53쌍이 서로 겹쳐서(실측) 한 업소가 두 상권에 잡힌다 → 그대로 두면
-    # 겹친 구역의 업소가 두 번 세어져 밀도가 부풀려진다. area_code 기준으로 하나만 남긴다.
-    overlapped = int(joined.index.duplicated(keep=False).sum())
-    joined = joined.sort_values("area_code")
-    joined = joined[~joined.index.duplicated(keep="first")]
-
-    matched = joined["area_code"].notna()
+    # 상권 폴리곤 53쌍이 서로 겹쳐서(실측) 한 업소가 두 상권에 잡힌다. **그 업소는 양쪽 모두에
+    # 계상한다** — 밀도는 상권마다 「제 폴리곤 안의 업소 ÷ 제 면적」으로 독립 계산되는 값이라
+    # 보존되어야 할 전역 합계가 없고, 명동 발달상권 안의 식당은 그 상권에 들어갈 사람에게도
+    # 이를 품은 관광특구에 들어갈 사람에게도 똑같이 경쟁이기 때문이다 (가정 #98).
+    #
+    # 이전에는 `sort_values("area_code")` + `duplicated(keep="first")` 로 업소당 한 상권만
+    # 남겼는데, 그 기준이 **area_code 사전순**이라 중첩 상권 중 코드가 작은 쪽이 인허가를 통째로
+    # 가져갔다. 관광특구 3001492 가 발달상권 3120022(북창동)·3120026(을지로입구역)·
+    # 3120028(명동거리)를 앞서 세 곳의 permit 이 0건 → 밀도 결측 → 폴백 0 → w3(경쟁여유)=1.0,
+    # 즉 서울에서 가장 빽빽한 상권이 「경쟁 여유 최상위」로 뒤집혔다 (가정 #69 전제의 반증).
+    # 중첩을 양쪽에 계상하면서부터 `joined` 는 업소가 아니라 **(업소 × 상권) 쌍**이다.
+    # 로그는 계속 「업소」 단위로 보고해야 등재 #19·#69 가 인용하는 「폴리곤 내부 81.2%」와
+    # 같은 자를 쓴다 — 쌍 수를 그대로 찍으면 분자만 부풀어 산술이 닫히지 않는다.
+    matched = joined["area_code"].notna().to_numpy()
+    total = joined.index.nunique()
+    inside = joined.index[matched].nunique()
+    overlapped = joined.index[joined.index.duplicated(keep=False)].nunique()
     logger.info(
         "점-폴리곤 조인: 업소 %d건 중 상권 내부 %d건 (%.1f%%) · 폴리곤 밖 %d건 "
-        "(중첩 상권 이중 매칭 %d건은 1건으로 정리)",
-        len(joined), int(matched.sum()), 100 * matched.mean(), int((~matched).sum()),
-        overlapped,
+        "· 내부 중 중첩 상권에 걸친 %d건은 양쪽 상권에 각각 계상 (조인 %d행)",
+        total, inside, 100 * inside / total if total else 0.0,
+        total - inside, overlapped, len(joined),
     )
 
     counts = (
