@@ -127,7 +127,7 @@ def _pack(
     """키 → {a: 면적 ㎡, r: 링 배열, …extra} 사전.
 
     면적은 **단순화 전** 투영 면적을 쓴다. 근거 문장의 배수가 표시용 왜곡을 타면 안 된다.
-    `extra` 는 {산출 키: 원본 컬럼} — 상권은 이름(n)과 유형(t)을 함께 굽는다.
+    `extra` 는 {산출 키: 원본 컬럼} — 상권은 이름(n)·유형(t)·자치구(g)를 함께 굽는다.
     """
     from batch.preprocess.crs import CRS_METRIC
 
@@ -153,7 +153,16 @@ def run() -> None:
     from batch.preprocess.crs import load_area_polygons, load_reb_districts
 
     area_gdf = load_area_polygons()
-    areas = _pack(area_gdf, "area_code", None, extra={"n": "name", "t": "area_type_name"})
+    areas = _pack(
+        area_gdf,
+        "area_code",
+        None,
+        # `g` = 자치구명(SIGNGU_CD_). 진단의 「희망 지역」이 화면 어디에도 나타나지 않던 문제를
+        # 화면 4의 자치구 필터로 잇기 위해 함께 굽는다 (가정 #112). API 응답이 아니라 이 자산에
+        # 싣는 이유는 유형(t)과 같다 — 자치구는 세션·업종·예산과 무관한 상권의 불변 속성이라,
+        # `/api/recommend` 에 넣으면 슬라이더를 움직일 때마다 1,059곳분이 재전송된다.
+        extra={"n": "name", "t": "area_type_name", "g": "sigungu_name"},
+    )
     districts = _pack(load_reb_districts(), "reb_district_name", "reb_area_m2")
 
     payload = {

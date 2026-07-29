@@ -20,6 +20,14 @@ export interface ScopeEntry {
   name?: string
   /** 골목상권 / 발달상권 / 전통시장 / 관광특구 (가정 #98). */
   type?: string
+  /**
+   * 자치구명 (가정 #112). 진단의 「희망 지역」을 화면 4의 필터로 잇는 축이다.
+   *
+   * 계약(`/api/recommend`)이 아니라 이 자산에 실린 이유는 유형(`type`)과 같다 — 자치구는
+   * 세션·업종·예산과 무관한 상권의 불변 속성이라, 응답에 넣으면 슬라이더를 움직일 때마다
+   * 1,059곳분이 재전송된다. 구획 경계(`districts`)는 부동산원 상권명이라 행정 자치구가 아니다.
+   */
+  sigungu?: string
 }
 
 /** 중첩 상대 하나 — `pct` 는 **기준 상권 자기 면적** 중 겹친 비율(%). */
@@ -45,6 +53,20 @@ export interface AreaScope {
   toleranceM: number
 }
 
+/**
+ * 「희망 지역」 문자열에서 자치구를 뽑는다 (가정 #112).
+ *
+ * 계약상 `region_hint` 는 시/도와 구를 합친 단일 문자열이라("서울특별시 마포구" · "서울 마포구"
+ * 둘 다 유효하다 — API_CONTRACT §4), 앞부분의 표기 흔들림을 타지 않도록 **마지막 토큰**만
+ * 본다. 자산에 실제로 있는 자치구일 때만 인정한다 — 「경기도 성남시」처럼 서울 밖 값이
+ * 들어와도 없는 필터를 권하지 않기 위해서다.
+ */
+export function guFromRegionHint(hint: string | null | undefined, known: string[]): string | null {
+  if (!hint) return null
+  const last = hint.trim().split(/\s+/).pop() ?? ''
+  return known.includes(last) ? last : null
+}
+
 const URL = '/geo/area-scope.v1.json'
 const SCHEMA = 'ventry.area-scope.v1'
 
@@ -54,13 +76,14 @@ function toEntries(raw: unknown): Map<string, ScopeEntry> {
   const out = new Map<string, ScopeEntry>()
   if (!raw || typeof raw !== 'object') return out
   for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
-    const v = value as { a?: unknown; r?: unknown; n?: unknown; t?: unknown }
+    const v = value as { a?: unknown; r?: unknown; n?: unknown; t?: unknown; g?: unknown }
     if (typeof v?.a !== 'number' || !Array.isArray(v?.r)) continue
     out.set(key, {
       areaM2: v.a,
       rings: v.r as Rings,
       name: typeof v.n === 'string' ? v.n : undefined,
       type: typeof v.t === 'string' ? v.t : undefined,
+      sigungu: typeof v.g === 'string' ? v.g : undefined,
     })
   }
   return out
@@ -105,7 +128,19 @@ function toOverlaps(raw: unknown, areas: Map<string, ScopeEntry>) {
 
 async function fetchScope(): Promise<AreaScope | null> {
   try {
-    const res = await fetch(URL, { cache: 'force-cache' })
+    /*
+     * `force-cache` 에서 `no-cache` 로 바꾼다 (2026-07-30).
+     *
+     * 파일명·schema 는 **판본(v1)** 을 가리킬 뿐 내용을 가리키지 않는다. 그래서 자산을 다시
+     * 굽고 필드를 더해도(자치구 `g` — 가정 #112) 파일명이 그대로다. `force-cache` 는 캐시에
+     * 항목이 있으면 신선도와 무관하게 그것을 쓰므로, 어제 이 화면을 연 브라우저는 새 필드가
+     * 없는 옛 파일을 계속 받는다 — 그러면 **오류 없이 자치구 필터만 조용히 사라진다.**
+     * nginx 의 `max-age=86400` 도 이 모드에서는 방어가 되지 않는다.
+     *
+     * `no-cache` 는 캐시를 끄는 것이 아니라 **매번 재검증**한다. 안 바뀌었으면 304(본문 없음)라
+     * 비용이 사실상 없고, 같은 세션의 중복 요청은 아래 `cached` 프라미스가 이미 막는다.
+     */
+    const res = await fetch(URL, { cache: 'no-cache' })
     // SPA 폴백이 살아 있는 환경(개발 서버 등)에서는 없는 파일이 index.html 200 으로 온다.
     // 상태 코드만 믿지 않고 content-type 과 schema 필드까지 본다.
     if (!res.ok) return null

@@ -16,6 +16,7 @@ import { formatAmount, formatRentScope, formatScopeOverlap } from '../lib/format
 import { SESSION_LOST_STATE } from '../lib/sessionLost'
 import { rentAreaShort } from '../lib/rentArea'
 import { useAreaScope } from '../hooks/useAreaScope'
+import { guFromRegionHint } from '../lib/areaScope'
 import { buildComposition } from '../lib/composition'
 import { prefersReducedMotion } from '../lib/motion'
 import { ENTRY_VERDICTS, VERDICT_LABEL, matchVerdict, type VerdictFilter } from '../lib/verdict'
@@ -119,6 +120,13 @@ export default function Recommend() {
   const [verdictFilter, setVerdictFilter] = useState<VerdictFilter>('ENTRY')
   /** 상권 구분 필터 — 서울시 공식 구분값 그대로. 'ALL'이면 좁히지 않는다. */
   const [areaTypeFilter, setAreaTypeFilter] = useState<string>('ALL')
+  /**
+   * 자치구 필터 (가정 #112). 기본값은 **좁히지 않음**이다 — 진단의 희망 지역으로 미리 잘라
+   * 두지 않는다. 예산으로 갈 수 있는 범위를 서비스가 먼저 지우면, 사용자가 모르고 지나쳤을
+   * 선택지가 화면에 오르지 못한다(심사_QA.md). 대신 「희망 지역만 보기」를 한 번에 누를 수
+   * 있게 두어, 좁히는 결정을 사용자가 한다.
+   */
+  const [guFilter, setGuFilter] = useState<string>('ALL')
   const [listLimit, setListLimit] = useState(LIST_PAGE)
   const [check, setCheck] = useState<CheckAreaResponse | null>(null)
   const [checking, setChecking] = useState(false)
@@ -186,18 +194,54 @@ export default function Recommend() {
    */
   const scope = useAreaScope()
 
-  /** 판정 필터까지 적용한 뒤의 상권 구분별 개수 — 칩에 실어 「고르면 몇 곳」인지 미리 보인다. */
-  const areaTypeCounts = useMemo(() => {
-    const out = new Map<string, number>()
-    if (!data || !scope) return out
-    const base = data.areas.filter((a) => a.verdict !== 'OUT_OF_SCOPE')
-    const afterVerdict = base.filter((a) => matchVerdict(a.verdict, verdictFilter))
-    for (const a of afterVerdict) {
-      const t = scope.areas.get(a.area_code)?.type
-      if (t) out.set(t, (out.get(t) ?? 0) + 1)
+  /**
+   * 판정 필터까지 적용한 뒤의 상권 구분·자치구별 개수 — 「고르면 몇 곳」인지 미리 보인다.
+   *
+   * 두 축을 한 번에 세는 것은 순회를 아끼려는 것이 아니라 **같은 모수에서 세기 위해서다.**
+   * 서로가 서로를 좁히지 않으므로(구분 칩을 눌러도 자치구 개수는 그대로), 어느 쪽을 먼저
+   * 골라도 화면의 숫자가 흔들리지 않는다.
+   */
+  const { areaTypeCounts, guCounts } = useMemo(() => {
+    const areaTypeCounts = new Map<string, number>()
+    const guCounts = new Map<string, number>()
+    if (!data || !scope) return { areaTypeCounts, guCounts }
+    for (const a of data.areas) {
+      if (a.verdict === 'OUT_OF_SCOPE' || !matchVerdict(a.verdict, verdictFilter)) continue
+      const entry = scope.areas.get(a.area_code)
+      if (entry?.type) areaTypeCounts.set(entry.type, (areaTypeCounts.get(entry.type) ?? 0) + 1)
+      if (entry?.sigungu) guCounts.set(entry.sigungu, (guCounts.get(entry.sigungu) ?? 0) + 1)
     }
-    return out
+    return { areaTypeCounts, guCounts }
   }, [data, scope, verdictFilter])
+
+  /** 자치구를 풀었을 때의 후보 수 — 드롭다운의 「전체」가 쓴다. */
+  const guTotal = useMemo(() => {
+    let sum = 0
+    for (const n of guCounts.values()) sum += n
+    return sum
+  }, [guCounts])
+
+  /** 자산에 실린 자치구 전체 (가나다순). 개수 0인 구도 드롭다운에는 남는다 — 아래 주석 참조. */
+  const allGus = useMemo(() => {
+    if (!scope) return []
+    const set = new Set<string>()
+    for (const entry of scope.areas.values()) if (entry.sigungu) set.add(entry.sigungu)
+    return [...set].sort((a, b) => a.localeCompare(b, 'ko'))
+  }, [scope])
+
+  /**
+   * 진단에서 고른 「희망 지역」의 자치구.
+   *
+   * `region_hint` 는 "서울특별시 마포구" 처럼 시/도와 구를 합친 단일 문자열이다
+   * (API_CONTRACT §4). 마지막 토큰이 자치구이며, **자산의 자치구 목록**에 있을 때만 인정한다 —
+   * 「경기도 성남시」처럼 서울 밖 값이 들어와도 없는 필터를 권하지 않기 위해서다. 후보 수가
+   * 아니라 목록으로 판정하는 것은, 예산·판정을 바꿀 때마다 이 칩이 사라졌다 나타나지 않게
+   * 하기 위해서다 — 「그 구에는 지금 후보가 없다」는 개수 0으로 말하는 편이 정확하다.
+   */
+  const wishGu = useMemo(
+    () => guFromRegionHint(parsedProfile?.region_hint, allGus),
+    [parsedProfile, allGus],
+  )
 
   const areas = useMemo(() => {
     if (!data) return []
@@ -208,11 +252,14 @@ export default function Recommend() {
      */
     const inScope = data.areas.filter((a) => a.verdict !== 'OUT_OF_SCOPE')
     const byVerdict = inScope.filter((a) => matchVerdict(a.verdict, verdictFilter))
-    // 상권 구분(골목·발달·전통시장·관광특구)은 서울시 공식 값이며 정적 자산에서 온다.
-    const filtered =
-      areaTypeFilter === 'ALL' || !scope
-        ? byVerdict
-        : byVerdict.filter((a) => scope.areas.get(a.area_code)?.type === areaTypeFilter)
+    // 상권 구분(골목·발달·전통시장·관광특구)·자치구 모두 서울시 공식 값이며 정적 자산에서 온다.
+    const filtered = byVerdict.filter((a) => {
+      if (!scope) return true
+      const entry = scope.areas.get(a.area_code)
+      if (areaTypeFilter !== 'ALL' && entry?.type !== areaTypeFilter) return false
+      if (guFilter !== 'ALL' && entry?.sigungu !== guFilter) return false
+      return true
+    })
     const sorted = [...filtered]
     sorted.sort((a, b) => {
       switch (sort) {
@@ -227,7 +274,7 @@ export default function Recommend() {
       }
     })
     return sorted
-  }, [data, scope, sort, verdictFilter, areaTypeFilter])
+  }, [data, scope, sort, verdictFilter, areaTypeFilter, guFilter])
 
   /*
    * 목록 구성이 바뀌면 "더 보기"로 늘려 둔 개수를 되돌린다 (FE 리뷰 m-2).
@@ -236,7 +283,7 @@ export default function Recommend() {
    */
   useEffect(() => {
     setListLimit(LIST_PAGE)
-  }, [data, sort, verdictFilter, areaTypeFilter])
+  }, [data, sort, verdictFilter, areaTypeFilter, guFilter])
 
   /**
    * 선택은 항상 **보이는 후보 안에** 있어야 한다.
@@ -531,15 +578,18 @@ export default function Recommend() {
                 dataAsOf={data.data_as_of}
                 industry={industry}
                 scope={scope}
-                /* 판정을 갈아타면 후보가 있는 자리가 달라진다 — 그때만 뷰포트를 다시 맞춘다. */
-                fitToken={verdictFilter}
+                /* 판정·자치구를 갈아타면 후보가 있는 자리가 달라진다 — 그때만 다시 맞춘다. */
+                fitToken={`${verdictFilter}|${guFilter}`}
                 /*
                  * 뷰포트 기준은 **표시 중인 마커가 아니라 후보 전체**다. 진입 가능이 6곳뿐인
                  * 예산(8,000만)에서 표시분에 맞추면 지도가 상계동 골목 하나로 확대돼, 「서울
                  * 어디까지 가능한가」를 보여줄 자리에서 서울이 사라진다. 범위 외까지 넣는 것은
                  * 그 집합만이 예산·필터와 무관하게 서울 전역으로 고정돼 있기 때문이다.
+                 *
+                 * 자치구를 고른 동안만 예외다 — 그때는 **사용자가 직접 범위를 좁힌 것**이므로
+                 * 표시분에 맞춰 그 구를 채운다. 「서울 전체 보기」도 같은 기준을 따른다.
                  */
-                fitAreas={data.areas}
+                fitAreas={guFilter === 'ALL' ? data.areas : undefined}
                 /*
                  * 범례에서 바로 조건부 적합으로 건너뛴다 — 지도를 보다가 「노란 마커는 어디
                  * 갔나」가 될 자리라, 답을 그 자리에 둔다. 필터를 옮기는 것이므로 지도·목록·
@@ -605,9 +655,15 @@ export default function Recommend() {
                           <button
                             type="button"
                             className={`t-caption ${styles.conditionalItem}`}
-                            /* 고르면 필터까지 옮긴다 — 그러지 않으면 지도에 마커가 없다. */
+                            /*
+                             * 고르면 필터까지 옮긴다 — 그러지 않으면 지도에 마커가 없다.
+                             * 좁혀 둔 축(자치구·구분)도 함께 푼다: 이 패널의 수는 예산 전체
+                             * 기준이라, 좁힌 채로 열면 패널이 말한 것과 화면이 어긋난다.
+                             */
                             onClick={() => {
                               setVerdictFilter('CONDITIONAL')
+                              setGuFilter('ALL')
+                              setAreaTypeFilter('ALL')
                               setSelected(a.area_code)
                             }}
                           >
@@ -622,9 +678,11 @@ export default function Recommend() {
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={() =>
+                      onClick={() => {
                         setVerdictFilter(verdictFilter === 'CONDITIONAL' ? 'ENTRY' : 'CONDITIONAL')
-                      }
+                        setGuFilter('ALL')
+                        setAreaTypeFilter('ALL')
+                      }}
                     >
                       {verdictFilter === 'CONDITIONAL'
                         ? '진입 가능으로 돌아가기'
@@ -713,6 +771,66 @@ export default function Recommend() {
                 <p className={`t-caption ${styles.filterHint}`}>
                   {AREA_TYPE_FILTERS.find((t) => t.value === areaTypeFilter)?.hint} · 서울시 상권분석서비스
                   상권 구분 기준입니다.
+                </p>
+              )}
+
+              {/*
+                자치구 필터 (가정 #112).
+
+                진단의 「희망 지역」이 이 화면에 닿는 유일한 자리다. 서버는 후보를 지역으로
+                자르지 않으므로(서울 전역 1,059곳) 그 입력만으로는 결과가 한 글자도 달라지지
+                않았고, 강남구를 고른 사람이 노원구 후보를 보며 「반영이 안 된다」고 판단했다.
+                자르는 주체를 서버에서 **사용자**로 옮긴다 — 기본은 전체이고, 좁히는 것은 선택이다.
+
+                25개를 칩으로 늘어놓으면 판정·구분 칩과 뒤엉키므로 드롭다운을 쓴다. 후보가 0곳인
+                구도 목록에 남긴다 — 사라지면 「내 구가 왜 없지」가 되고, 0이라는 사실 자체가
+                예산 대비 그 지역의 상태를 말해 준다.
+              */}
+              {scope && allGus.length > 0 && (
+                <div className={styles.guRow}>
+                  <label className={styles.sortLabel}>
+                    <span className="t-caption">자치구</span>
+                    <select
+                      className={`t-caption ${styles.sortSelect}`}
+                      value={guFilter}
+                      onChange={(e) => setGuFilter(e.target.value)}
+                    >
+                      {/* 「전체」의 수는 자치구를 풀었을 때의 수여야 한다 — 지금 보이는 수를
+                          쓰면 구를 고른 순간 「전체」가 그 구의 수로 줄어 읽힌다. */}
+                      <option value="ALL">
+                        전체 ({guTotal.toLocaleString('ko-KR')}곳)
+                      </option>
+                      {allGus.map((gu) => (
+                        <option key={gu} value={gu}>
+                          {gu} ({guCounts.get(gu) ?? 0}곳)
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {wishGu && guFilter !== wishGu && (
+                    <button
+                      type="button"
+                      className={`t-label ${styles.chip}`}
+                      onClick={() => setGuFilter(wishGu)}
+                    >
+                      희망 지역 {wishGu}만 보기 ({(guCounts.get(wishGu) ?? 0).toLocaleString('ko-KR')}곳)
+                    </button>
+                  )}
+                  {guFilter !== 'ALL' && (
+                    <button
+                      type="button"
+                      className={`t-caption ${styles.conditionalLink}`}
+                      onClick={() => setGuFilter('ALL')}
+                    >
+                      서울 전체로
+                    </button>
+                  )}
+                </div>
+              )}
+              {scope && allGus.length > 0 && (
+                <p className={`t-caption ${styles.filterHint}`}>
+                  진단에서 입력한 희망 지역은 <strong>지역 한정 상품의 자격 판정</strong>에 쓰입니다.
+                  상권 후보는 서울 전역이며, 좁혀 보는 것은 여기서 선택합니다.
                 </p>
               )}
 

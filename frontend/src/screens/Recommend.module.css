@@ -192,6 +192,14 @@
   color: var(--color-text-tertiary);
 }
 
+/* 자치구 필터 한 줄 — 드롭다운 + 희망 지역 바로가기 + 해제 (가정 #112) */
+.guRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-8) var(--space-12);
+}
+
 /*
  * 조건부 적합 분리 패널 — 지도 바로 아래. 노란 계열 배경(--color-bg-tip)을 쓰는 것은
  * 마커 색과 같은 축을 유지하기 위해서다. 「여기가 조건부 적합 자리」가 색으로도 읽힌다.
