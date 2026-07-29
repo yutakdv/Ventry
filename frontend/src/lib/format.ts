@@ -100,6 +100,37 @@ export function formatRentScope(
 }
 
 /**
+ * 상권 **범위 중첩** 줄 (가정 #98) — 겹치는 상권이 있을 때만 나온다.
+ *
+ * 서울 상권영역은 골목·발달·전통시장·**관광특구** 4개 층이 한 파일에 들어 있고, 관광특구
+ * 6곳은 하위 상권을 통째로 품는다. 그래서 잠실 관광특구·방이동먹자골목·잠실역이 후보
+ * 목록에 **각각** 올라오고, 같은 땅이 여러 번 세어진 것처럼 보인다. 그 사실을 숨기지 않는다.
+ *
+ * 실질 중첩은 1,650곳 중 52곳뿐이다 — 교차 5,128쌍의 98%는 경계선이 스치는 수준이라
+ * 배치에서 10% 임계로 걸러 두었다.
+ */
+export function formatScopeOverlap(
+  selfType: string | undefined,
+  containedBy: { name: string; type: string; pct: number }[],
+  contains: { name: string; type: string; pct: number }[],
+): string | undefined {
+  const parts: string[] = []
+  const top = containedBy[0]
+  if (top) {
+    parts.push(
+      `이 상권${selfType ? `(${selfType})` : ''} 면적의 ${Math.round(top.pct)}%가 '${top.name}'(${top.type}) 범위와 겹칩니다`,
+    )
+  }
+  if (contains.length) {
+    const names = contains.slice(0, 2).map((o) => o.name).join('·')
+    const rest = contains.length > 2 ? ` 외 ${contains.length - 2}곳` : ''
+    parts.push(`이 범위 안에 다른 후보 ${contains.length}곳이 함께 있습니다 (${names}${rest})`)
+  }
+  if (!parts.length) return undefined
+  return `범위 중첩: ${parts.join(' · ')}. 상권 구분이 4개 층(골목·발달·전통시장·관광특구)이라 같은 지역이 둘 이상의 후보에 속할 수 있습니다.`
+}
+
+/**
  * 도보 소요 시간(분). 계약에는 `distance_m`만 있어 결정적 계수로 환산한다 —
  * 보행 속도 4km/h ≈ 분속 67m (docs/assumptions.md #85). 최소 1분.
  */
