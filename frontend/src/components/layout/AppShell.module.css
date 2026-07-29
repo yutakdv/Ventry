@@ -24,6 +24,11 @@
  * 이 고지는 「지금 보고 있는 수치가 실데이터가 아니다」라는 전제라 놓치면 안 된다.
  */
 .fallbackNotice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-8);
   padding: var(--space-8) var(--space-24);
   border-bottom: 1px solid var(--color-border-error);
   background: var(--color-bg-error-subtle);
@@ -32,6 +37,24 @@
 
 .fallbackText {
   color: var(--color-text-error);
+}
+
+/* 고지는 유지하고 회복 경로만 붙인다 — 배너를 지우는 버튼이 아니라 조회를 다시 도는 버튼이다. */
+.fallbackRetry {
+  flex: none;
+  padding: 2px var(--space-8);
+  border: 1px solid var(--color-border-error);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-error);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.fallbackRetry:hover {
+  background: var(--color-bg-error-subtle);
+  filter: brightness(0.97);
 }
 .rail {
   position: sticky;

@@ -8,7 +8,6 @@ import com.ventry.api.explore.ExploreDtos.DoneEvent;
 import com.ventry.api.explore.ExploreDtos.InsightEvent;
 import com.ventry.api.explore.ExploreDtos.PlanEvent;
 import com.ventry.api.explore.ExploreDtos.RefineEvent;
-import com.ventry.api.llm.LlmClient;
 import com.ventry.api.llm.PlanPrompt;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,14 +44,14 @@ public class ExploreService {
 
     private final InsightBuilder insights;
     private final FrontierService frontier;
-    private final LlmClient llm;
+    private final PlanGenerator planner;
     private final RefineGenerator refiner;
 
-    public ExploreService(InsightBuilder insights, FrontierService frontier, LlmClient llm,
+    public ExploreService(InsightBuilder insights, FrontierService frontier, PlanGenerator planner,
                           RefineGenerator refiner) {
         this.insights = insights;
         this.frontier = frontier;
-        this.llm = llm;
+        this.planner = planner;
         this.refiner = refiner;
     }
 
@@ -116,8 +115,9 @@ public class ExploreService {
     private PlanEvent plan(Profile profile, int budget, List<String> concerns,
                            InsightBuilder.Result result) {
         String industry = profile.industry();
-        List<String> requested = PlanPrompt.parseAxes(
-                llm.complete(PlanPrompt.build(industry, concerns)));   // 실패는 폴백 축으로 수렴
+        // 캐시 경계(PlanGenerator)는 성공만 담는다 — 실패는 빈 목록으로 오고 폴백은 여기서 씌운다.
+        List<String> planned = planner.requestedAxes(industry, concerns);
+        List<String> requested = planned.isEmpty() ? PlanPrompt.FALLBACK_AXES : planned;
 
         boolean hasPremiumBoundary = !frontier.boundariesExPremium(industry, budget).isEmpty();
         List<String> axes = new ArrayList<>();

@@ -1,5 +1,6 @@
 package com.ventry.api.llm;
 
+import java.time.Duration;
 import java.util.Optional;
 
 /**
@@ -19,6 +20,19 @@ public interface LlmClient {
      * 이 메서드는 예외를 던지지 않는다 — 모든 실패는 empty로 표현된다.
      */
     Optional<String> complete(String prompt);
+
+    /**
+     * 호출 지점별 상한을 지정하는 변형. <b>기본 상한(5초)은 SSE 경로 기준</b>이라, 톰캣 워커
+     * 스레드에서 동기로 기다리는 경로가 그대로 쓰면 슬라이더 한 번이 최대 5초 멈춘다
+     * (스펙 §7 「&lt;100ms 재계산 체감」과 정면 충돌 — BE 리뷰 M-01).
+     *
+     * <p>상한을 넘기면 지금과 <b>동일한 폴백</b>이 일어난다({@code Optional.empty()} → 템플릿이
+     * 최종본). 새 실패 모드가 생기지 않으므로 상한만 짧게 주는 것으로 닫힌다.
+     * 기본 구현은 상한을 무시한다 — 무LLM 구현·테스트 스텁은 애초에 기다리지 않는다.
+     */
+    default Optional<String> complete(String prompt, Duration timeout) {
+        return complete(prompt);
+    }
 
     /** 실제 LLM 호출이 가능한 상태인지(키 존재 등). 무LLM 모드에서는 false. */
     boolean enabled();

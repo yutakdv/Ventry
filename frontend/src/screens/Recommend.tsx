@@ -13,6 +13,7 @@ import Modal from '../components/Modal'
 import { getRecommend, postBudget, postCheckArea } from '../api/client'
 import { useSession } from '../store/session'
 import { formatAmount, formatRentScope, formatScopeOverlap } from '../lib/format'
+import { SESSION_LOST_STATE } from '../lib/sessionLost'
 import { rentAreaShort } from '../lib/rentArea'
 import { useAreaScope } from '../hooks/useAreaScope'
 import { buildComposition } from '../lib/composition'
@@ -53,6 +54,7 @@ export default function Recommend() {
     parsedProfile,
     setBudget,
     bumpVersion,
+    retryToken,
   } = useSession()
   /**
    * 임대료 금액이 어느 면적 기준인지 밝히기 위해 지도·카드·슬라이더 바로 내린다 (이슈 #151).
@@ -106,13 +108,15 @@ export default function Recommend() {
      */
     if (!sessionId || budget == null) return
 
-    let cancelled = false
+    // AbortController 로 실제 요청까지 취소한다 — 불리언으로 결과만 무시하면 버려질 응답
+    // 본문(gzip 122KB)을 끝까지 받는다. SSE 두 경로는 이미 같은 방식이다 (m-1).
+    const ac = new AbortController()
     if (hasDataRef.current) setRefreshing(true)
     else setLoading(true)
 
-    getRecommend(sessionId, version)
+    getRecommend(sessionId, version, ac.signal)
       .then((res) => {
-        if (cancelled) return
+        if (ac.signal.aborted) return
         setData(res)
         hasDataRef.current = true
         /*
@@ -127,15 +131,16 @@ export default function Recommend() {
         )
         setVerdictOf(null) // 예산이 바뀌면 이전 판정은 더 이상 유효하지 않다
       })
+      // 취소된 요청은 reject 한다(client.ts) — 그 경우 화면 상태를 건드리지 않는다.
+      .catch(() => {})
       .finally(() => {
-        if (cancelled) return
+        if (ac.signal.aborted) return
         setLoading(false)
         setRefreshing(false)
       })
-    return () => {
-      cancelled = true
-    }
-  }, [sessionId, version, budget])
+    return () => ac.abort()
+    // retryToken: 폴백 배너의 「다시 불러오기」가 세션을 유지한 채 이 조회만 다시 돌린다 (M-14)
+  }, [sessionId, version, budget, retryToken])
 
   const areas = useMemo(() => {
     if (!data) return []
@@ -163,6 +168,14 @@ export default function Recommend() {
     return sorted
   }, [data, sort, verdictFilter])
 
+  /*
+   * 목록 구성이 바뀌면 "더 보기"로 늘려 둔 개수를 되돌린다 (FE 리뷰 m-2).
+   * 200건까지 펼친 뒤 예산·정렬·필터를 바꾸면 **새 결과 200건이 한 번에 렌더**됐다 —
+   * 카드 한 장의 DOM 이 커서(스탯 6개 + 근거 4줄) 체감에 그대로 닿는다.
+   */
+  useEffect(() => {
+    setListLimit(LIST_PAGE)
+  }, [data, sort, verdictFilter])
 
   /**
    * 판정별 개수.
@@ -253,24 +266,34 @@ export default function Recommend() {
       setCheck(null)
       return
     }
-    let cancelled = false
+    const ac = new AbortController()
     setChecking(true)
-    postCheckArea(sessionId, verdictOf)
+    postCheckArea(sessionId, verdictOf, ac.signal)
       .then((res) => {
-        if (!cancelled) setCheck(res)
+        if (!ac.signal.aborted) setCheck(res)
       })
+      .catch(() => {})   // 취소는 장애가 아니다 — 상태를 건드리지 않는다
       .finally(() => {
-        if (!cancelled) setChecking(false)
+        if (!ac.signal.aborted) setChecking(false)
       })
-    return () => {
-      cancelled = true
-    }
+    return () => ac.abort()
   }, [sessionId, verdictOf, version])
 
   /* ── 하단 고정 슬라이더 (FE-05) ─────────────────────────────────────────── */
 
   const [sliderValue, setSliderValue] = useState(budget ?? 0)
   const [budgetPending, setBudgetPending] = useState(false)
+  /**
+   * 요청 일련번호.
+   *
+   * debounce(300ms)는 요청 **수**만 줄인다 — `/budget` 응답이 그보다 오래 걸리면 두 요청이 동시에
+   * 떠 있고, 먼저 보낸 쪽이 나중에 도착하면 아래 `setSliderValue(res.confirmed_budget)` 가
+   * **사용자가 방금 놓은 위치를 이전 값으로 되돌린다.** 되돌린 뒤에는 `sliderValue === budget` 이
+   * 성립해 effect 가 멈추므로 그 잘못된 값이 그대로 확정된다. 마지막 요청의 응답만 반영한다.
+   */
+  const budgetSeqRef = useRef(0)
+  /** 진행 중인 `/budget` 요청 — 새 요청 전에 실제로 끊는다. 근거는 화면 3과 같다 (Q-06). */
+  const budgetInFlightRef = useRef<AbortController | null>(null)
 
   /**
    * debounce 300ms 후 예산 재확정 (스펙 §7). `POST /budget`은 덮어쓰기이므로 마지막 값이 확정값이다.
@@ -285,17 +308,31 @@ export default function Recommend() {
     if (sliderValue === budget) return
 
     const t = setTimeout(() => {
+      const seq = (budgetSeqRef.current += 1)
+      budgetInFlightRef.current?.abort()
+      const ac = new AbortController()
+      budgetInFlightRef.current = ac
       setBudgetPending(true)
-      postBudget(sessionId, {
-        confirmed_budget: sliderValue,
-        composition: buildComposition(selectedScenario, sliderValue),
-      })
+      postBudget(
+        sessionId,
+        {
+          confirmed_budget: sliderValue,
+          composition: buildComposition(selectedScenario, sliderValue),
+        },
+        ac.signal,
+      )
         .then((res) => {
+          if (seq !== budgetSeqRef.current) return // 더 나중에 보낸 요청이 있다 — 이 응답은 버린다
           setSliderValue(res.confirmed_budget)
           setBudget(res.confirmed_budget, res.preview, res.data_as_of)
           bumpVersion() // /recommend·/explore가 공유하는 version
         })
-        .finally(() => setBudgetPending(false))
+        .catch(() => {
+          // 취소(새 요청이 앞선 것을 끊었다)뿐이다 — 그 외 실패는 client.ts 가 목으로 흡수한다.
+        })
+        .finally(() => {
+          if (seq === budgetSeqRef.current) setBudgetPending(false)
+        })
     }, 300)
 
     return () => clearTimeout(t)
@@ -305,7 +342,8 @@ export default function Recommend() {
    * 세션이 없으면 목 폴백으로 그럴듯한 화면이 떠서 "확정 예산 —"처럼 반쪽 상태가 된다
    * (새로고침·주소 직접 입력에서 실제로 발생). 화면을 보여주는 대신 앞 단계로 돌려보낸다.
    */
-  if (!sessionId) return <Navigate to="/diagnose" replace />
+  // 세션이 사라진 이유를 첫 화면이 설명할 수 있도록 state 를 실어 보낸다 (M-13)
+  if (!sessionId) return <Navigate to="/diagnose" replace state={SESSION_LOST_STATE} />
   if (budget == null) return <Navigate to="/budget" replace />
 
   return (

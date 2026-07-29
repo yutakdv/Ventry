@@ -76,6 +76,81 @@ class ReviewPromptTest {
         assertThat(ReviewPrompt.sanitize(Optional.of(dated), FACTS)).isEmpty();
     }
 
+    /**
+     * <b>값 집합만 보면 수치의 귀속이 바뀐 문장을 막지 못한다.</b>
+     *
+     * <p>사실의 환산임대료는 198만원이고 1800만원은 추정매출인데, 값 집합 대조는 1800 이
+     * 「어딘가에」 있었다는 것만 본다. 그래서 「환산임대료가 1,800만원」이 통과했다 —
+     * 지어낸 숫자는 아니지만 <b>화면에 실리는 문장은 거짓</b>이고, 게다가 임대료를 9배로
+     * 말하는 반박이라 사용자 판단을 정면으로 왜곡한다. §0-1 이 막으려는 것은 숫자의 출처가
+     * 아니라 숫자가 뜻하는 바이므로, 라벨과 값이 함께 맞아야 한다.
+     */
+    @Test
+    void rejectsObjection_thatReattachesAGivenNumberToTheWrongLabel() {
+        String swapped = "환산임대료가 1,800만원에 이르러 상환 부담이 추정매출을 잠식할 수 있습니다.";
+        String scoreAsRatio = "부담률 75 는 추정매출이 유지된다는 전제에 기대고 있어 하위 시나리오에 취약합니다.";
+
+        assertThat(ReviewPrompt.sanitize(Optional.of(swapped), FACTS)).isEmpty();
+        assertThat(ReviewPrompt.sanitize(Optional.of(scoreAsRatio), FACTS)).isEmpty();
+    }
+
+    /** 라벨이 맞으면 그대로 통과해야 한다 — 귀속 검사가 정상 반박까지 걷어차면 안 된다. */
+    @Test
+    void acceptsObjection_thatAttachesEachNumberToItsOwnLabel() {
+        String correct = "환산임대료 198만원 대비 추정매출 1,800만원이라는 구성은 분기 평균에 기댄 것이라 "
+                + "비수기에는 부담률 0.110 이 그대로 유지되지 않을 수 있습니다.";
+
+        assertThat(ReviewPrompt.sanitize(Optional.of(correct), FACTS)).contains(correct);
+    }
+
+    /**
+     * 「환산임대료 대비 추정매출 부담률 0.110」처럼 라벨이 줄지어 나오면 값의 임자는
+     * <b>가장 가까운 라벨</b>이다 (checkArea 사실 문구가 실제로 이 형태다). 앞선 라벨까지
+     * 값을 요구하면 정상 문장이 폐기된다.
+     */
+    @Test
+    void acceptsObjection_whereNearestLabelOwnsTheNumber() {
+        String chained = "환산임대료 대비 추정매출 부담률 0.110 은 매출이 유지된다는 전제에 기대고 있습니다.";
+
+        assertThat(ReviewPrompt.sanitize(Optional.of(chained), FACTS)).contains(chained);
+    }
+
+    /**
+     * <b>머리말 문단이 반박문 자리에 실리던 경로.</b>
+     *
+     * <p>{@code firstParagraph} 는 첫 문단만 취하는데, 모델이 「…아래에 작성하였습니다:」로
+     * 한 문단을 먼저 쓰면 그 안내문이 첫 문단이 된다. 숫자가 없어 수치 검사는 <b>공허하게
+     * 참</b>이고 금지어도 없어, 검증 적용(verified=true) 표시와 함께 안내문이 반박문으로
+     * 화면에 올랐다. 반박이 사라지는 것보다 나쁘다 — 검증이 돌았다고 말하면서 내용이 없다.
+     */
+    @Test
+    void skipsPreambleParagraph_andUsesTheObjectionThatFollows() {
+        String objection = "부담률 0.110 은 추정매출이 유지된다는 전제에 기대고 있습니다.";
+        String withPreamble = "요청하신 리스크 검증 반박문을 아래에 작성하였습니다:\n\n" + objection;
+
+        assertThat(ReviewPrompt.sanitize(Optional.of(withPreamble), FACTS)).contains(objection);
+    }
+
+    /** 안내문 한 줄만 온 경우에는 건너뛸 다음 문단이 없다 — 그때는 폐기해야 한다. */
+    @Test
+    void rejectsHeaderOnlyResponse_insteadOfShowingItAsTheObjection() {
+        String headerOnly = "요청하신 리스크 검증 반박문을 아래에 작성하였습니다:";
+
+        assertThat(ReviewPrompt.sanitize(Optional.of(headerOnly), FACTS)).isEmpty();
+    }
+
+    /**
+     * 수치 인용은 <b>강제하지 않는다</b>. 「추정매출은 분기 평균이라 계절 변동이 큰 업종에서는
+     * 실제와 다를 수 있다」류는 수치가 없어도 유효한 반박이고, 검증기가 이를 막으면 정상 반박이
+     * 폐기돼 「검증 생략」이 뜬다. 수치 인용 요구는 프롬프트에만 둔다.
+     */
+    @Test
+    void acceptsQualitativeObjection_withoutAnyNumber() {
+        String qualitative = "추정매출은 분기 평균이라 계절 변동이 큰 업종에서는 실제와 다를 수 있습니다.";
+
+        assertThat(ReviewPrompt.sanitize(Optional.of(qualitative), FACTS)).contains(qualitative);
+    }
+
     @Test
     void rejectsObjection_withBannedTerminology() {
         String banned = "이 상권은 자금 조건이 좋아 대출 승인 가능성이 높으니 권장할 만합니다.";

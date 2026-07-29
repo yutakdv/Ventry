@@ -31,10 +31,14 @@
   color: var(--color-text-secondary);
 }
 
-/* 요약 4장은 한 줄 유지 (값이 짧아 좁은 폭에서도 들어간다) */
+/*
+ * 요약 4장. 넓은 폭에서는 한 줄이지만 고정 4열이면 좁은 화면에서 한 칸이 80px 아래로 눌려
+ * "진입 가능 1,059곳 · 조건부 적합 …" 캡션이 글자 단위로 줄바꿈된다. 화면 3의 요약과 같은
+ * 방식(auto-fit)으로 접어 브레이크포인트 없이 폭에 반응하게 한다.
+ */
 .summaryBar {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   gap: var(--space-12);
 }
 
@@ -143,7 +147,7 @@
 }
 
 .disclaimer {
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
   word-break: keep-all;
 }
 

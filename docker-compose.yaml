@@ -23,6 +23,9 @@ services:
 
   api:
     build: ./backend
+    # 예열 실패가 기동 실패가 아니게 된 뒤로(CandidateWarmup) DB 순단에도 컨테이너가 살아남는다.
+    # 그래도 죽는 경우(OOM 등)에는 스스로 돌아오게 한다 — 심사 중 수동 개입을 없애는 심층 방어.
+    restart: unless-stopped
     environment:
       DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-ventry}
       DB_USER: ${POSTGRES_USER:-ventry}
@@ -30,6 +33,30 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     ports:
       - "8080:8080"
+    # `/api/health` 는 계약이 고정한 상수 응답이라 DB가 죽어도 200 ok 다 — 오케스트레이션 판단에
+    # 쓰면 **전 엔드포인트가 500인 스택을 정상으로 통과시킨다**(QA 실측). DB 인디케이터가 붙은
+    # actuator 쪽을 본다(DB 미가용 시 503 DOWN 실측 확인).
+    #
+    # ⚠️ `CMD-SHELL` 이 아니라 **`CMD` + `bash -c`** 다. temurin 이미지에는 curl·wget·nc 가 없어
+    # bash 의 `/dev/tcp` 를 쓰는데, `CMD-SHELL` 은 `/bin/sh` 를 부르고 그 이미지의 `/bin/sh` 는
+    # **dash** 라 `/dev/tcp` 를 지원하지 않는다(실측: "cannot create /dev/tcp/…"). 그대로 두면
+    # 헬스체크가 **항상 실패**해 컨테이너가 영구 unhealthy 로 보인다 — 장애를 드러내려고 넣은
+    # 장치가 거짓 장애를 만드는 형태다. bash 는 이 이미지에 있다(실측).
+    #
+    # ⚠️ 상태줄이 아니라 **본문의 `"status":"UP"`** 을 본다. Tomcat 은 상태줄에 이유구를 넣지
+    # 않아(실측 `HTTP/1.1 200 ` — 뒤가 비어 있다) `200 OK` 로는 영원히 매칭되지 않는다.
+    # 본문 판정이 의미상으로도 정확하다 — DB 가 내려가면 이 값이 DOWN 이 되고, 그것을 잡는 것이
+    # 이 헬스체크를 `/api/health` 대신 쓰는 이유 전체다.
+    healthcheck:
+      test:
+        - CMD
+        - bash
+        - -c
+        - "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /actuator/health HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q '\"status\":\"UP\"' <&3"
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
     depends_on:
       db:
         condition: service_healthy

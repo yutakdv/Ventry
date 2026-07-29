@@ -22,9 +22,10 @@ public class DbProductSource implements ProductSource {
         this.repository = repository;
     }
 
+    /* 캐시 인스턴스를 전 요청이 공유한다 — 정렬 한 줄이 요청 간 오염이 되지 않게 불변화 (N-09). */
     @Override
     @Cacheable(cacheNames = "products")
     public List<FundingProduct> all() {
-        return repository.findAll();
+        return List.copyOf(repository.findAll());
     }
 }

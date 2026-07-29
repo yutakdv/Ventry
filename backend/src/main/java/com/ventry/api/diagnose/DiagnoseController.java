@@ -1,5 +1,6 @@
 package com.ventry.api.diagnose;
 
+import com.ventry.api.common.Amounts;
 import com.ventry.api.common.ApiException;
 import com.ventry.api.common.SessionStore;
 import com.ventry.api.diagnose.DiagnoseDtos.DiagnoseRequest;
@@ -101,6 +102,13 @@ public class DiagnoseController {
         if (form.capital() < 0) {
             throw ApiException.invalidRequest("capital 은 음수일 수 없습니다.");
         }
+        // 상한이 없어 int 최댓값 근처가 그대로 통과했고, 시나리오 조립에서
+        // budget_max = 자기자본 + 상품 한도 가 오버플로해 /api/scenarios 가 500 이 됐다
+        // (QA 리뷰 2026-07-29 Q-01, 실측 경계 2,147,473,648). 음수 하한과 같은 성격의 규격 검증이다.
+        if (form.capital() > Amounts.MAX) {
+            throw ApiException.invalidRequest(
+                    "capital 은 " + Amounts.MAX_LABEL + "(만원) 이하여야 합니다: " + form.capital());
+        }
         // age 미기재는 통과시킨다 — 자격 판정에서 나이 조건 상품이 빠지는 것으로 처리된다
         // (EligibilityFilter, 가정 #86). 들어온 값이 범위 밖일 때만 막는다.
         if (form.age() != null && (form.age() < AGE_MIN || form.age() > AGE_MAX)) {
@@ -111,6 +119,10 @@ public class DiagnoseController {
         // 떨어뜨린다 — 200 + "유의미한 대안이 없습니다"로 나가 정상처럼 보인다 (이슈 #155 ②).
         if (form.monthlyInvestable() != null && form.monthlyInvestable() < 0) {
             throw ApiException.invalidRequest("monthly_investable 은 음수일 수 없습니다.");
+        }
+        if (form.monthlyInvestable() != null && form.monthlyInvestable() > Amounts.MAX) {
+            throw ApiException.invalidRequest("monthly_investable 은 " + Amounts.MAX_LABEL
+                    + "(만원) 이하여야 합니다: " + form.monthlyInvestable());
         }
     }
 }

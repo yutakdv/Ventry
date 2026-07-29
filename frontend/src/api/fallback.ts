@@ -16,16 +16,30 @@
  * `VITE_USE_MOCK=1`(개발자가 의도적으로 켠 목 모드)에서는 세우지 않는다 — 그건 장애가 아니다.
  */
 let active = false
+/**
+ * 폴백이 **몇 번** 일어났는가. `active` 는 한 번 켜지면 되돌지 않으므로(위 설계) 그것만으로는
+ * "다시 시도했더니 또 실패했다"를 구분할 수 없다 — 재시도 경로가 사용자에게 결과를 말해 주려면
+ * 새 실패가 있었는지가 필요하다. 값은 단조 증가하며 되돌지 않는다.
+ */
+let count = 0
 const listeners = new Set<() => void>()
 
 export function markApiFallback(): void {
-  if (active) return
+  count += 1
+  if (active) {
+    listeners.forEach((l) => l())
+    return
+  }
   active = true
   listeners.forEach((l) => l())
 }
 
 export function isApiFallback(): boolean {
   return active
+}
+
+export function apiFallbackCount(): number {
+  return count
 }
 
 export function subscribeApiFallback(listener: () => void): () => void {

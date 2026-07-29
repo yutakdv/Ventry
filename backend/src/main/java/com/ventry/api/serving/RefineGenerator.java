@@ -50,11 +50,16 @@ public class RefineGenerator {
     // done 을 못 보내고 끊겼다 (통합 QA F2 가 잡았다 — 단위 테스트는 캐시 프록시가 없어 못 잡는다).
     @Cacheable(cacheNames = "refines", key = "#templateBody", unless = "#result == null")
     public Optional<String> refine(String templateBody) {
-        Optional<String> refined = RefinePrompt.sanitize(
-                llm.complete(RefinePrompt.build(templateBody)), templateBody);
+        Optional<String> raw = llm.complete(RefinePrompt.build(templateBody));
+        Optional<String> refined = RefinePrompt.sanitize(raw, templateBody);
         if (refined.isEmpty()) {
-            // 원인(무LLM인가 응답 거부인가)은 로그로만 구분한다 — 화면 동작은 어느 쪽이든 같다.
-            log.info("인사이트 언어화 폴백 (llm_enabled={}) — 템플릿을 최종본으로 사용", llm.enabled());
+            /*
+             * 폴백 사유를 세 갈래로 나눈다 — 「LLM이 없다」와 「응답이 없다(타임아웃·포화)」와
+             * 「검증기가 버렸다」는 대응이 완전히 다른데 이전에는 같은 문장이었다.
+             * 마지막 항목의 비율이 곧 프롬프트 품질 지표다 (AI 리뷰 M-03).
+             */
+            String reason = !llm.enabled() ? "no_llm" : raw.isEmpty() ? "no_response" : "rejected_by_validator";
+            log.info("인사이트 언어화 폴백 reason={} — 템플릿을 최종본으로 사용", reason);
         }
         return refined;
     }

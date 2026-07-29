@@ -1,12 +1,12 @@
 -- Ventry 정책자금 구조화 (AI-06, 전건 검수본 reviewed.json 재생성)
--- 생성: 2026-07-27 (batch.load) — 재실행 시 전체 교체
+-- 생성: batch.load — 재실행 시 전체 교체 (기준일은 각 행 data_as_of 참조)
 BEGIN;
 TRUNCATE finance_doc_chunk, finance_product RESTART IDENTITY CASCADE;
 
 INSERT INTO finance_product (product_id, name, org, max_age, industries, regions, pre_startup_only, existing_business_only, target_group, amount_max, rate, rate_type, rate_note, term_months, exclusive_group, status, notice_date, data_as_of, source_org, source_url, source_collected, doc_chunk_ref) VALUES
 ('F-000', 'KB소상공인 보증서대출', 'KB국민은행', NULL, NULL, ARRAY['서울'], FALSE, FALSE, NULL, 10000, 2.1, 'fixed', NULL, NULL, NULL, 'open', '2026-07-21', '2026-07-21', 'KB국민은행', 'https://obank.kbstar.com', '2026-07-21', NULL),
 ('F-001', 'KB소상공인 신용대출', 'KB국민은행', NULL, NULL, NULL, FALSE, FALSE, NULL, 20000, 3.62, 'variable', '최저 연 3.62% (2026.07.21 기준) 3개월 변동금리', 60, NULL, 'open', '2026-07-21', '2026-07-21', 'KB국민은행', 'https://obank.kbstar.com', '2026-07-21', NULL),
-('F-002', '이자지원 보증서 대출', 'KB국민은행', NULL, NULL, ARRAY['서울'], FALSE, FALSE, NULL, 10000, NULL, 'fixed', '은행 대출 금리 - 이자 지원 금리', NULL, NULL, 'open', '2026-07-21', '2026-07-21', 'KB국민은행', 'https://obank.kbstar.com', '2026-07-21', NULL),
+('F-002', '이자지원 보증서 대출', 'KB국민은행', NULL, NULL, ARRAY['서울'], FALSE, FALSE, NULL, 10000, NULL, 'variable', '은행 대출 금리 - 이자 지원 금리', NULL, NULL, 'open', '2026-07-21', '2026-07-21', 'KB국민은행', 'https://obank.kbstar.com', '2026-07-21', NULL),
 ('F-003', '소상공인 정책자금대출', 'KB국민은행', NULL, NULL, ARRAY['서울'], FALSE, FALSE, NULL, 7000, 2.76, 'variable', '최저 연 2.76%~최고 연 3.56% (기준금리 연 2.96%+가산금리 연 0.6%p, 분기별 변동금리, 2026년 1분기 기준)', 60, NULL, 'open', '2026-07-21', '2026-07-21', 'KB국민은행', 'https://obank.kbstar.com', '2026-07-21', NULL),
 ('F-004', 'ESG 실천기업 보증', '서울신용보증재단', NULL, NULL, ARRAY['서울'], FALSE, TRUE, ARRAY['인증기업'], 80000, NULL, 'variable', '서울시자금(ESG 자금) 이용 시 은행금리에서 2.5% 차감(서울시 부담), 그 외의 경우 자금에 따라 상이', NULL, NULL, 'open', '2026-07-21', '2026-07-21', '서울신용보증재단', 'https://www.seoulshinbo.co.kr', '2026-07-27', '서울신보_보증상품_ESG실천기업#0'),
 ('F-005', '서울형 자영업자 위기극복 안심통장 특별보증', '서울신용보증재단', NULL, NULL, ARRAY['서울'], FALSE, TRUE, NULL, 1000, NULL, 'variable', '은행 일반자금 변동금리(CD금리 + 2.0% 이내 수준). 대상: 업력 1년 초과·대표자 NICE 600점 이상 개인사업자', NULL, NULL, 'open', '2026-07-21', '2026-07-21', '서울신용보증재단', 'https://www.seoulshinbo.co.kr', '2026-07-27', '서울신보_보증상품_모바일앱자동심사#0'),

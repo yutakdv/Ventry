@@ -50,8 +50,13 @@ public class CandidateRepository {
      * {@code IllegalArgumentException} 을 던져 <b>입력 오류가 500으로 증폭</b>되는 것을 막는다.
      * 캐시 자체는 {@code CacheConfig} 가 db 프로파일 전용이라 픽스처 경로에서는 동작하지 않는다.
      */
+    /*
+     * 반환을 불변 리스트로 감싼다. 캐시에 들어간 인스턴스는 **모든 요청이 공유**하므로, 누군가
+     * 호출부에서 `pool.sort(...)` 한 줄을 넣는 순간 요청 간 상태 오염이 되고 재현이 매우 어렵다.
+     * 현재 호출부는 전부 스트림만 쓰지만, 그 사실을 사람의 기억이 아니라 타입으로 고정한다 (N-09).
+     */
     @Cacheable(cacheNames = "candidates", key = "#industry", condition = "#industry != null")
     public List<CandidateArea> findCandidates(String industry) {
-        return jdbcClient.sql(SELECT_BY_INDUSTRY).param(industry).query(ROW_MAPPER).list();
+        return List.copyOf(jdbcClient.sql(SELECT_BY_INDUSTRY).param(industry).query(ROW_MAPPER).list());
     }
 }

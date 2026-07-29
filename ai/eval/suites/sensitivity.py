@@ -6,6 +6,11 @@ from pathlib import Path
 
 from eval import common
 
+# ⚠️ 서빙 상수의 **사본**이다 (언어 경계라 import 불가).
+#   w1~w5 ← backend `serving/LocationService.java` DEFAULT_WEIGHTS
+#   θ     ← backend `engine/ReverseCheck.java`   DEFAULT_THETA
+# 한쪽만 고치면 평가가 실서빙과 다른 규칙을 재면서도 초록으로 남는다 — 그 침묵을
+# `tests/test_serving_constants_sync.py` 가 깨뜨린다. 값을 바꿀 때는 양쪽을 함께 고칠 것.
 WEIGHTS = {"w1": 0.30, "w2": 0.20, "w3": 0.20, "w4": 0.15, "w5": 0.15}
 THETA = 0.15
 
