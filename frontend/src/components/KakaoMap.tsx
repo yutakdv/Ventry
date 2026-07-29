@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useKakaoLoader } from '../lib/useKakaoLoader'
 import { MAP_LEGEND, VERDICT_LABEL, VERDICT_MARKER_COLOR } from '../lib/verdict'
 import { formatBurdenRatio, formatTransit } from '../lib/format'
@@ -69,7 +69,7 @@ const OVERLAY_HEIGHT_PX = 180
  * 선택된 상권의 말풍선.
  * 문자열 HTML 대신 DOM으로 만들어 textContent만 쓴다 — 상권명이 그대로 마크업이 되지 않도록.
  */
-function buildOverlay(area: Area, industry?: Industry | null): HTMLElement {
+function buildOverlay(area: Area, industry: Industry | null | undefined, onClose: () => void): HTMLElement {
   const box = document.createElement('div')
   box.className = styles.overlay
 
@@ -81,7 +81,17 @@ function buildOverlay(area: Area, industry?: Industry | null): HTMLElement {
   const badge = document.createElement('span')
   badge.className = `${styles.overlayBadge} ${styles[area.verdict]}`
   badge.textContent = VERDICT_LABEL[area.verdict]
-  head.append(title, badge)
+  // 말풍선이 경계를 가릴 때 사용자가 직접 치울 수 있어야 한다 — 선택은 유지된다.
+  const close = document.createElement('button')
+  close.type = 'button'
+  close.className = styles.overlayClose
+  close.setAttribute('aria-label', '말풍선 닫기')
+  close.textContent = '×'
+  close.addEventListener('click', (e) => {
+    e.stopPropagation()
+    onClose()
+  })
+  head.append(title, badge, close)
 
   const rows = document.createElement('dl')
   rows.className = styles.overlayRows
@@ -160,6 +170,12 @@ export default function KakaoMap({
   scope?: AreaScope | null
 }) {
   const status = useKakaoLoader()
+  /**
+   * 말풍선을 접었는가. 경계를 보려고 확대하면 폭 230px·높이 약 180px 짜리 말풍선이 정확히
+   * 그 위를 덮는다. 확대 버튼을 누르면 자동으로 접고, 다른 상권을 고르면 다시 편다 —
+   * 선택 자체는 유지되므로 카드·목록 연동은 그대로다.
+   */
+  const [overlayHidden, setOverlayHidden] = useState(false)
   const boxRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<kakao.maps.Map | null>(null)
   const markersRef = useRef<Map<string, kakao.maps.Marker>>(new Map())
@@ -229,7 +245,12 @@ export default function KakaoMap({
         image: buildMarkerImage(VERDICT_MARKER_COLOR[a.verdict], a.score, selected),
         zIndex: selected ? 10 : 1,
       })
-      kakao.maps.event.addListener(marker, 'click', () => onSelectRef.current(a.area_code))
+      kakao.maps.event.addListener(marker, 'click', () => {
+        // 같은 마커를 다시 눌러도 말풍선이 돌아와야 한다 — selectedCode 가 안 바뀌므로
+        // 아래 리셋 효과에 기대지 못한다.
+        setOverlayHidden(false)
+        onSelectRef.current(a.area_code)
+      })
       markersRef.current.set(a.area_code, marker)
       bounds.extend(pos)
     })
@@ -336,22 +357,23 @@ export default function KakaoMap({
     }
 
     const area = areas.find((a) => a.area_code === selectedCode)
-    if (!map || !area) {
+    if (!map || !area || overlayHidden) {
       overlayRef.current?.setMap(null)
       return
     }
 
     const pos = new kakao.maps.LatLng(area.lat, area.lng)
+    const content = buildOverlay(area, industry, () => setOverlayHidden(true))
     if (!overlayRef.current) {
       overlayRef.current = new kakao.maps.CustomOverlay({
         position: pos,
-        content: buildOverlay(area, industry),
+        content,
         yAnchor: 1.35, // 마커 위로 띄운다
         zIndex: 20,
       })
     } else {
       overlayRef.current.setPosition(pos)
-      overlayRef.current.setContent(buildOverlay(area, industry))
+      overlayRef.current.setContent(content)
     }
     overlayRef.current.setMap(map)
 
@@ -370,7 +392,10 @@ export default function KakaoMap({
     const clipSpan = boxHeight > 0 ? latSpan * (OVERLAY_HEIGHT_PX / boxHeight) : latSpan * 0.33
     const overlayClipped = area.lat > b.getNorthEast().getLat() - clipSpan
     if (!b.contain(pos) || overlayClipped) map.panTo(pos)
-  }, [status, areas, selectedCode, industry])
+  }, [status, areas, selectedCode, industry, overlayHidden])
+
+  // 다른 상권을 고르면 접힘을 푼다 — 접기는 「지금 이 경계를 보는 중」이라는 일시 상태다.
+  useEffect(() => setOverlayHidden(false), [selectedCode])
 
   return (
     <div className={styles.panel}>
@@ -399,6 +424,8 @@ export default function KakaoMap({
                 onClick={() => {
                   const map = mapRef.current
                   if (!map) return
+                  // 경계를 보려고 확대하는 것이므로 그 위를 덮는 말풍선은 접는다.
+                  setOverlayHidden(true)
                   const b = new kakao.maps.LatLngBounds()
                   const rings = [
                     ...boundary.areaEntry.rings,

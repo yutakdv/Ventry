@@ -28,6 +28,8 @@ export default function AreaCard({
   onCheck,
   industry,
   scopeNote,
+  overlapNote,
+  areaType,
 }: {
   area: Area
   selected: boolean
@@ -42,6 +44,13 @@ export default function AreaCard({
    * 있을 때 그 두 선이 무엇인지 글로 받는 자리라, 목록 전체에 깔면 짝이 맞지 않는다.
    */
   scopeNote?: string
+  /** 범위 중첩 문장 (가정 #98). 실질 중첩이 있는 상권에서만, 선택됐을 때만 온다. */
+  overlapNote?: string
+  /**
+   * 상권 구분 — 골목상권 / 발달상권 / 전통시장 / 관광특구.
+   * 이 라벨이 있어야 「왜 잠실 관광특구와 방이동먹자골목이 둘 다 후보인가」가 읽힌다.
+   */
+  areaType?: string
 }) {
   const areaUnit = rentAreaShort(industry)
   const perPyeong = rentPerPyeong(area.monthly_rent, industry)
@@ -57,6 +66,8 @@ export default function AreaCard({
           <span className={styles.titleRow}>
             <span className={`t-body-strong ${styles.name}`}>{area.name}</span>
             <VerdictBadge verdict={area.verdict} />
+            {/* 판정 배지와 색·모양을 겹치지 않게 둔다 — 이건 분류이지 판정이 아니다 */}
+            {areaType && <span className={`t-caption ${styles.areaType}`}>{areaType}</span>}
           </span>
         </span>
       </span>
@@ -106,6 +117,7 @@ export default function AreaCard({
           권리금: 연간 조사(전년 기준) · 실제 금액은 개별 물건에 따라 다릅니다
         </span>
         {scopeNote && <span className={`t-caption ${styles.evidenceLine}`}>{scopeNote}</span>}
+        {overlapNote && <span className={`t-caption ${styles.evidenceLine}`}>{overlapNote}</span>}
       </span>
 
       <span className={styles.reason}>

@@ -35,6 +35,10 @@ SCHEMA = "ventry.area-scope.v1"
 SIMPLIFY_M = 5.0  # 가정 #95 — 하우스도르프 최대 8.08m
 COORD_PRECISION = 5  # ≈1.1m. 단순화(5m)보다 촘촘해 추가 왜곡을 만들지 않는다.
 
+# 중첩으로 볼 최소 비율(자기 면적 대비 %). 가정 #98 실측 — 교차 5,128쌍 중 98.0%가
+# 0.01% 미만(경계선이 스치는 수준)이라, 임계를 두지 않으면 의미 없는 쌍이 화면에 뜬다.
+OVERLAP_MIN_PCT = 10.0
+
 # 원천 판본. 통계(2026-1Q)와 판본이 다르다는 사실을 화면 캡션에도 함께 적는다.
 AS_OF = {"areas": "2023-10-20", "districts": "2024-10-31"}
 
@@ -79,10 +83,51 @@ def _simplify(gdf: gpd.GeoDataFrame) -> gpd.GeoSeries:
     )
 
 
-def _pack(gdf: gpd.GeoDataFrame, key_col: str, area_col: str | None) -> dict[str, dict]:
-    """키 → {면적 ㎡, 링 배열} 사전.
+def _overlaps(gdf: gpd.GeoDataFrame) -> dict[str, list]:
+    """상권 코드 → [[겹치는 상권 코드, 자기 면적 중 겹친 비율 %], …] (가정 #98).
+
+    서울 상권영역은 골목·발달·전통시장·**관광특구** 4개 레이어가 한 파일에 들어 있고,
+    관광특구(6곳, 면적 중앙 0.63㎢)는 하위 상권을 통째로 품는다 — 잠실 관광특구 안에
+    방이동먹자골목(76%)·잠실역(51%)이 들어간다. 후보 목록에는 셋이 **각각** 올라오므로,
+    같은 땅이 여러 번 세어진 것처럼 보인다. 그 사실을 화면이 말할 수 있게 구워 둔다.
+
+    비율은 **자기 면적 기준**이다 — "내가 얼마나 잠겼는가"가 사용자가 알고 싶은 값이라서다.
+    """
+    import geopandas as gpd_  # 지역 임포트 이유는 모듈 상단 주석 참조
+
+    from batch.preprocess.crs import CRS_METRIC
+
+    metric = gdf.to_crs(epsg=CRS_METRIC)
+    metric = metric.assign(_a=metric.geometry.area)
+    pairs = gpd_.sjoin(
+        metric[["area_code", "_a", "geometry"]],
+        metric[["area_code", "geometry"]].rename(columns={"area_code": "other"}),
+        predicate="intersects",
+    )
+    pairs = pairs[pairs["area_code"] != pairs["other"]]
+    shapes = metric.set_index("area_code").geometry
+
+    out: dict[str, list] = {}
+    for code, other, own_area in zip(pairs["area_code"], pairs["other"], pairs["_a"], strict=True):
+        pct = shapes[code].intersection(shapes[other]).area / own_area * 100
+        if pct >= OVERLAP_MIN_PCT:
+            out.setdefault(str(code), []).append([str(other), round(pct, 1)])
+    for entries in out.values():
+        entries.sort(key=lambda e: -e[1])
+    logger.info("실질 중첩(≥%.0f%%) %d개 상권", OVERLAP_MIN_PCT, len(out))
+    return out
+
+
+def _pack(
+    gdf: gpd.GeoDataFrame,
+    key_col: str,
+    area_col: str | None,
+    extra: dict[str, str] | None = None,
+) -> dict[str, dict]:
+    """키 → {a: 면적 ㎡, r: 링 배열, …extra} 사전.
 
     면적은 **단순화 전** 투영 면적을 쓴다. 근거 문장의 배수가 표시용 왜곡을 타면 안 된다.
+    `extra` 는 {산출 키: 원본 컬럼} — 상권은 이름(n)과 유형(t)을 함께 굽는다.
     """
     from batch.preprocess.crs import CRS_METRIC
 
@@ -97,14 +142,18 @@ def _pack(gdf: gpd.GeoDataFrame, key_col: str, area_col: str | None) -> dict[str
         if not rings:
             continue
         area = gdf.at[idx, area_col] if area_col else metric_area.loc[idx]
-        out[key] = {"a": int(round(float(area))), "r": rings}
+        entry: dict = {"a": int(round(float(area))), "r": rings}
+        for out_key, src_col in (extra or {}).items():
+            entry[out_key] = str(gdf.at[idx, src_col])
+        out[key] = entry
     return out
 
 
 def run() -> None:
     from batch.preprocess.crs import load_area_polygons, load_reb_districts
 
-    areas = _pack(load_area_polygons(), "area_code", None)
+    area_gdf = load_area_polygons()
+    areas = _pack(area_gdf, "area_code", None, extra={"n": "name", "t": "area_type_name"})
     districts = _pack(load_reb_districts(), "reb_district_name", "reb_area_m2")
 
     payload = {
@@ -113,8 +162,10 @@ def run() -> None:
         "as_of": AS_OF,
         "simplify_tolerance_m": int(SIMPLIFY_M),
         "coord_precision": COORD_PRECISION,
+        "overlap_min_pct": OVERLAP_MIN_PCT,
         "areas": areas,
         "districts": districts,
+        "overlaps": _overlaps(area_gdf),
     }
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUT_PATH.write_text(

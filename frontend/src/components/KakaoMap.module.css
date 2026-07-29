@@ -75,6 +75,21 @@
   color: var(--color-text-tertiary);
 }
 
+/* 말풍선 닫기 — 경계를 가릴 때 직접 치운다 (선택은 유지된다) */
+.overlayClose {
+  margin-left: auto;
+  padding: 0 var(--space-4);
+  border: 0;
+  background: none;
+  color: var(--color-text-tertiary);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.overlayClose:hover {
+  color: var(--color-text-primary);
+}
+
 /* 지도 컨테이너 — 「서울 전체 보기」의 위치 기준 (범례는 .panel 기준 그대로다) */
 .mapBox {
   position: relative;

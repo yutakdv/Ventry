@@ -16,6 +16,18 @@ export interface ScopeEntry {
   /** ㎡. 단순화 **전** 투영 면적이라 근거 문장의 배수가 표시용 왜곡을 타지 않는다. */
   areaM2: number
   rings: Rings
+  /** 상권명 — 중첩 상대를 이름으로 부르기 위해 함께 굽는다. */
+  name?: string
+  /** 골목상권 / 발달상권 / 전통시장 / 관광특구 (가정 #98). */
+  type?: string
+}
+
+/** 중첩 상대 하나 — `pct` 는 **기준 상권 자기 면적** 중 겹친 비율(%). */
+export interface Overlap {
+  code: string
+  name: string
+  type: string
+  pct: number
 }
 
 export interface AreaScope {
@@ -23,6 +35,10 @@ export interface AreaScope {
   areas: Map<string, ScopeEntry>
   /** 부동산원 상권명(`rent_source.district`) → 경계 */
   districts: Map<string, ScopeEntry>
+  /** 이 상권이 **잠긴** 상대들 (내림차순) — "내 면적의 76%가 잠실 관광특구 안" */
+  containedBy: Map<string, Overlap[]>
+  /** 이 상권이 **품는** 상대들 (내림차순) — "이 범위 안에 다른 후보 5곳" */
+  contains: Map<string, Overlap[]>
   /** 원천 판본. 통계 기준일과 다르다는 사실을 화면 캡션이 함께 적는다. */
   asOf: { areas: string; districts: string }
   /** 표시용 단순화 허용 오차(m) — 고지 문구가 이 값에서 나온다. */
@@ -38,11 +54,53 @@ function toEntries(raw: unknown): Map<string, ScopeEntry> {
   const out = new Map<string, ScopeEntry>()
   if (!raw || typeof raw !== 'object') return out
   for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
-    const v = value as { a?: unknown; r?: unknown }
+    const v = value as { a?: unknown; r?: unknown; n?: unknown; t?: unknown }
     if (typeof v?.a !== 'number' || !Array.isArray(v?.r)) continue
-    out.set(key, { areaM2: v.a, rings: v.r as Rings })
+    out.set(key, {
+      areaM2: v.a,
+      rings: v.r as Rings,
+      name: typeof v.n === 'string' ? v.n : undefined,
+      type: typeof v.t === 'string' ? v.t : undefined,
+    })
   }
   return out
+}
+
+/**
+ * `{코드: [[상대코드, 비율], …]}` 을 양방향 색인으로 편다 (가정 #98).
+ *
+ * 배치는 「내가 잠긴 비율」만 굽는다. 화면은 반대 방향(「내가 품는 상권」)도 필요한데,
+ * 실질 중첩이 52개 상권·58쌍뿐이라 역색인을 여기서 만드는 편이 파일에 양쪽을 중복해
+ * 굽는 것보다 싸다.
+ */
+function toOverlaps(raw: unknown, areas: Map<string, ScopeEntry>) {
+  const containedBy = new Map<string, Overlap[]>()
+  const contains = new Map<string, Overlap[]>()
+  if (!raw || typeof raw !== 'object') return { containedBy, contains }
+
+  const describe = (code: string, pct: number): Overlap => ({
+    code,
+    name: areas.get(code)?.name ?? code,
+    type: areas.get(code)?.type ?? '',
+    pct,
+  })
+  const push = (m: Map<string, Overlap[]>, key: string, v: Overlap) => {
+    const list = m.get(key)
+    if (list) list.push(v)
+    else m.set(key, [v])
+  }
+
+  for (const [code, entries] of Object.entries(raw as Record<string, unknown>)) {
+    if (!Array.isArray(entries)) continue
+    for (const pair of entries) {
+      if (!Array.isArray(pair) || typeof pair[0] !== 'string' || typeof pair[1] !== 'number') continue
+      const [other, pct] = pair as [string, number]
+      push(containedBy, code, describe(other, pct))
+      push(contains, other, describe(code, pct))
+    }
+  }
+  for (const m of [containedBy, contains]) for (const list of m.values()) list.sort((a, b) => b.pct - a.pct)
+  return { containedBy, contains }
 }
 
 async function fetchScope(): Promise<AreaScope | null> {
@@ -56,9 +114,11 @@ async function fetchScope(): Promise<AreaScope | null> {
     if (raw?.schema !== SCHEMA) return null
 
     const asOf = raw.as_of as { areas?: unknown; districts?: unknown } | undefined
+    const areas = toEntries(raw.areas)
     return {
-      areas: toEntries(raw.areas),
+      areas,
       districts: toEntries(raw.districts),
+      ...toOverlaps(raw.overlaps, areas),
       asOf: {
         areas: typeof asOf?.areas === 'string' ? asOf.areas : '',
         districts: typeof asOf?.districts === 'string' ? asOf.districts : '',
