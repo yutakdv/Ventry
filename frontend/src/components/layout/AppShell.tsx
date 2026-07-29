@@ -10,10 +10,23 @@ export default function AppShell({
   activeStep,
   children,
   aside,
+  wide,
 }: {
   activeStep?: number
   children: ReactNode
   aside?: ReactNode
+  /**
+   * 사이드바를 접고 본문이 전폭을 쓴다 (실사용 점검 2026-07-29).
+   *
+   * `/map`·`/explore` 는 지도+목록 / 차트+시나리오의 **2단 구성**이라 가로가 가장 아쉬운
+   * 화면인데, 사이드바가 `position: sticky` 로 스크롤 내내 따라오면서 232px + 거터 24px 을
+   * 영구 점유했다. 1280(13인치)에서 본문이 976px 로 줄어 `/explore` 가 실제로 넘쳤다.
+   *
+   * 마지막 두 단계에서 단계 표시의 값이 가장 낮다는 점도 함께 봤다 — 어디까지 왔는지는
+   * 이미 알고 있고, 그 자리에 필요한 것은 결과를 볼 면적이다. 진단·시나리오·예산 화면에는
+   * 사이드바가 그대로 남는다.
+   */
+  wide?: boolean
 }) {
   const fallback = useApiFallback()
   const fallbackCount = useApiFallbackCount()
@@ -52,8 +65,10 @@ export default function AppShell({
           </button>
         </div>
       )}
-      <div className={`${styles.container} ${aside ? '' : styles.noRail}`}>
-        <Sidebar activeStep={activeStep} />
+      <div
+        className={`${styles.container} ${aside ? '' : styles.noRail} ${wide ? styles.wide : ''}`}
+      >
+        {!wide && <Sidebar activeStep={activeStep} />}
         <main className={styles.main}>{children}</main>
         {aside && <div className={styles.rail}>{aside}</div>}
       </div>

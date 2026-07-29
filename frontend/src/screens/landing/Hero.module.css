@@ -197,6 +197,16 @@
   color: var(--color-text-primary);
 }
 
+/*
+ * 큰 숫자의 한정 조건 (실사용 점검 2026-07-29). 「403곳」 단독은 그 예산으로 403곳에
+ * 갈 수 있다고 읽힌다 — 실제 진입 가능은 6곳이다. 카드 폭이 늘어나지 않게 줄바꿈을 허용한다.
+ */
+.statNote {
+  max-width: 15em;
+  color: var(--color-text-secondary);
+  word-break: keep-all;
+}
+
 /* ── 반응형 ───────────────────────────────────────────────── */
 @media (max-width: 1100px) {
   .hero {

@@ -145,7 +145,13 @@
   color: var(--color-text-secondary);
 }
 
-@media (max-width: 1200px) {
+/*
+ * 1200 → 1500 (실사용 점검 2026-07-29). 좌열이 440px 고정이라 폭이 줄면 시나리오 스트림만
+ * 일방적으로 깎인다 — 1440에서 630px, 1280(13인치)에서 470px. 행의 하한이 그보다 커서
+ * 카드가 터졌다. 컨테이너가 1440에서 캡되므로 이 값은 실질적으로 「항상 1열」을 뜻하며,
+ * 좌열이 전폭을 쓰면 프론티어 차트도 함께 커진다.
+ */
+@media (max-width: 1500px) {
   .columns {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: none;

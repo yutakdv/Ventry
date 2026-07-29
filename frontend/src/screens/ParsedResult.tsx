@@ -1,6 +1,7 @@
 import Button from '../components/Button'
 import Divider from '../components/Divider'
 import type { ParsedProfile } from '../api/types'
+import { formatAmount } from '../lib/format'
 import styles from './ParsedResult.module.css'
 
 const INDUSTRY_LABEL: Record<string, string> = { cafe: '카페', food: '음식점' }
@@ -34,10 +35,13 @@ export default function ParsedResult({
           ? '기존 사업자'
           : '예비 창업자',
     ],
-    ['자기자본', profile.capital != null ? `${profile.capital.toLocaleString()}만원` : '—'],
+    // 공용 포매터를 쓴다 (실사용 점검 2026-07-29). 이 두 줄이 앱 전체에서 유일하게
+    // `formatAmount` 를 안 써서, 다른 화면이 「1.5억 원」으로 줄이는 값을 여기서만 만원
+    // 단위 원문으로 늘어놓았다 — 자릿수를 세어야 읽히는 숫자가 진단 결과에만 남았다.
+    ['자기자본', profile.capital != null ? formatAmount(profile.capital) : '—'],
     [
       '월 투자 가능액',
-      profile.monthly_investable != null ? `${profile.monthly_investable.toLocaleString()}만원` : '—',
+      profile.monthly_investable != null ? formatAmount(profile.monthly_investable) : '—',
     ],
     [
       '담보 제공',

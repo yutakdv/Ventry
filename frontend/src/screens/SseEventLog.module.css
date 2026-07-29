@@ -65,8 +65,13 @@
 }
 
 .name {
+  /*
+   * 60px 고정이면 부모가 `overflow: hidden` 이라 긴 이벤트명이 스크롤 없이 **잘렸다**.
+   * 뷰포트와 무관한 상시 결함이었다 (실사용 점검 2026-07-29).
+   */
   flex: none;
-  width: 60px;
+  min-width: 72px;
+  width: auto;
   color: var(--color-text-primary);
 }
 

@@ -21,6 +21,24 @@ class ScenarioBuilderTest {
     private final Profile demo = new Profile(32, 5000, false, "cafe", "서울 마포구");
 
     /**
+     * 실사용 점검(2026-07-29) — 초기 예산은 <b>슬라이더 격자 위</b>에 있어야 한다.
+     *
+     * <p>격자는 {@code budget_min + k*100} 이다(프론트 {@code Budget.tsx} 의 step).
+     * 초기값이 그 밖에 있으면 사용자가 슬라이더를 <b>잡기만 해도</b> 값이 소리 없이 스냅한다 —
+     * 실측에서 확정 예산 7,901만원이 화면 4에서 손대는 순간 7,900만원이 됐다.
+     */
+    @Test
+    void initialBudget_sitsOnSliderStepGrid() {
+        for (ScenarioCard card : builder.build(demo)) {
+            assertThat((card.budget() - card.budgetMin()) % 100)
+                    .as("%s 카드의 초기값 %d 이 격자(min %d + k*100)를 벗어났다",
+                            card.label(), card.budget(), card.budgetMin())
+                    .isZero();
+            assertThat(card.budget()).isBetween(card.budgetMin(), card.budgetMax());
+        }
+    }
+
+    /**
      * #87 — 실적재 상품에는 한도 8억(80,000만원) 보증이 3건 있다. 구 규칙("한도 최대")은
      * 소상공인 카페 창업에 8억을 제시했다. 필요분 최소 커버 규칙은 그 상품을 고르지 않는다
      * (DECISIONS §13-2). 데모 후보의 진입 비용 중앙값이 1억을 넘지 않으므로 8억은 과잉이다.

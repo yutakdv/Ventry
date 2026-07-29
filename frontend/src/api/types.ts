@@ -215,7 +215,11 @@ export interface RiskReview {
 export interface RecommendResponse {
   data_as_of: string
   total_count: number
-  summary: { avg_rent: number; avg_sales: number }
+  /**
+   * 화면에 남는 후보(범위 외 제외)의 평균. **후보가 없으면 생략된다**
+   * (계약 D14 · 실사용 점검 2026-07-29) — 0곳의 평균은 0이 아니라 정의되지 않는 값이다.
+   */
+  summary?: { avg_rent: number; avg_sales: number }
   /**
    * `score` 내림차순으로 정렬되어 온다. 정렬·필터 쿼리는 없으며 프론트가 처리한다.
    * ⚠️ 실데이터에서는 1,000건대가 한 번에 온다(실측 1,059건·748KB). 전량을 마커·목록으로

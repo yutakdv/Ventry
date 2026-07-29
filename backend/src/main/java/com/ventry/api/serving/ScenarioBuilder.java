@@ -46,6 +46,13 @@ public class ScenarioBuilder {
     /** 상품 카드의 기준일은 상품 데이터 기준일을 쓴다 (data_source_meta.finance_product). */
     private static final String META_SOURCE_PRODUCT = "finance_product";
 
+    /**
+     * 예산 슬라이더 눈금(만원) — <b>프론트 `screens/Budget.tsx` 의 {@code step} 사본</b>이다.
+     * 초기값이 이 격자를 벗어나면 슬라이더를 잡는 순간 값이 소리 없이 바뀌므로, 서버가 내는
+     * 초기값도 같은 격자 위에 올려 둔다. 한쪽을 고치면 다른 쪽도 함께 고쳐야 한다.
+     */
+    private static final int BUDGET_STEP = 100;
+
     /** 계약 D8 고정 정렬: 한도(amount_max) 내림차순, 동점 시 이름 오름차순. 금리 정렬 금지. */
     private static final Comparator<Product> PRODUCT_ORDER =
             Comparator.comparingInt(Product::amountMax).reversed().thenComparing(Product::name);
@@ -144,7 +151,18 @@ public class ScenarioBuilder {
         // 상한을 초기값으로 두면 "한도 전액을 쓰는 것"이 기본 선택이 된다 — 가용 상품의 최소
         // 한도가 필요분보다 큰 경우(실데이터에서 흔하다) 과잉 조달이 기본값이 되어버린다.
         // 상한은 여전히 budget_max 로 노출되므로 사용자가 올릴 수 있다 (DECISIONS §13-3).
-        int initial = (int) Math.clamp((long) equity + need, equity, budgetMax);
+        //
+        // **필요분을 슬라이더 눈금까지 올림한다** (실사용 점검 2026-07-29). 화면의 슬라이더는
+        // `budget_min + k*BUDGET_STEP` 격자 위에서만 값을 낼 수 있는데, 초기값이 그 격자를
+        // 벗어나 있으면 사용자가 슬라이더를 **잡기만 해도** 값이 소리 없이 스냅한다 —
+        // 실측에서 확정 예산 7,901만원이 화면 4에서 손대는 순간 7,900만원이 됐다. 확정했다고
+        // 적힌 금액이 조작만으로 달라지면 그 화면의 다른 숫자도 믿기 어려워진다.
+        //
+        // 내림이 아니라 **올림**인 이유: need = ceil(중앙값 − 자기자본) 이라 equity+need 는
+        // 중앙값 비용을 덮는 최소 금액이다. 내리면 기본값이 그 비용을 못 덮어 "기본 선택으로는
+        // 중앙값 상권에 못 들어간다"가 되어 초기값의 의미가 무너진다.
+        int steppedNeed = (int) (Math.ceilDiv((long) need, BUDGET_STEP) * BUDGET_STEP);
+        int initial = (int) Math.clamp((long) equity + steppedNeed, equity, budgetMax);
         return new ScenarioCard(label, initial, equity, (int) Math.min(budgetMax, Integer.MAX_VALUE),
                 composition, cardProducts);
     }

@@ -30,6 +30,60 @@ import { markApiFallback } from './fallback'
 const FORCE_MOCK = import.meta.env.VITE_USE_MOCK === '1'
 
 /**
+ * 서버가 4xx 로 **답한** 경우 (실사용 점검 2026-07-29).
+ *
+ * 목 폴백은 「서버에 닿지 못했다」의 대응이다. 서버가 답을 줬다면 그건 장애가 아니라 요청이
+ * 틀린 것이므로, 폴백해서도 배너를 세워서도 안 된다.
+ *
+ * 종전에는 `if (!res.ok) throw` 한 줄이 400 과 500·네트워크 단절을 같은 자리로 보내서 —
+ * 진단에서 나이를 `999` 로 넣으면 서버가 「age 는 15~100 범위여야 합니다」 라고 정확히
+ * 거절했는데도 화면은 그 문장을 버리고 **목 데이터로 세션 전체를 전환**했다. 사용자는 거부당한
+ * 줄 모른 채 다음 화면으로 넘어갔고, 목 데이터의 진입 후보가 0곳이라 막다른 길이 됐다.
+ * 게다가 폴백 플래그는 되돌지 않는 설계라, 입력을 고쳐 성공한 뒤에도 진짜 수치 위에
+ * 「이 수치는 실제 조사 결과가 아닙니다」 라는 **거짓 경고**가 남았다.
+ */
+export class ApiError extends Error {
+  constructor(
+    readonly status: number,
+    readonly code: string,
+    message: string,
+  ) {
+    super(message)
+    this.name = 'ApiError'
+  }
+}
+
+/** 세션이 서버에 없다 — 재시도가 아니라 처음부터 다시 시작해야 하는 상태다. */
+export function isSessionGone(e: unknown): boolean {
+  return e instanceof ApiError && e.status === 404
+}
+
+/**
+ * 4xx 응답 → `ApiError`. 계약 오류 포맷 `{error:{code,message}}` 의 문장을 그대로 싣는다 —
+ * 화면이 사유를 다시 쓰지 않고 서버가 준 것을 보여 주기 위해서다.
+ */
+async function toApiError(res: Response, fallbackMessage: string): Promise<ApiError> {
+  try {
+    const body = (await res.json()) as { error?: { code?: string; message?: string } }
+    if (body?.error?.message) {
+      return new ApiError(res.status, body.error.code ?? 'UNKNOWN', body.error.message)
+    }
+  } catch {
+    // 본문이 JSON 이 아니면 상태코드만으로 만든다 — 여기서 실패해도 폴백으로 새지 않는다.
+  }
+  return new ApiError(res.status, 'UNKNOWN', fallbackMessage)
+}
+
+/** 응답이 실패면 던진다. 4xx 는 `ApiError`(폴백 금지), 그 외는 일반 오류(폴백 대상). */
+async function throwIfFailed(res: Response, label: string): Promise<void> {
+  if (res.ok) return
+  if (res.status >= 400 && res.status < 500) {
+    throw await toApiError(res, `요청을 처리하지 못했습니다 (${label} ${res.status}).`)
+  }
+  throw new Error(`${label} ${res.status}`)
+}
+
+/**
  * SSE 재연결 대기 — `done` 이전 오류 1회는 재연결로 흡수한다.
  *
  * EventSource는 일시 단절에도 `onerror`를 발화한다(프록시 재시작·백엔드 GC·모바일 회선 blip).
@@ -48,9 +102,10 @@ export async function postDiagnose(req: DiagnoseRequest): Promise<DiagnoseRespon
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(req),
     })
-    if (!res.ok) throw new Error(`diagnose ${res.status}`)
+    await throwIfFailed(res, 'diagnose')
     return (await res.json()) as DiagnoseResponse
   } catch (e) {
+    if (e instanceof ApiError) throw e // 서버가 답했다 — 폴백도 배너도 아니다
     console.warn('[api] 실제 diagnose 실패 → 목 폴백', e)
     markApiFallback()
     return mockDiagnose(req)
@@ -74,9 +129,10 @@ export async function postBudget(
       body: JSON.stringify(req),
       signal,
     })
-    if (!res.ok) throw new Error(`budget ${res.status}`)
+    await throwIfFailed(res, 'budget')
     return (await res.json()) as BudgetResponse
   } catch (e) {
+    if (e instanceof ApiError) throw e
     if (signal?.aborted) throw e   // 취소는 장애가 아니다 — 목 폴백 배너를 세우지 않는다
     console.warn('[api] 실제 budget 실패 → 목 폴백', e)
     markApiFallback()
@@ -99,9 +155,10 @@ export async function getRecommend(
     // `signal` 을 실제 요청까지 내린다 — 호출부가 결과만 무시하면 슬라이더를 움직이는 동안
     // 버려질 응답 본문(실측 gzip 122KB)을 끝까지 받는다 (FE 리뷰 m-1). SSE 두 함수는 이미 같다.
     const res = await fetch(`/api/recommend/${sessionId}${q}`, { signal })
-    if (!res.ok) throw new Error(`recommend ${res.status}`)
+    await throwIfFailed(res, 'recommend')
     return (await res.json()) as RecommendResponse
   } catch (e) {
+    if (e instanceof ApiError) throw e
     // 취소는 장애가 아니다 — 목 폴백 배너를 세우면 사용자 조작이 "서버 장애"로 고지된다.
     if (signal?.aborted) throw e
     console.warn('[api] 실제 recommend 실패 → 목 폴백', e)
@@ -308,9 +365,10 @@ export async function postCheckArea(
       body: JSON.stringify({ area_code: areaCode }),
       signal,
     })
-    if (!res.ok) throw new Error(`check-area ${res.status}`)
+    await throwIfFailed(res, 'check-area')
     return (await res.json()) as CheckAreaResponse
   } catch (e) {
+    if (e instanceof ApiError) throw e
     if (signal?.aborted) throw e   // 취소는 장애가 아니다 (위와 같은 이유)
     console.warn('[api] 실제 check-area 실패 → 목 폴백', e)
     markApiFallback()
