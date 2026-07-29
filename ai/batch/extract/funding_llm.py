@@ -183,7 +183,10 @@ def run() -> None:
     from batch.collect._common import load_env, require_key
 
     key = require_key(load_env(), "OPENAI_API_KEY")
-    client = OpenAI(api_key=key)
+    # 단발 호출이면 일시적 429/5xx 한 번에 그 문서가 0건이 되고 루프는 다음 PDF 로 넘어간다.
+    # 0건은 검수대조표가 「⚠️ 0건 — 원본 확인 필요」로 세우고 전건 사람 검수가 최종 게이트라
+    # 오염이 적재까지 가지는 않지만, 재실행 비용이 크므로 SDK 재시도로 흡수한다 (AI 리뷰 P2 m-05).
+    client = OpenAI(api_key=key, max_retries=3, timeout=60)
     raw_products, coverage = extract_all(client)
     products = dedup_products(raw_products)
     OUT_DIR.mkdir(parents=True, exist_ok=True)

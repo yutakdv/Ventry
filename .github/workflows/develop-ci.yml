@@ -31,13 +31,19 @@ jobs:
       - name: Compose up
         run: docker compose up -d
 
-      - name: Smoke — api health
+      # `/api/health` 는 계약이 고정한 상수 응답이라 DB가 내려가 있어도 200 ok 를 준다.
+      # 그것만 보면 **모든 업무 엔드포인트가 500인 스택도 CI를 통과한다**(QA 실측 Q-03-b).
+      # 계약 엔드포인트의 생존은 그대로 확인하되, 게이트는 DB 인디케이터가 붙은 actuator 로 둔다.
+      - name: Smoke — api health (계약 /api/health + DB 반영 /actuator/health)
         run: |
           for i in $(seq 1 30); do
-            if curl -fsS http://localhost:8080/api/health; then exit 0; fi
+            if curl -fsS http://localhost:8080/api/health \
+               && curl -fsS http://localhost:8080/actuator/health; then exit 0; fi
             sleep 3
           done
-          echo "::error::api health check failed"
+          echo "::error::api health check failed (계약 health 또는 actuator health)"
+          curl -sS -o /dev/null -w 'api/health=%{http_code}\n'      http://localhost:8080/api/health      || true
+          curl -sS -o /dev/null -w 'actuator/health=%{http_code}\n' http://localhost:8080/actuator/health || true
           docker compose logs api
           exit 1
 

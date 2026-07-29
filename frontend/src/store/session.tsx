@@ -86,6 +86,16 @@ interface SessionState {
     dataAsOf: string | null,
   ) => void
   bumpVersion: () => void
+  /**
+   * 조회 재시도 토큰 (FE 리뷰 M-14).
+   *
+   * 목 폴백은 조용히 일어나고 되돌지 않으므로, 일시 장애가 지나가도 화면은 계속 예시 데이터를
+   * 보여 준다. 사용자가 할 수 있는 일이 새로고침뿐이었는데 그러면 세션이 통째로 날아간다.
+   * 각 화면의 조회 effect 가 이 값을 의존성으로 물고 있어, 증가시키면 **세션을 유지한 채**
+   * 현재 화면의 조회만 다시 돈다.
+   */
+  retryToken: number
+  retryFetch: () => void
 }
 
 const Ctx = createContext<SessionState | null>(null)
@@ -101,6 +111,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [selectedScenario, setSelectedScenarioState] = useState<Scenario | null>(null)
   const [budgetPreview, setBudgetPreviewState] = useState<BudgetPreview | null>(null)
   const [dataAsOf, setDataAsOfState] = useState<string | null>(null)
+  const [retryToken, setRetryToken] = useState(0)
 
   /**
    * setter는 **신원이 고정**되어야 한다.
@@ -131,6 +142,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     [],
   )
   const bumpVersion = useCallback(() => setVersion((v) => v + 1), [])
+  const retryFetch = useCallback(() => {
+    // 탐색은 기준 예산당 한 번만 도는 캐시 가드가 있어, 캐시를 비워야 다시 돈다.
+    setExploreState(null)
+    setRetryToken((t) => t + 1)
+  }, [])
 
   const value = useMemo<SessionState>(
     () => ({
@@ -151,6 +167,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setExplore,
       applyExploreBudget,
       bumpVersion,
+      retryToken,
+      retryFetch,
     }),
     [
       sessionId,
@@ -170,6 +188,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setExplore,
       applyExploreBudget,
       bumpVersion,
+      retryToken,
+      retryFetch,
     ],
   )
 

@@ -142,7 +142,7 @@
 }
 
 .disclaimer {
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
 }
 
 @media (max-width: 1200px) {

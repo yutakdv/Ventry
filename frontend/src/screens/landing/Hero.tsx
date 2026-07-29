@@ -61,6 +61,7 @@ export default function Hero() {
             width={1440}
             height={1333}
             url="ventry.app/map"
+            priority
           />
 
           {/* 캡처에 실제로 찍힌 값만 얹는다 — 오버레이가 캡처와 다른 숫자를 말하면 안 된다. */}

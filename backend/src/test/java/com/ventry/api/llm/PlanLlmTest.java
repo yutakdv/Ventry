@@ -106,4 +106,12 @@ class PlanLlmTest {
         assertThat(prompt).contains("premium").contains("A1").contains("JSON");
         assertThat(prompt).doesNotContainPattern("[0-9]{3,}");   // 예산·금액 미포함
     }
+
+    /** 업종은 한국어 표기로 들어간다 — 한국어 프롬프트에 영문 코드를 섞지 않는다 (AI 리뷰 m-03). */
+    @Test
+    void prompt_usesKoreanIndustryLabel() {
+        assertThat(PlanPrompt.build("cafe", List.of())).contains("업종은 카페입니다")
+                .doesNotContain("cafe");
+        assertThat(PlanPrompt.build("food", List.of())).contains("업종은 음식점입니다");
+    }
 }

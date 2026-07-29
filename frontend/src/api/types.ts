@@ -148,7 +148,14 @@ export type Verdict = 'FIT' | 'CONDITIONAL' | 'CAUTION' | 'OUT_OF_SCOPE'
 /** 임대료 출처 — 화면에 **상시** 표기한다 (스펙 §7). fallback이면 자치구 평균으로 대체된 값. */
 export interface RentSource {
   org: string // "REB" 등 기관 코드
-  district: string // 부동산원 상권명
+  /**
+   * 부동산원 상권명. **폴백 행에서는 `null`** 이다 (API_CONTRACT §4).
+   *
+   * 사용처는 전부 `fallback` 불리언으로 선분기해 런타임은 안전했지만, 타입이 `string` 이라
+   * 새 사용처가 폴백 분기 없이 이 값을 쓰면 컴파일러가 잡아 주지 못했다. 우회 코드가 주석이
+   * 아니라 타입으로 설명되게 좁힌다 (FE 리뷰 m-6 · 계약 리뷰 P2-1).
+   */
+  district: string | null
   fallback: boolean
 }
 

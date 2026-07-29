@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { Wallet, PiggyBank, CalendarClock, MapPin, Receipt, Users } from 'lucide-react'
 import AppShell from '../components/layout/AppShell'
@@ -10,6 +10,7 @@ import StatCard from '../components/StatCard'
 import { postBudget } from '../api/client'
 import { useSession } from '../store/session'
 import { formatAmount, formatBudgetRange, formatPeople } from '../lib/format'
+import { SESSION_LOST_STATE } from '../lib/sessionLost'
 import { rentAreaShort, rentAreaBasis } from '../lib/rentArea'
 import { buildComposition } from '../lib/composition'
 import type { BudgetCompositionItem, BudgetPreview, Scenario } from '../api/types'
@@ -31,7 +32,14 @@ const PRESETS: { label: string; ratio: number }[] = [
 
 export default function Budget() {
   const navigate = useNavigate()
-  const { sessionId, parsedProfile, selectedScenario, setBudget, bumpVersion } = useSession()
+  const {
+    sessionId,
+    parsedProfile,
+    selectedScenario,
+    budget: sessionBudget,
+    setBudget,
+    bumpVersion,
+  } = useSession()
 
   const scenario = selectedScenario
   /** 임대료 금액의 면적 조건 (이슈 #151) — 라벨엔 ㎡만, 근거 줄엔 평까지. */
@@ -41,6 +49,28 @@ export default function Budget() {
   const [preview, setPreview] = useState<BudgetPreview | null>(null)
   const [dataAsOf, setDataAsOf] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
+  /**
+   * 요청 일련번호.
+   *
+   * debounce(300ms)는 요청 **수**를 줄일 뿐 도착 **순서**를 보장하지 않는다. `/budget` 응답이
+   * 300ms보다 오래 걸리면 두 요청이 동시에 떠 있게 되고, 먼저 보낸 쪽이 나중에 도착하면
+   * 사용자가 방금 고른 예산의 프리뷰와 세션 확정값이 **이전 예산의 것으로 덮인다**.
+   * 마지막으로 보낸 요청의 응답만 반영한다.
+   */
+  const seqRef = useRef(0)
+  /**
+   * 진행 중인 `/budget` 요청. 새 요청을 보내기 전에 앞선 것을 **실제로 끊는다** (QA 리뷰 Q-06).
+   *
+   * 일련번호만으로도 화면이 구 응답에 덮이는 일은 막히지만, 느린 회선에서는 debounce 창마다
+   * 요청이 하나씩 쌓여 **동시에 떠 있는 수가 늘어난다** — 각각이 톰캣 워커와 프리뷰 조회를
+   * 붙잡는다. 취소는 그 누적을 1건으로 묶는다.
+   *
+   * ⚠️ 서버 쪽 도착 순서까지 보장하는 것은 아니다. B₀ 는 **마지막으로 도착한** 요청이 이기므로,
+   * 끊긴 요청이 서버에 먼저 닿아 있었다면 그 값이 남을 수 있다. 다만 슬라이더가 멈추면 마지막
+   * 값으로 한 번 더 확정되고, 화면이 읽는 값은 항상 서버 응답(`res.confirmed_budget`)이라
+   * 화면과 세션이 어긋난 채로 남지는 않는다.
+   */
+  const inFlightRef = useRef<AbortController | null>(null)
 
   const composition = useMemo(
     () => (scenario ? buildComposition(scenario, value) : []),
@@ -49,19 +79,28 @@ export default function Budget() {
 
   const confirm = useCallback(
     async (budget: number, comp: BudgetCompositionItem[]) => {
-      if (!scenario) return
+      if (!scenario || !sessionId) return
+      const seq = (seqRef.current += 1)
+      inFlightRef.current?.abort()
+      const ac = new AbortController()
+      inFlightRef.current = ac
       setPending(true)
       try {
-        const res = await postBudget(sessionId ?? 'mock', {
-          confirmed_budget: budget,
-          composition: comp,
-        })
+        const res = await postBudget(
+          sessionId,
+          { confirmed_budget: budget, composition: comp },
+          ac.signal,
+        )
+        if (seq !== seqRef.current) return // 더 나중에 보낸 요청이 있다 — 이 응답은 버린다
         setPreview(res.preview)
         setDataAsOf(res.data_as_of)
         setBudget(res.confirmed_budget, res.preview, res.data_as_of) // 세션 B₀ — 화면 4의 진실 원천
         bumpVersion() // /recommend·/explore가 공유하는 version 갱신
+      } catch {
+        // 취소(새 요청이 앞선 것을 끊었다)뿐이다 — 그 외 실패는 client.ts 가 목으로 흡수한다.
       } finally {
-        setPending(false)
+        // 뒤늦게 끝난 구 요청이 "계산 중"을 먼저 꺼 버리지 않게 한다.
+        if (seq === seqRef.current) setPending(false)
       }
     },
     [scenario, sessionId, setBudget, bumpVersion],
@@ -74,16 +113,22 @@ export default function Budget() {
     return () => clearTimeout(t)
   }, [scenario, value, composition, confirm])
 
-  // 시나리오를 고르지 않고 직접 들어온 경우 — 화면 2로 되돌린다.
+  // 세션·시나리오 없이 직접 들어온 경우 — 앞 단계로 되돌린다.
+  // 세션이 사라진 이유를 첫 화면이 설명할 수 있도록 state 를 실어 보낸다 (M-13)
+  if (!sessionId) return <Navigate to="/diagnose" replace state={SESSION_LOST_STATE} />
   if (!scenario) return <Navigate to="/scenarios" replace />
 
   const meta = SCENARIO_LABEL[scenario.label]
   const noCandidate = preview?.area_count === 0
-
-  const aside = null
+  /*
+   * 확정이 아직 한 번도 끝나지 않았으면 세션 예산이 없다. 그 상태로 /map 에 보내면 화면 4가
+   * 곧바로 여기로 되돌려 보내, 사용자에게는 CTA 를 눌러도 아무 일이 없는 것처럼 보인다
+   * (진입 직후 debounce 300ms + 응답 시간 동안 실제로 그랬다).
+   */
+  const budgetNotReady = sessionBudget == null
 
   return (
-    <AppShell activeStep={3} aside={aside}>
+    <AppShell activeStep={3}>
       <div className={styles.surface}>
         <div className={styles.header}>
           <div className={styles.titleRow}>
@@ -265,8 +310,13 @@ export default function Budget() {
           <p className="t-body">
             이제 선택하신 예산 범위 내에서 도달 가능한 입지를 지도에서 확인할 수 있습니다.
           </p>
-          <Button variant="primary" size="md" disabled={noCandidate} onClick={() => navigate('/map')}>
-            입지 추천 결과 보기 →
+          <Button
+            variant="primary"
+            size="md"
+            disabled={noCandidate || budgetNotReady}
+            onClick={() => navigate('/map')}
+          >
+            {budgetNotReady ? '예산 계산 중…' : '입지 추천 결과 보기 →'}
           </Button>
         </div>
       </div>

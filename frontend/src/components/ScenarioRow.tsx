@@ -41,7 +41,10 @@ export interface ScenarioRowProps {
   applied?: boolean
   /** 이 시나리오 예산을 적용(=POST /budget 재호출) */
   onApply: () => void
+  /** **이 행**이 적용 중인가 — 문구를 바꾼다 */
   applying?: boolean
+  /** 어느 행이든 적용 중인가 — 중복 적용만 막고 문구는 바꾸지 않는다 */
+  busy?: boolean
 }
 
 /**
@@ -59,7 +62,8 @@ export default function ScenarioRow({
   highlight = false,
   applied = false,
   onApply,
-  applying,
+  applying = false,
+  busy = false,
 }: ScenarioRowProps) {
   const [open, setOpen] = useState(false)
   const panelId = useId()
@@ -164,9 +168,14 @@ export default function ScenarioRow({
             variant={applied ? 'secondary' : highlight ? 'primary' : 'secondary'}
             size="md"
             onClick={onApply}
-            disabled={applying || applied}
+            disabled={busy || applied}
           >
-            {applied ? '적용 중' : '적용하기'}
+            {/*
+              적용 중 표시는 **누른 행에만** 붙인다. 이전에는 플래그가 전역이라 한 행을 적용하는
+              동안 모든 행이 똑같이 비활성돼, 어느 것을 눌렀는지 화면이 말해 주지 않았다 (m-3).
+              나머지 행은 중복 적용 방지를 위해 비활성만 유지한다.
+            */}
+            {applied ? '적용 중' : applying ? '적용하는 중…' : '적용하기'}
           </Button>
         </span>
       </div>
@@ -235,10 +244,19 @@ export default function ScenarioRow({
               </>
             )}
 
-            {insight.disclaimer && <p className={`t-caption ${styles.disclaimer}`}>ⓘ {DISCLAIMER}</p>}
           </div>
         </div>
       </div>
+
+      {/*
+        고지는 **접힘 밖**에 둔다. 계약이 인사이트마다 `disclaimer: true` 를 보내는 취지는
+        카드 단위 동반인데, 「근거 보기」를 펼쳐야 보이는 자리에 있으면 그 취지가 성립하지
+        않는다 (계약 리뷰 P2-5). 화면 하단의 상시 고지는 그대로 두고 — 화면 단위 요건과
+        카드 단위 요건은 별개다 — 여기서는 이 행이 말하는 선택지에 붙인다.
+      */}
+      {insight.disclaimer && (
+        <p className={`t-caption ${styles.disclaimer}`}>ⓘ {DISCLAIMER}</p>
+      )}
     </article>
   )
 }

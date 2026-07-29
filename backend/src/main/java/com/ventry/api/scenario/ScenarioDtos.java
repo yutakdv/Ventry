@@ -33,7 +33,15 @@ public final class ScenarioDtos {
      */
     public record CompositionRange(String type, int amountMin, int amountMax) {}
 
-    public record BudgetRequest(int confirmedBudget, List<CompositionItem> composition) {}
+    /**
+     * {@code confirmedBudget} 이 <b>박싱 타입</b>인 것은 의도적이다.
+     *
+     * <p>원시형 {@code int} 면 필드가 아예 빠진 본문에서 Jackson 이 조용히 0을 채우고, 음수 검증만
+     * 통과해 <b>B₀=0 세션</b>이 만들어진다 — 이후 전 화면이 "진입 후보 0곳"으로 정상처럼 흐르므로
+     * 잘못된 입력이라는 사실이 어디에도 남지 않는다 (BE 리뷰 N-03, D-17 과 같은 계열).
+     * 「미기재와 0은 다른 사건」이라는 {@code DiagnoseController} 의 판단과도 일관된다.
+     */
+    public record BudgetRequest(Integer confirmedBudget, List<CompositionItem> composition) {}
 
     /**
      * @param dataAsOf 프리뷰 수치(환산임대료·유동인구)의 데이터 기준일. 화면 3은 이 값이 없어

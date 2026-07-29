@@ -36,7 +36,14 @@ import org.springframework.stereotype.Service;
 @Service
 public class LocationService {
 
-    /** 업종 프리셋 가중치 (화면 공개, assumptions.md). 현재 카페·음식점 공용. */
+    /**
+     * 업종 프리셋 가중치 (화면 공개, assumptions.md). 현재 카페·음식점 공용.
+     *
+     * <p>⚠️ 이 값은 평가 하네스가 <b>사본으로 미러링</b>한다 —
+     * {@code ai/eval/suites/sensitivity.py} 의 {@code WEIGHTS}. 언어 경계라 공유할 수 없으므로,
+     * 바꿀 때는 그쪽도 함께 고쳐야 한다. 한쪽만 바뀌면 민감도 지표(부록 1)가 실서빙과 다른
+     * 가중치를 재게 되며, 그 어긋남은 {@code ai/tests/test_serving_constants_sync.py} 가 잡는다.
+     */
     static final Weights DEFAULT_WEIGHTS = new Weights(0.30, 0.20, 0.20, 0.15, 0.15);
 
     private final CandidateSource candidates;

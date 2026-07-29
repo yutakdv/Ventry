@@ -27,7 +27,17 @@ _SPLIT = re.compile(r"\n\s*\n|\n- \d+ -\n")
 # rate 는 월 상환액(§4-2·§353)에 쓰는 연 대출금리(%). 보증료율·차감폭·보증금비율은 rate 가 아니다.
 _VAR_HINT = re.compile(r"기준금리|CD금리|변동")
 # 절대금리 미상(base 미상) → 지어내지 않음: "기준금리/CD금리+가산" · "은행금리에서 X% 차감"
-_BASE_VAR = re.compile(r"(기준금리|CD금리)\s*\+|은행금리에서.*차감")
+#
+# 「은행 대출 금리 - 이자 지원 금리」(F-002)도 여기 해당한다 — 「차감」이라는 낱말 대신 뺄셈
+# 기호를 쓴 표현이라 구 패턴이 놓쳤고, 그 결과 은행금리에 연동해 움직이는 상품이 FE 분기 키
+# (`rate_type`)에서 '고정'으로 실렸다. 금융 정보 서비스에서 금리 <b>성격</b>의 오표기는 값의
+# 오표기와 같은 무게다 — 사용자가 재확인 시점을 판단하는 근거가 그 한 글자다 (AI 리뷰 P1).
+# 기준이 되는 은행금리를 지어내지 않는다는 원칙은 그대로다(rate 는 여전히 NULL + 원문 note).
+_BASE_VAR = re.compile(
+    r"(기준금리|CD금리)\s*\+"
+    r"|은행\s*(대출\s*)?금리\s*(에서)?\s*[-−–]"      # 「은행 대출 금리 - 이자 지원 금리」
+    r"|은행\s*(대출\s*)?금리.*(차감|감면)"           # 「은행금리에서 2.5% 차감」
+)
 _FIX_LOAN = re.compile(r"연\s*([\d.]+)\s*%\s*고정금리")  # note 에 명시된 고정 대출금리
 _FLOOR = re.compile(r"최저\s*연\s*([\d.]+)\s*%")          # 공시 최저(floor) 절대금리
 
@@ -62,6 +72,19 @@ def rate_fields(product: dict) -> tuple[float | None, str, str | None]:
 # 날조 대신 doc_chunk_ref=null (스펙 §5-4 "인용은 검색이지 생성이 아니다", 코드리뷰 S1)
 _KEYWORDS = ("대출", "융자", "한도", "금리", "보증", "지원", "소상공인", "상환", "기업")
 _CLEAN_DENSITY = 3.0  # 1000자당 키워드 히트
+
+
+def _data_as_of(notice_date: str | None, name: str) -> str:
+    """화면에 상시 표기되는 데이터 기준일 (스펙 §0-4).
+
+    공고일이 없으면 연도 단독("2026")이 화면에 뜬다 — 기준일 표기의 하한선이라 계약 위반은
+    아니지만 **말없이 정밀도가 떨어지는** 자리다. 현 적재본은 26건 전부 notice_date 를 갖고
+    있어 발동하지 않으므로, 발동하면 그 사실이 로그에 남게 한다 (AI 리뷰 P2).
+    """
+    if notice_date:
+        return notice_date
+    logger.warning("data_as_of 폴백 — '%s' 에 notice_date 가 없어 연도 단독 표기로 적재된다", name)
+    return "2026"
 
 
 def _is_clean(text: str) -> bool:
@@ -205,7 +228,7 @@ def build_finance(reviewed: list[dict], docs_dir: Path) -> dict[str, pd.DataFram
             "rate": rate, "rate_type": rate_type, "rate_note": rate_note,
             "term_months": p.get("term_months"), "exclusive_group": p.get("exclusive_group"),
             "status": p.get("status") or "open", "notice_date": p.get("notice_date"),
-            "data_as_of": p.get("notice_date") or "2026", "source_org": p.get("org"),
+            "data_as_of": _data_as_of(p.get("notice_date"), name), "source_org": p.get("org"),
             "source_url": p.get("source_url") or "",
             "source_collected": collected.for_doc(doc, today),
             "doc_chunk_ref": chunk_ref,

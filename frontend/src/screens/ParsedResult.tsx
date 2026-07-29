@@ -87,7 +87,11 @@ export default function ParsedResult({
           이대로 조달 시나리오 보기 →
         </Button>
       </div>
-      <p className={`t-caption ${styles.sid}`}>세션 {sessionId}</p>
+      {/*
+        세션 id 는 디버깅에만 쓸모가 있다. 심사 화면에서는 의미 없는 36자 문자열이 결과
+        바로 아래에 놓여 시선을 뺏는다 (FE 리뷰 UX-7). 개발 모드에서만 남긴다.
+      */}
+      {import.meta.env.DEV && <p className={`t-caption ${styles.sid}`}>세션 {sessionId}</p>}
     </div>
   )
 }

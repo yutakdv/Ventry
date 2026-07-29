@@ -9,7 +9,13 @@ import com.ventry.api.common.Verdict;
  */
 public final class ReverseCheck {
 
-    /** 부담률 임계 θ 기본값 (assumptions.md 등재, D1 문헌 확정 시 갱신). */
+    /**
+     * 부담률 임계 θ 기본값 (assumptions.md 등재, D1 문헌 확정 시 갱신).
+     *
+     * <p>⚠️ 평가 하네스가 사본으로 미러링한다 — {@code ai/eval/suites/sensitivity.py} 의
+     * {@code THETA}. 바꿀 때 양쪽을 함께 고칠 것
+     * ({@code ai/tests/test_serving_constants_sync.py} 가 어긋남을 잡는다).
+     */
     public static final double DEFAULT_THETA = 0.15;
 
     private ReverseCheck() {}

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useRef, useState } from 'react'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import AppShell from '../components/layout/AppShell'
 import RailCard from '../components/layout/RailCard'
 import Button from '../components/Button'
@@ -14,6 +14,7 @@ import MyDataPanel from './MyDataPanel'
 import ParsedResult from './ParsedResult'
 import { postDiagnose } from '../api/client'
 import { useSession } from '../store/session'
+import { isSessionLost } from '../lib/sessionLost'
 import type { DiagnoseRequest, DiagnoseResponse, Industry } from '../api/types'
 import {
   SIDO,
@@ -84,6 +85,18 @@ export default function Diagnose() {
   const [submitted, setSubmitted] = useState(false) // "조달 시나리오 보기" 누른 뒤 에러 노출
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<DiagnoseResponse | null>(null)
+  /**
+   * 에러 요약으로 **포커스를 옮기기 위한** 앵커.
+   *
+   * 예전에는 스크롤만 올렸다. 화면을 보는 사용자에게는 통했지만 키보드 포커스는 페이지 맨
+   * 아래 제출 버튼에 남아, 다시 Tab 을 누르면 폼이 아니라 그 아래로 빠져나갔다. 두 번째
+   * 제출부터는 `role="alert"` 도 이미 떠 있는 같은 문구라 다시 낭독되지 않아 아무 피드백이
+   * 없었다. 표준 에러 요약 패턴대로 요약 자체에 포커스를 준다.
+   */
+  const errorSummaryRef = useRef<HTMLDivElement>(null)
+
+  /** 다른 화면의 세션 가드가 되돌려 보낸 것인지 (M-13). 주소로 직접 열었으면 false 다. */
+  const sessionLost = isSessionLost(useLocation().state)
 
   // 필수 검증 — 폼 상태에서 매 렌더 계산(별도 상태 없음 → 채우면 즉시 에러 해제).
   const errors = validateDiagnose(f)
@@ -104,6 +117,8 @@ export default function Diagnose() {
     if (!isValid) {
       setSubmitted(true) // 미입력 필드 에러 노출 + 이동 차단
       window.scrollTo({ top: 0, behavior: 'smooth' }) // 상단 에러 요약으로 스크롤
+      // 요약이 이번 렌더에서 처음 붙을 수 있어 다음 프레임에 포커스한다.
+      requestAnimationFrame(() => errorSummaryRef.current?.focus())
       return
     }
     setLoading(true)
@@ -184,10 +199,24 @@ export default function Diagnose() {
             현재 상황을 입력하면, 정책자금·보증·대출을 조합한 조달 시나리오와 예산 범위를 안내해 드립니다.
           </p>
 
+          {/*
+            세션이 사라져 되돌아온 경우에만 나온다 (M-13). 세션은 메모리 전용이라 새로고침
+            한 번이면 통째로 없어지는데, 그동안 화면은 아무 말 없이 1단계로 돌아왔다 —
+            사용자에게는 방금 본 결과가 이유 없이 사라진 것으로 보인다.
+          */}
+          {sessionLost && (
+            <InfoBanner tone="info">
+              이전 진행 내용이 남아 있지 않아 처음부터 시작합니다. 입력한 정보는 브라우저에만 잠시
+              머무르고 서버에 저장되지 않으므로, 새로고침하거나 창을 닫으면 사라집니다.
+            </InfoBanner>
+          )}
+
           {submitted && errorCount > 0 && (
-            <Alert title={`입력값 ${errorCount}건을 확인해 주세요.`}>
-              표시된 항목을 수정하면 조달 시나리오를 계산할 수 있습니다.
-            </Alert>
+            <div ref={errorSummaryRef} tabIndex={-1} className={styles.errorSummary}>
+              <Alert title={`입력값 ${errorCount}건을 확인해 주세요.`}>
+                표시된 항목을 수정하면 조달 시나리오를 계산할 수 있습니다.
+              </Alert>
+            </div>
           )}
 
           <p className={`t-caption ${styles.demoHint}`}>
@@ -240,10 +269,16 @@ export default function Diagnose() {
             </Field>
           </div>
           <div className={styles.regionField}>
+            {/*
+              한 라벨 아래 컨트롤이 둘이라 `Field` 의 자동 연결(label/for)이 닿지 않는다 —
+              래퍼 div 에는 이름을 걸 수 없으므로 두 셀렉트가 각자 이름을 갖는다.
+            */}
             <Field label="희망 지역" error={submitted ? (errors.sido ?? errors.gu) : undefined}>
-              <div className={styles.row2}>
+              <div className={styles.row2} role="group" aria-label="희망 지역">
                 <Select
                   placeholder="시/도 선택"
+                  aria-label="희망 지역 시/도"
+                  aria-invalid={!!fieldError('sido') || undefined}
                   invalid={!!fieldError('sido')}
                   value={f.sido}
                   onChange={(e) => set('sido', e.target.value)}
@@ -256,6 +291,8 @@ export default function Diagnose() {
                 </Select>
                 <Select
                   placeholder="구/군 선택"
+                  aria-label="희망 지역 구/군"
+                  aria-invalid={!!fieldError('gu') || undefined}
                   invalid={!!fieldError('gu')}
                   value={f.gu}
                   onChange={(e) => set('gu', e.target.value)}

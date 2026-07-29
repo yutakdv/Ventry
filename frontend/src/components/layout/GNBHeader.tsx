@@ -19,7 +19,13 @@ export default function GNBHeader() {
           맡긴다 — 로고 비율을 CSS로 강제하면 교체할 때마다 값을 다시 맞춰야 한다.
           원본 크기를 그대로 적어 두면 로딩 중 헤더가 밀리지 않는다.
         */}
-        <img className={styles.logo} src={logo} alt="Ventry" width={296} height={78} />
+        {/*
+          로고를 누르면 랜딩으로 — 보편적 기대다 (FE 리뷰 UX-6). 라우터 링크여야 하는 이유는
+          아래 nav 와 같다(전체 리로드 한 번에 세션이 통째로 사라진다).
+        */}
+        <Link to="/" className={styles.logoLink} aria-label="Ventry 홈으로">
+          <img className={styles.logo} src={logo} alt="Ventry" width={296} height={78} />
+        </Link>
         <span className={`t-caption ${styles.beta}`}>Beta</span>
       </div>
       {/*

@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * BE-06 ③ — 인사이트 <b>언어화</b> 프롬프트 조립 + 응답 검증기 (스펙 §0-1 역할 ②, expl §2-5).
@@ -46,6 +48,20 @@ public final class RefinePrompt {
      */
     private static final List<String> EXTRA_BANNED = List.of();
 
+    /**
+     * 「382곳에서 1,014곳으로 늘어납니다」 꼴 — 두 수와 증감 어휘를 한 번에 잡는다.
+     *
+     * <p>조사·단위가 붙을 자리를 한글 몇 글자로 열어 두고(「곳에서」·「만원에서」),
+     * 증감 어휘까지의 거리를 짧게 제한한다. 문장 부호를 넘어가면 다른 절이라 보지 않는다.
+     */
+    private static final Pattern TRANSITION = Pattern.compile(
+            "(\\d[\\d,]*(?:\\.\\d+)?)\\s*[가-힣]{0,5}에서\\s*"
+                    + "(\\d[\\d,]*(?:\\.\\d+)?)\\s*[가-힣]{0,5}(?:으로|로)"
+                    + "[^.!?\\n]{0,20}?(늘|증가|확대|줄|감소|축소)");
+
+    /** {@link #TRANSITION} 3번째 그룹 중 "커진다" 쪽. 나머지는 "작아진다"로 본다. */
+    private static final List<String> INCREASE_WORDS = List.of("늘", "증가", "확대");
+
     private RefinePrompt() {}
 
     /**
@@ -69,6 +85,7 @@ public final class RefinePrompt {
                   (예: "96개월"을 "8년"으로, "1,014곳"을 "약 1,000곳"으로 바꾸면 안 됩니다)
                 - 위 문장에 없는 숫자를 새로 만들지 마세요.
                 - 위 문장에 있는 숫자를 빼먹지 마세요. 특히 후보 수는 전부 남겨야 합니다.
+                - 증감의 방향을 바꾸지 마세요. "A에서 B로 늘어납니다"의 A와 B를 뒤바꾸면 안 됩니다.
                 - 한 문단, 200자 이내의 한국어 평서문으로 쓰세요.
                 - "승인", "권장", "보장", "추천"(추천드립니다·추천합니다·추천해 드립니다),
                   "권유합니다", "권해 드립니다" 같은 표현을 쓰지 마세요.
@@ -95,7 +112,41 @@ public final class RefinePrompt {
         if (LlmResponses.violatesTerminology(text, EXTRA_BANNED)) {
             return Optional.empty();
         }
-        return keepsEveryNumber(text, templateBody) ? Optional.of(text) : Optional.empty();
+        if (!keepsEveryNumber(text, templateBody)) {
+            return Optional.empty();
+        }
+        return keepsDirection(text) ? Optional.of(text) : Optional.empty();
+    }
+
+    /**
+     * 「A에서 B로 늘어납니다」 꼴에서 <b>증감 어휘와 두 수의 대소가 어긋나면</b> false
+     * (AI 리뷰 M-04 (B)안).
+     *
+     * <p>{@link #keepsEveryNumber} 는 수치 <b>집합</b>만 보므로 순서 뒤바뀜을 잡지 못한다 —
+     * 「382곳에서 1,014곳으로 늘어납니다」를 「1,014곳에서 382곳으로 늘어납니다」로 뒤집어도
+     * 집합은 같아 통과한다. {@link ReviewPrompt} 계열의 라벨 결속 검사도 여기엔 듣지 않는다:
+     * 두 수가 <b>같은 라벨</b>(진입 가능 후보)을 공유해 라벨로는 구별되지 않기 때문이다.
+     *
+     * <p>집합 비교를 순서 비교로 바꾸지 않은 것은 의도적이다 — 「1,014곳으로, 382곳에서」처럼
+     * 어순만 바꾸는 것은 허용해야 언어화가 의미를 갖는다는 기존 설계 결정을 보존한다.
+     * 여기서 보는 것은 어순이 아니라 <b>증감 서술과 대소 관계의 모순</b> 하나뿐이라,
+     * 정상 문장을 걸러낼 여지가 좁다. 해당 꼴이 없으면 아무것도 판단하지 않는다.
+     */
+    private static boolean keepsDirection(String text) {
+        Matcher m = TRANSITION.matcher(text);
+        while (m.find()) {
+            Optional<BigDecimal> from = LlmResponses.parse(m.group(1));
+            Optional<BigDecimal> to = LlmResponses.parse(m.group(2));
+            if (from.isEmpty() || to.isEmpty() || from.get().compareTo(to.get()) == 0) {
+                continue;   // 판단할 근거가 없다 — 통과시킨다(과잉 폐기 방지)
+            }
+            boolean increased = from.get().compareTo(to.get()) < 0;
+            boolean saysIncrease = INCREASE_WORDS.contains(m.group(3));
+            if (increased != saysIncrease) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

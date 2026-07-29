@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useKakaoLoader } from '../lib/useKakaoLoader'
 import { MAP_LEGEND, VERDICT_LABEL, VERDICT_MARKER_COLOR } from '../lib/verdict'
 import { formatBurdenRatio, formatTransit } from '../lib/format'
@@ -170,6 +170,8 @@ export default function KakaoMap({
   scope?: AreaScope | null
 }) {
   const status = useKakaoLoader()
+  /** 지도 컨테이너가 가리키는 대체 경로 안내의 id (m-4). */
+  const mapAltId = useId()
   /**
    * 말풍선을 접었는가. 경계를 보려고 확대하면 폭 230px·높이 약 180px 짜리 말풍선이 정확히
    * 그 위를 덮는다. 확대 버튼을 누르면 자동으로 접고, 다른 상권을 고르면 다시 편다 —
@@ -408,7 +410,21 @@ export default function KakaoMap({
         </div>
       ) : (
         <div className={styles.mapBox}>
-          <div ref={boxRef} className={styles.map} role="application" aria-label="추천 상권 지도" />
+          {/*
+              지도는 키보드로 마커를 옮겨 다닐 수 없다. 우측 목록이 완전한 대체 경로로
+              설계돼 있으므로(AreaCard 전체가 버튼) **그 사실을 스크린리더에도 알린다** —
+              실질 차단은 아니지만 대체 경로가 있다는 것을 모르면 없는 것과 같다 (FE 리뷰 m-4).
+            */}
+          <p id={mapAltId} className={styles.srOnly}>
+            지도의 마커는 키보드로 선택할 수 없습니다. 오른쪽 상권 목록에서 동일한 내용을 선택할 수 있습니다.
+          </p>
+          <div
+            ref={boxRef}
+            className={styles.map}
+            role="application"
+            aria-label="추천 상권 지도"
+            aria-describedby={mapAltId}
+          />
           {/* 초기 fit 을 1회로 줄인 대신, 전체 조망은 명시적으로 요청할 수 있게 남긴다. */}
           <div className={styles.mapBtns}>
             {/*

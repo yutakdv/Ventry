@@ -44,6 +44,15 @@
   text-align: center;
   color: var(--color-text-secondary);
 }
+.loading p {
+  margin: 0;
+}
+/* 빈 결과에서 되돌아갈 경로 — 문구만 두면 막다른 화면이 된다. */
+.emptyAction {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-16);
+}
 
 .columns {
   display: grid;
@@ -159,7 +168,7 @@
 }
 
 .disclaimer {
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
 }
 
 .ctaBar {

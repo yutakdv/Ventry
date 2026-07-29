@@ -188,7 +188,7 @@
 }
 
 .disclaimer {
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -216,4 +216,9 @@
   border-radius: var(--radius-full);
   background: var(--color-brand-primary);
   color: var(--color-text-on-brand);
+}
+
+/* 접힘 밖으로 옮긴 카드 단위 고지 — 행 하단에 붙인다 (계약 리뷰 P2-5). */
+.disclaimer {
+  padding: 0 var(--space-16) var(--space-12);
 }

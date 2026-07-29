@@ -19,12 +19,17 @@ public class SseSupport {
     private static final long TIMEOUT_MS = 60_000L;
     private static final long HEARTBEAT_SEC = 15L;
 
-    /** 하트비트 스케줄러 스레드 수 — 한 emitter 의 send 가 막혀도 다른 스트림이 멈추지 않게 (D-15). */
-    private static final int HEARTBEAT_THREADS = 4;
-
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
-    private final ScheduledExecutorService heartbeat =
-            Executors.newScheduledThreadPool(HEARTBEAT_THREADS);
+    /**
+     * 하트비트 스케줄러는 <b>1스레드로 충분하다</b> — 실제 쓰기는 가상 스레드로 넘기기 때문이다.
+     *
+     * <p>이전에는 4스레드를 두고 스케줄러 스레드가 직접 {@code send} 했다. {@code SseEmitter.send}
+     * 는 블로킹 쓰기라, 소비가 느린 클라이언트(모바일 회선·백그라운드 탭)에서 TCP 송신 버퍼가
+     * 차면 그 호출이 스케줄러 스레드를 붙잡는다. 즉 「한 emitter 의 send 가 막혀도 다른 스트림이
+     * 멈추지 않는다」는 보장이 <b>느린 클라이언트 4명까지만</b> 성립했다 (BE 리뷰 M-02).
+     * 지금은 스케줄러가 제출만 하고 즉시 반환하므로 그 상한이 사라진다.
+     */
+    private final ScheduledExecutorService heartbeat = Executors.newScheduledThreadPool(1);
 
     /**
      * SSE 스트림 1개를 띄운다.
@@ -37,15 +42,19 @@ public class SseSupport {
     public SseEmitter run(SseBody body) {
         SseEmitter emitter = new SseEmitter(TIMEOUT_MS);
         Object lock = new Object();
-        ScheduledFuture<?> hb = heartbeat.scheduleAtFixedRate(() -> {
-            try {
-                synchronized (lock) {
-                    emitter.send(SseEmitter.event().comment("heartbeat"));
-                }
-            } catch (Exception ignored) {
-                // 이미 완료/끊긴 emitter — onCompletion에서 취소된다
-            }
-        }, HEARTBEAT_SEC, HEARTBEAT_SEC, TimeUnit.SECONDS);
+        // 블로킹 쓰기를 가상 스레드로 이관한다 — 스케줄러 스레드는 제출만 하고 즉시 반환하므로
+        // 느린 클라이언트가 몇이든 서로의 하트비트를 굶기지 않는다 (M-02).
+        ScheduledFuture<?> hb = heartbeat.scheduleAtFixedRate(
+                () -> executor.submit(() -> {
+                    try {
+                        synchronized (lock) {
+                            emitter.send(SseEmitter.event().comment("heartbeat"));
+                        }
+                    } catch (Exception ignored) {
+                        // 이미 완료/끊긴 emitter — onCompletion에서 취소된다
+                    }
+                }),
+                HEARTBEAT_SEC, HEARTBEAT_SEC, TimeUnit.SECONDS);
         emitter.onCompletion(() -> hb.cancel(true));
         emitter.onTimeout(() -> hb.cancel(true));
         emitter.onError(e -> hb.cancel(true));
