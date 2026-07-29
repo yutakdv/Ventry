@@ -1,7 +1,7 @@
 # BE 인수인계 — 현재 상태와 다음 순서
 
 > 작성: 2026-07-21 (D2 종료 시점, CP1 직전) · 대상: BE를 이어받는 팀원
-> 총괄 일정·의존은 [TASKS.md](TASKS.md), 체크리스트는 [tasks/BACKEND.md](tasks/BACKEND.md),
+> 총괄 일정·의존은 [TASKS.md](TASKS.md),
 > 스키마는 [API_CONTRACT.md](API_CONTRACT.md). **이 문서는 "지금 무엇이 진짜로 도는가"만 다룬다.**
 
 ---
