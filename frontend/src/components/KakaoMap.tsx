@@ -1,10 +1,16 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useKakaoLoader } from '../lib/useKakaoLoader'
-import { MAP_LEGEND, VERDICT_LABEL, VERDICT_MARKER_COLOR } from '../lib/verdict'
+import {
+  MAP_LEGEND,
+  VERDICT_LABEL,
+  VERDICT_MARKER_COLOR,
+  VERDICT_MARKER_SHAPE,
+  type VerdictShape,
+} from '../lib/verdict'
 import { formatBurdenRatio, formatTransit } from '../lib/format'
 import { rentAreaShort, rentPerPyeong } from '../lib/rentArea'
 import { ringsToLatLng, type AreaScope } from '../lib/areaScope'
-import type { Area, Industry } from '../api/types'
+import type { Area, Industry, Verdict } from '../api/types'
 import styles from './KakaoMap.module.css'
 
 /**
@@ -126,18 +132,46 @@ function buildOverlay(area: Area, industry: Industry | null | undefined, onClose
 }
 
 /**
- * 판정 색 원 + 점수 마커 (SVG data URI — 외부 이미지 의존 없음).
+ * 판정 모양 하나 — 원(적합) / 둥근 사각(조건부 적합) / 마름모(유의).
+ *
+ * 색만으로 판정을 전달하지 않기 위한 두 번째 축이다(WCAG 1.4.1). 마름모는 같은 반지름이면
+ * 넓이가 원의 약 64% 라 작아 보이므로 1.18배로 보정한다 — 세 모양의 시각 무게를 맞춰야
+ * 「모양이 다르다」가 「중요도가 다르다」로 잘못 읽히지 않는다.
+ */
+function markerShape(shape: VerdictShape, c: number, r: number, attrs: string): string {
+  if (shape === 'square') {
+    const s = r * 1.8
+    const o = c - s / 2
+    return `<rect x="${o}" y="${o}" width="${s}" height="${s}" rx="${r * 0.42}" ${attrs}/>`
+  }
+  if (shape === 'diamond') {
+    const d = r * 1.18
+    return `<polygon points="${c},${c - d} ${c + d},${c} ${c},${c + d} ${c - d},${c}" ${attrs}/>`
+  }
+  return `<circle cx="${c}" cy="${c}" r="${r}" ${attrs}/>`
+}
+
+/**
+ * 판정 마커 (SVG data URI — 외부 이미지 의존 없음).
  * 선택 시에는 캔버스째 키운다. 반지름만 몇 px 늘리면 클릭됐다는 느낌이 나지 않는다.
  */
-function buildMarkerImage(color: string, score: number, selected: boolean): kakao.maps.MarkerImage {
+function buildMarkerImage(
+  verdict: Verdict,
+  score: number,
+  selected: boolean,
+): kakao.maps.MarkerImage {
+  const color = VERDICT_MARKER_COLOR[verdict]
+  const shape = VERDICT_MARKER_SHAPE[verdict]
   const canvas = selected ? 52 : 36
   const c = canvas / 2
   const r = selected ? 19 : 13
   const font = selected ? 16 : 13
   // 선택 마커는 같은 색 반투명 링을 둘러 주변에서 확실히 도드라지게 한다.
+  // 후광은 의미가 아니라 강조라 모양을 따르지 않고 원으로 둔다.
   const halo = selected ? `<circle cx="${c}" cy="${c}" r="${r + 6}" fill="${color}" opacity="0.2"/>` : ''
+  const body = markerShape(shape, c, r, `fill="${color}" stroke="#ffffff" stroke-width="${selected ? 3 : 2}"`)
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${canvas}" height="${canvas}" viewBox="0 0 ${canvas} ${canvas}">
-${halo}<circle cx="${c}" cy="${c}" r="${r}" fill="${color}" stroke="#ffffff" stroke-width="${selected ? 3 : 2}"/>
+${halo}${body}
 <text x="${c}" y="${c + font * 0.35}" text-anchor="middle" font-family="'Noto Sans KR',sans-serif" font-size="${font}" font-weight="700" fill="#ffffff">${score}</text>
 </svg>`
   return new kakao.maps.MarkerImage(
@@ -244,7 +278,7 @@ export default function KakaoMap({
         position: pos,
         map,
         title: `${a.name} · ${VERDICT_LABEL[a.verdict]} · ${a.score}점`,
-        image: buildMarkerImage(VERDICT_MARKER_COLOR[a.verdict], a.score, selected),
+        image: buildMarkerImage(a.verdict, a.score, selected),
         zIndex: selected ? 10 : 1,
       })
       kakao.maps.event.addListener(marker, 'click', () => {
@@ -349,7 +383,7 @@ export default function KakaoMap({
       const marker = markersRef.current.get(code)
       const a = areas.find((x) => x.area_code === code)
       if (!marker || !a) return
-      marker.setImage(buildMarkerImage(VERDICT_MARKER_COLOR[a.verdict], a.score, selected))
+      marker.setImage(buildMarkerImage(a.verdict, a.score, selected))
       marker.setZIndex(selected ? 10 : 1)
     }
     if (prevSelectedRef.current !== selectedCode) {
@@ -474,9 +508,16 @@ export default function KakaoMap({
       )}
 
       <div className={styles.legend}>
+        {/*
+          범례도 마커와 **같은 모양**을 보여 준다 — 색·모양 대조표가 화면 안에 있어야
+          색을 구분하기 어려운 사람도 지도를 읽을 수 있다 (WCAG 1.4.1).
+        */}
         {MAP_LEGEND.map((v) => (
           <span key={v} className={`t-caption ${styles.legendItem}`}>
-            <span className={styles.legendDot} style={{ background: VERDICT_MARKER_COLOR[v] }} />
+            <span
+              className={`${styles.legendDot} ${styles[`shape_${VERDICT_MARKER_SHAPE[v]}`]}`}
+              style={{ background: VERDICT_MARKER_COLOR[v] }}
+            />
             {VERDICT_LABEL[v]}
           </span>
         ))}
