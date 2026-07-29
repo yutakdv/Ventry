@@ -204,15 +204,37 @@ export default function Explore() {
 
   const ordered = useMemo(() => orderInsights(cached?.insights ?? []), [cached])
 
-  /** 강조는 1건만 — 진입 증가폭이 가장 큰 T1. "추천" 문구 없이 시각 위계로만 표시한다. */
+  /**
+   * 강조는 1건만 — 진입 증가폭이 가장 큰 T1. "추천" 문구 없이 시각 위계로만 표시한다.
+   *
+   * **지속 가능 후보가 늘지 않는 행은 강조하지 않는다** (실사용 점검 2026-07-29).
+   * 실측에서 i-1(+5,968만원 → 진입 1,014곳·지속 196곳)과 i-2(+6,120만원 → 진입 1,018곳·
+   * 지속 **196곳**)가 나왔고, 배지는 i-2에 붙었다. 152만원을 더 내서 진입이 4곳 열리지만
+   * **버틸 수 있는 후보는 한 곳도 늘지 않는** 선택지가 「임팩트 최대」로 보인 것이다.
+   * 이 서비스의 명제가 「진입」이 아니라 「지속」이므로 그 방향으로 강조를 건다. 상향
+   * 인사이트를 단독으로 부각하지 않는다는 용어 컴플라이언스와도 방향이 같다.
+   *
+   * 계약에 `n_sustain_before` 가 없어 Δ지속을 직접 못 구하므로, **지속이 진입 증가에 전혀
+   * 기여하지 않는 행**(지속 후보가 그 축의 최대치보다 작지 않은데 진입만 큰 경우)을 가리는
+   * 대신 보수적으로 간다 — 후보군 중 지속 후보 수가 최대인 행들로 먼저 좁히고, 그 안에서
+   * 진입 증가폭이 가장 큰 것을 고른다. 지속이 같으면 종전과 같은 결과가 나오고, 지속이
+   * 적은 행이 진입만으로 배지를 가져가는 경우가 사라진다.
+   */
   const highlightId = useMemo(() => {
     const t1 = ordered.filter((i) => i.type !== 'T2')
     if (t1.length === 0) return null
-    return t1.reduce((best, cur) =>
+    // `n_sustain_after` 는 계약상 선택 필드다. 없는 축이 섞이면 비교가 성립하지 않으므로,
+    // 전건이 값을 가진 경우에만 지속으로 좁히고 아니면 종전대로 진입 증가폭만 본다.
+    const sustains = t1.map((i) => i.delta.n_sustain_after)
+    const hasSustain = sustains.every((s): s is number => s != null)
+    const maxSustain = hasSustain ? Math.max(...sustains) : null
+    const best =
+      maxSustain == null ? t1 : t1.filter((i) => i.delta.n_sustain_after === maxSustain)
+    return best.reduce((acc, cur) =>
       cur.delta.n_entry_after - cur.delta.n_entry_before >
-      best.delta.n_entry_after - best.delta.n_entry_before
+      acc.delta.n_entry_after - acc.delta.n_entry_before
         ? cur
-        : best,
+        : acc,
     ).insight_id
   }, [ordered])
 
@@ -299,13 +321,21 @@ export default function Explore() {
           이 화면이 「데이터 기준일 상시 표기」(스펙 §0-4)를 못 지키는 유일한 자리였다.
           `POST /budget` 응답이 D9 에서 실어 보내기 시작한 값을 세션이 그대로 옮겨 온다.
         */}
+        {/*
+          지속·상환 지표는 `appliedInsight` 가 아니라 `activeRow` 를 본다
+          (실사용 점검 2026-07-29). `appliedInsight` 는 **명시적으로 적용한 것**만 잡아서,
+          적용 전에는 항상 null → 요약 배지가 「지속 가능 후보 —」 인데 바로 아래 카드들은
+          227·308·307곳을 적고 있었다. 같은 지표가 한 화면에서 두 값으로 보인 것이다.
+          더 나쁘게는 아래 목록이 `activeId` 로 「적용 중」 칩을 달 수 있어 **「적용 중」과
+          「—」가 동시에** 떴다. 화면의 다른 부분이 이미 `activeRow` 를 쓰므로 여기만 맞춘다.
+        */}
         <ExploreSummary
           budget={effectiveBudget}
           baseBudget={base}
           entryCount={frontierAt(effectiveBudget)}
           baseEntryCount={frontierAt(base)}
-          sustainCount={appliedInsight?.delta.n_sustain_after ?? null}
-          monthlyPayment={appliedInsight?.marginal_payment ?? null}
+          sustainCount={activeRow?.delta.n_sustain_after ?? null}
+          monthlyPayment={activeRow?.marginal_payment ?? null}
           dataAsOf={dataAsOf ?? undefined}
           onOpenMap={() => navigate('/map')}
           onRevert={() => void changeBudget(base, null)}
@@ -371,9 +401,15 @@ export default function Explore() {
 
             {ordered.length > 0 && (
               <p className={`t-caption ${styles.baselineNote}`}>
+                {/*
+                  「현재」를 쓰지 않는다 (실사용 점검 2026-07-29). 이 문장과 화면 최하단 고지가
+                  둘 다 「현재」로 시작하면서 **서로 다른 금액**(적용 예산 / 기준 예산)을 가리켜,
+                  한 화면에서 같은 낱말이 두 뜻이 됐다. 두 금액을 각각 「적용 예산」·「기준 예산」
+                  으로 불러 이름과 값이 1:1이 되게 한다.
+                */}
                 {appliedInsight
-                  ? `현재 ${formatAmount(effectiveBudget)} 기준으로 결과가 갱신돼 있습니다. 다른 시나리오를 누르면 기준 예산에서 다시 계산됩니다.`
-                  : `현재는 확정 예산 ${formatAmount(base)} 기준입니다. 다른 시나리오를 적용하면 예산과 결과가 갱신됩니다.`}
+                  ? `적용 예산 ${formatAmount(effectiveBudget)} 기준으로 결과가 갱신돼 있습니다. 다른 시나리오를 누르면 기준 예산에서 다시 계산됩니다.`
+                  : `기준 예산 ${formatAmount(base)} 기준입니다. 다른 시나리오를 적용하면 예산과 결과가 갱신됩니다.`}
               </p>
             )}
 
@@ -419,7 +455,7 @@ export default function Explore() {
         */}
         <p className={`t-caption ${styles.disclaimer}`}>
           ⓘ 본 정보는 공개 자료 기반 정보 제공이며 대출 권유·중개·자문이 아닙니다. 실제 한도·금리·승인
-          여부는 해당 기관의 심사에 따릅니다. 현재 기준 예산은 {formatAmount(base)}입니다.
+          여부는 해당 기관의 심사에 따릅니다. 기준 예산은 {formatAmount(base)}입니다.
           {dataAsOf && ` 데이터 기준일 ${dataAsOf}.`}
         </p>
       </div>

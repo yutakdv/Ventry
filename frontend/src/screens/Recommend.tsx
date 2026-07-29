@@ -10,7 +10,7 @@ import CheckAreaPanel from '../components/CheckAreaPanel'
 import RiskReviewPanel from '../components/RiskReviewPanel'
 import BudgetSliderBar from '../components/BudgetSliderBar'
 import Modal from '../components/Modal'
-import { getRecommend, postBudget, postCheckArea } from '../api/client'
+import { getRecommend, isSessionGone, postBudget, postCheckArea } from '../api/client'
 import { useSession } from '../store/session'
 import { formatAmount, formatRentScope, formatScopeOverlap } from '../lib/format'
 import { SESSION_LOST_STATE } from '../lib/sessionLost'
@@ -42,6 +42,27 @@ const SORT_LABEL: Record<SortKey, string> = {
 
 /** 판정 필터 — 계약에 필터 쿼리가 없어 전부 클라이언트에서 처리한다 (API_CONTRACT §4). */
 const VERDICT_FILTERS: (Verdict | 'ALL')[] = ['ALL', 'FIT', 'CONDITIONAL', 'CAUTION']
+
+/**
+ * 상권 구분 필터 (실사용 점검 2026-07-29).
+ *
+ * 값은 **서울시 상권분석서비스의 공식 구분**(`TRDAR_SE_CD` — A 골목 / D 발달 / R 전통시장 /
+ * U 관광특구)을 그대로 쓴다. 화면이 이 이름을 적는 것은 분류가 아니라 **인용**이다.
+ *
+ * 진단 폼에 있던 「오피스/주거/대학가/번화가」를 여기로 옮기지 **않은** 이유가 이것이다 —
+ * 그 어휘에 대응하는 데이터가 없어 우리가 직접 임계값을 정해야 하는데(직장인구 비중 몇 %부터
+ * 오피스인가), 그러면 출처 규율을 지켜 온 화면에 근거 없는 분류가 하나 생긴다. 대학가는
+ * 데이터 자체가 없다. 설명 문구(`hint`)는 분류를 바꾸지 않고 **읽기만 돕는다.**
+ *
+ * 자리도 옮겼다: 진단(1단계)에서 미리 선언하는 축이 아니라 **결과를 좁히는 축**이다.
+ * 1,000곳 넘는 목록에서 실제로 필요한 동작이고, 지도 마커 겹침도 함께 줄어든다.
+ */
+const AREA_TYPE_FILTERS: { value: string; hint: string }[] = [
+  { value: '골목상권', hint: '주택가·이면도로 중심' },
+  { value: '발달상권', hint: '대로변 대형 상권' },
+  { value: '전통시장', hint: '재래시장 배후' },
+  { value: '관광특구', hint: '관광 수요 중심' },
+]
 
 export default function Recommend() {
   const navigate = useNavigate()
@@ -75,9 +96,13 @@ export default function Recommend() {
    * 순간 1초 이상 걸린다(BE 실측 1.4~1.8초, 같은 구성 안에서는 캐시로 ~10ms).
    */
   const [refreshing, setRefreshing] = useState(false)
+  /** 서버에 세션이 없다(404) — 첫 화면으로 돌려보내고 사유를 알린다. */
+  const [sessionGone, setSessionGone] = useState(false)
   const [selected, setSelected] = useState<string | null>(null)
   const [sort, setSort] = useState<SortKey>('score')
   const [verdictFilter, setVerdictFilter] = useState<Verdict | 'ALL'>('ALL')
+  /** 상권 구분 필터 — 서울시 공식 구분값 그대로. 'ALL'이면 좁히지 않는다. */
+  const [areaTypeFilter, setAreaTypeFilter] = useState<string>('ALL')
   const [listLimit, setListLimit] = useState(LIST_PAGE)
   const [check, setCheck] = useState<CheckAreaResponse | null>(null)
   const [checking, setChecking] = useState(false)
@@ -131,8 +156,12 @@ export default function Recommend() {
         )
         setVerdictOf(null) // 예산이 바뀌면 이전 판정은 더 이상 유효하지 않다
       })
-      // 취소된 요청은 reject 한다(client.ts) — 그 경우 화면 상태를 건드리지 않는다.
-      .catch(() => {})
+      .catch((e: unknown) => {
+        // 취소된 요청은 reject 한다(client.ts) — 그 경우 화면 상태를 건드리지 않는다.
+        // 세션이 서버에 없으면(404) 목 데이터로 이어 붙이지 않고 첫 화면으로 돌린다 —
+        // 없는 세션의 결과를 지어내 보여 주는 것보다 사실을 말하는 편이 낫다.
+        if (!ac.signal.aborted && isSessionGone(e)) setSessionGone(true)
+      })
       .finally(() => {
         if (ac.signal.aborted) return
         setLoading(false)
@@ -142,6 +171,27 @@ export default function Recommend() {
     // retryToken: 폴백 배너의 「다시 불러오기」가 세션을 유지한 채 이 조회만 다시 돌린다 (M-14)
   }, [sessionId, version, budget, retryToken])
 
+  /*
+   * 상권 경계·구분 정적 자산. `AreaCard` 의 구분 라벨과 근거 문장이 이미 이 값을 쓰고 있어,
+   * 상권 구분 필터도 API 왕복 없이 여기서 그대로 나온다. 로드 실패 시 null 이며 그때는
+   * 필터 자체를 노출하지 않는다 (데이터가 없으면 고르게 하지 않는다).
+   */
+  const scope = useAreaScope()
+
+  /** 판정 필터까지 적용한 뒤의 상권 구분별 개수 — 칩에 실어 「고르면 몇 곳」인지 미리 보인다. */
+  const areaTypeCounts = useMemo(() => {
+    const out = new Map<string, number>()
+    if (!data || !scope) return out
+    const base = data.areas.filter((a) => a.verdict !== 'OUT_OF_SCOPE')
+    const afterVerdict =
+      verdictFilter === 'ALL' ? base : base.filter((a) => a.verdict === verdictFilter)
+    for (const a of afterVerdict) {
+      const t = scope.areas.get(a.area_code)?.type
+      if (t) out.set(t, (out.get(t) ?? 0) + 1)
+    }
+    return out
+  }, [data, scope, verdictFilter])
+
   const areas = useMemo(() => {
     if (!data) return []
     /*
@@ -150,8 +200,13 @@ export default function Recommend() {
      * 총계(total_count)에는 남아 있으니 수치가 사라지는 것은 아니다.
      */
     const inScope = data.areas.filter((a) => a.verdict !== 'OUT_OF_SCOPE')
-    const filtered =
+    const byVerdict =
       verdictFilter === 'ALL' ? inScope : inScope.filter((a) => a.verdict === verdictFilter)
+    // 상권 구분(골목·발달·전통시장·관광특구)은 서울시 공식 값이며 정적 자산에서 온다.
+    const filtered =
+      areaTypeFilter === 'ALL' || !scope
+        ? byVerdict
+        : byVerdict.filter((a) => scope.areas.get(a.area_code)?.type === areaTypeFilter)
     const sorted = [...filtered]
     sorted.sort((a, b) => {
       switch (sort) {
@@ -166,7 +221,7 @@ export default function Recommend() {
       }
     })
     return sorted
-  }, [data, sort, verdictFilter])
+  }, [data, scope, sort, verdictFilter, areaTypeFilter])
 
   /*
    * 목록 구성이 바뀌면 "더 보기"로 늘려 둔 개수를 되돌린다 (FE 리뷰 m-2).
@@ -175,7 +230,7 @@ export default function Recommend() {
    */
   useEffect(() => {
     setListLimit(LIST_PAGE)
-  }, [data, sort, verdictFilter])
+  }, [data, sort, verdictFilter, areaTypeFilter])
 
   /**
    * 판정별 개수.
@@ -227,7 +282,6 @@ export default function Recommend() {
    * 상권·구획 경계 (가정 #96). 첫 페인트 이후에 도착하며, 못 받으면 `null` 로 남아
    * 경계·근거 범위 문장만 빠진 채 나머지 화면은 그대로 동작한다.
    */
-  const scope = useAreaScope()
   const scopeNote = useMemo(() => {
     if (!scope || !selected) return undefined
     const area = areas.find((a) => a.area_code === selected)
@@ -249,7 +303,24 @@ export default function Recommend() {
     )
   }, [scope, selected])
 
-  // 지도에서 마커를 고르면 해당 카드가 목록 밖에 있을 수 있다 — 보이는 위치로 끌어온다.
+  /*
+   * 지도에서 마커를 고르면 해당 카드가 목록 밖에 있을 수 있다 — 보이는 위치로 끌어온다.
+   *
+   * **목록을 먼저 늘린다** (실사용 점검 2026-07-29). 지도는 상위 100곳(`MAP_MARKER_LIMIT`)에
+   * 마커를 그리는데 목록은 50건(`LIST_PAGE`)만 렌더해서, 51~100위 마커를 누르면 카드가 DOM 에
+   * 아예 없어 `querySelector` 가 null → **아무 일도 일어나지 않았다.** 주석은 「목록 밖에 있을
+   * 수 있다 — 끌어온다」라고 적혀 있었지만 그 처리가 없었고, 지도 말풍선은 「자세한 근거는
+   * 오른쪽 목록에서 확인할 수 있습니다」라고 안내하고 있었다. 두 안내가 다 어긋난 셈이다.
+   */
+  useEffect(() => {
+    if (!selected) return
+    const index = areas.findIndex((a) => a.area_code === selected)
+    if (index >= 0 && index >= listLimit) {
+      // 고른 카드가 나올 때까지 페이지 단위로 늘린다 — 다음 렌더에서 스크롤이 걸린다.
+      setListLimit(Math.ceil((index + 1) / LIST_PAGE) * LIST_PAGE)
+    }
+  }, [selected, areas, listLimit])
+
   useEffect(() => {
     if (!selected || !listRef.current) return
     const card = listRef.current.querySelector<HTMLElement>(`[data-area-code="${CSS.escape(selected)}"]`)
@@ -258,7 +329,7 @@ export default function Recommend() {
       block: 'nearest',
       behavior: prefersReducedMotion() ? 'auto' : 'smooth',
     })
-  }, [selected])
+  }, [selected, listAreas])
 
   // 상권을 고르면 역방향 판정을 재조회한다 (계약 6번 — 판정 4단계 + 부족분 + 자격 부합 상품).
   useEffect(() => {
@@ -343,7 +414,7 @@ export default function Recommend() {
    * (새로고침·주소 직접 입력에서 실제로 발생). 화면을 보여주는 대신 앞 단계로 돌려보낸다.
    */
   // 세션이 사라진 이유를 첫 화면이 설명할 수 있도록 state 를 실어 보낸다 (M-13)
-  if (!sessionId) return <Navigate to="/diagnose" replace state={SESSION_LOST_STATE} />
+  if (!sessionId || sessionGone) return <Navigate to="/diagnose" replace state={SESSION_LOST_STATE} />
   if (budget == null) return <Navigate to="/budget" replace />
 
   return (
@@ -378,17 +449,22 @@ export default function Recommend() {
               value={`${counts.inScope.toLocaleString('ko-KR')}곳`}
               caption={`진입 가능 ${counts.entry.toLocaleString('ko-KR')}곳 · 조건부 적합 ${counts.CONDITIONAL.toLocaleString('ko-KR')}곳 (무권리 매물 기준)`}
             />
+            {/*
+              후보가 0곳이면 서버가 `summary` 를 생략한다 — 그때는 「—」로 둔다
+              (실사용 점검 2026-07-29). 종전에는 서버가 후보 풀 전체를 평균해서, 추천이
+              0곳인 화면에서도 「평균 임대료 221만원」이 그대로 떴다.
+            */}
             <StatCard
               icon={Receipt}
               tone="green"
               label={`평균 환산 임대료 (월${rentUnit ? `, ${rentUnit}` : ''})`}
-              value={formatAmount(data.summary.avg_rent)}
+              value={data.summary ? formatAmount(data.summary.avg_rent) : '—'}
             />
             <StatCard
               icon={TrendingUp}
               tone="orange"
               label="평균 추정 매출 (월)"
-              value={formatAmount(data.summary.avg_sales)}
+              value={data.summary ? formatAmount(data.summary.avg_sales) : '—'}
             />
           </div>
         )}
@@ -448,6 +524,45 @@ export default function Recommend() {
                   </button>
                 ))}
               </div>
+
+              {/*
+                상권 구분 필터 — 경계 자산이 실린 경우에만 노출한다. 자산 로드는 선택 경로라
+                (`useAreaScope`) 실패하면 필터가 아예 나타나지 않고 나머지는 그대로 동작한다.
+              */}
+              {scope && (
+                <div className={styles.filters}>
+                  <button
+                    type="button"
+                    className={`t-label ${styles.chip} ${areaTypeFilter === 'ALL' ? styles.chipActive : ''}`}
+                    aria-pressed={areaTypeFilter === 'ALL'}
+                    onClick={() => setAreaTypeFilter('ALL')}
+                  >
+                    상권 구분 전체
+                  </button>
+                  {AREA_TYPE_FILTERS.filter((t) => (areaTypeCounts.get(t.value) ?? 0) > 0).map(
+                    (t) => (
+                      <button
+                        key={t.value}
+                        type="button"
+                        className={`t-label ${styles.chip} ${areaTypeFilter === t.value ? styles.chipActive : ''}`}
+                        aria-pressed={areaTypeFilter === t.value}
+                        // 구분 이름만으로는 무엇인지 모를 수 있어 설명을 툴팁·보조라벨로 함께 준다.
+                        title={t.hint}
+                        aria-label={`${t.value} — ${t.hint}, ${areaTypeCounts.get(t.value)}곳`}
+                        onClick={() => setAreaTypeFilter(t.value)}
+                      >
+                        {t.value} {areaTypeCounts.get(t.value)}
+                      </button>
+                    ),
+                  )}
+                </div>
+              )}
+              {scope && areaTypeFilter !== 'ALL' && (
+                <p className={`t-caption ${styles.filterHint}`}>
+                  {AREA_TYPE_FILTERS.find((t) => t.value === areaTypeFilter)?.hint} · 서울시 상권분석서비스
+                  상권 구분 기준입니다.
+                </p>
+              )}
 
               {/* 검증 의견은 결과 전체에 1건이다 (상권별 아님 — API_CONTRACT §4) */}
               <RiskReviewPanel review={data.risk_review} claim={riskClaim} label="추천 결과 전체" />

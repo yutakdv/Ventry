@@ -56,10 +56,18 @@
 
 .columns {
   display: grid;
-  grid-template-columns: 340px 1fr;
+  /* `1fr` 은 min-content 아래로 안 줄어든다 — 우열 내용이 그리드를 넓혀 넘치던 자리. */
+  grid-template-columns: 340px minmax(0, 1fr);
   gap: var(--space-16);
   align-items: start;
   animation: fadeIn 180ms ease;
+}
+
+/* 이 화면에는 폭 기반 대응이 하나도 없었다 (실사용 점검 2026-07-29). */
+@media (max-width: 1000px) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 @keyframes fadeIn {

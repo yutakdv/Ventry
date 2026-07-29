@@ -24,6 +24,22 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+
+  /*
+   * 한국어 줄바꿈 기본값 (실사용 점검 2026-07-29).
+   *
+   * `keep-all` — 한국어는 어절 단위로 끊어야 읽힌다. 없으면 좁은 폭에서 「가능한 / 가.」처럼
+   * 어절 중간이 갈라진다. 종전에는 랜딩만 처리돼 있었고 서비스 화면 본문 다수가 빠져 있었다.
+   *
+   * `overflow-wrap: anywhere` — 끊을 수 없는 긴 토큰(공고 원문 URL·상권명·긴 숫자열)의
+   * 최후 방어선이다. 저장소 전체에 `overflow-wrap` 이 한 곳도 없어 그런 토큰이 부모를
+   * 그대로 밀어냈다. `break-word` 대신 `anywhere` 인 이유는 **intrinsic min-content 계산에도
+   * 반영**되기 때문이다 — flex/grid 안에서 긴 텍스트가 컨테이너를 넓히는 부류가 함께 사라진다.
+   *
+   * 단, `white-space: nowrap` 이 걸린 요소에는 효과가 없다. 그건 개별로 푼다.
+   */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 button {

@@ -50,6 +50,9 @@
   top: var(--space-12);
   right: var(--space-12);
   display: flex;
+  /* 지도 열이 좁아지면 접힌다 — 항목 3종이 모두 nowrap 이라 겹치던 자리. */
+  flex-wrap: wrap;
+  max-width: calc(100% - var(--space-24));
   gap: var(--space-12);
   padding: var(--space-8) var(--space-12);
   border-radius: var(--radius-md);
