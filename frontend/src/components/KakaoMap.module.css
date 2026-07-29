@@ -67,24 +67,10 @@
   color: var(--color-text-secondary);
   white-space: nowrap;
 }
-/*
- * 범례 표식 — 마커와 **같은 모양**을 쓴다 (2026-07-30). 색만으로 판정을 전달하지 않기 위한
- * 축이라, 범례가 모양까지 보여 줘야 대조표 구실을 한다 (WCAG 1.4.1).
- */
 .legendDot {
-  width: 9px;
-  height: 9px;
-  flex: none;
-}
-.shape_circle {
+  width: 8px;
+  height: 8px;
   border-radius: var(--radius-full);
-}
-.shape_square {
-  border-radius: 2px;
-}
-.shape_diamond {
-  border-radius: 1px;
-  transform: rotate(45deg);
 }
 
 .note {
@@ -198,15 +184,13 @@
   background: var(--green-50);
   color: var(--green-600);
 }
-/* 마커 팔레트에 맞춘다 (2026-07-30) — 배지와 마커가 다른 색이면 대조가 끊긴다.
-   조건부 적합의 노랑은 KB 브랜드색이라 유지하고, 유의만 주황 → 빨강으로 옮겼다. */
 .CONDITIONAL {
   background: var(--yellow-50);
   color: var(--yellow-600);
 }
 .CAUTION {
-  background: var(--red-50);
-  color: var(--red-600);
+  background: var(--orange-50);
+  color: var(--orange-500);
 }
 .OUT_OF_SCOPE {
   background: var(--gray-50);
