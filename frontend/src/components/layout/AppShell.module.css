@@ -15,6 +15,14 @@
 .noRail {
   grid-template-columns: var(--layout-sidebar) minmax(0, 1fr);
 }
+
+/*
+ * 사이드바를 접은 화면(`/map`·`/explore`) — 본문이 전폭을 쓴다.
+ * `.noRail` 뒤에 와야 칼럼 선언을 덮는다 (실사용 점검 2026-07-29).
+ */
+.wide {
+  grid-template-columns: minmax(0, 1fr);
+}
 .main {
   min-width: 0;
 }

@@ -418,11 +418,19 @@ export default function Recommend() {
   if (budget == null) return <Navigate to="/budget" replace />
 
   return (
-    <AppShell activeStep={4}>
+    <AppShell activeStep={4} wide>
       <div className={styles.surface}>
         <div className={styles.header}>
           <div className={styles.titleRow}>
-            <h1 className="t-title1">4단계. 입지 추천</h1>
+            {/*
+              사이드바를 접으면서 그 자리의 태그라인(「내 형편에 어디까지 가능한가 / 자금이
+              입지를 결정합니다」)이 사라진다. 이 서비스의 명제라 화면에서 빠지면 안 되므로
+              결과 화면의 제목 옆으로 옮긴다 (실사용 점검 2026-07-29).
+            */}
+            <h1 className="t-title1">
+              4단계. 입지 추천
+              <span className={`t-body ${styles.thesis}`}>자금이 입지를 결정합니다</span>
+            </h1>
             <Button variant="secondary" size="sm" onClick={() => navigate('/budget')}>
               ‹ 예산 다시 선택
             </Button>
@@ -624,6 +632,7 @@ export default function Recommend() {
             conditionalCount={counts.CONDITIONAL}
             pending={budgetPending || refreshing}
             industry={industry}
+            onOpenExplore={() => navigate('/explore')}
           />
         )}
 

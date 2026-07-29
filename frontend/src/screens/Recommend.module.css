@@ -25,6 +25,20 @@
 }
 .titleRow h1 {
   margin: 0;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-12);
+}
+
+/*
+ * 사이드바를 접으면서 옮겨 온 명제 (실사용 점검 2026-07-29).
+ * 제목과 같은 줄에 두되 위계는 확실히 낮춘다 — 화면의 주인공은 결과이지 표어가 아니다.
+ */
+.thesis {
+  font-weight: 400;
+  color: var(--color-text-accent);
+  word-break: keep-all;
 }
 .subtitle {
   margin: 0;

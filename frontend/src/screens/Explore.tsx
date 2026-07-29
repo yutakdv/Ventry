@@ -294,8 +294,9 @@ export default function Explore() {
     ? `탐색 계획: ${plan.rationale} (탐색 축: ${plan.axes.map((a) => plan.axis_labels[a] ?? a).join(', ')})`
     : '탐색 계획을 세우는 중입니다…'
 
+  // wide: 사이드바를 접고 차트+시나리오가 전폭을 쓴다 (실사용 점검 2026-07-29)
   return (
-    <AppShell activeStep={4}>
+    <AppShell activeStep={4} wide>
       <div className={styles.surface}>
         <div className={styles.header}>
           <div className={styles.titleRow}>

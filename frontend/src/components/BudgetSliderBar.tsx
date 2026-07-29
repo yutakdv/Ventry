@@ -1,3 +1,4 @@
+import Button from './Button'
 import Slider from './Slider'
 import { formatAmount } from '../lib/format'
 import { rentAreaShort } from '../lib/rentArea'
@@ -23,6 +24,7 @@ export default function BudgetSliderBar({
   conditionalCount,
   pending,
   industry,
+  onOpenExplore,
 }: {
   min: number
   max: number
@@ -41,6 +43,18 @@ export default function BudgetSliderBar({
   pending: boolean
   /** 임대료 금액의 면적 조건 표기용 (이슈 #151). */
   industry?: Industry | null
+  /**
+   * 결정공간 탐색 진입 (실사용 점검 2026-07-29).
+   *
+   * 종전 진입점은 화면 맨 아래, **2단 영역 전체 뒤**에 있었다. 목록이 최대 200장까지 늘어나
+   * 거기까지 스크롤해야 했고, 이 바가 `sticky; bottom: 0` 이라 진입점은 늘 그 **아래에 가려**
+   * 페이지 끝에 닿기 전에는 존재조차 보이지 않았다.
+   *
+   * 이 자리가 제자리인 이유는 위치가 아니라 의미다 — 「예산을 더 확보하면 어디까지 열리는가」가
+   * 곧 탐색 화면이고, 그 예산을 만지는 컨트롤이 바로 옆이다. 하단의 설명 블록은 그대로 둬서
+   * 「추천을 본 뒤 탐색」이라는 데모 순서(expl §8)도 유지된다.
+   */
+  onOpenExplore?: () => void
 }) {
   const areaUnit = rentAreaShort(industry)
   const noCandidate = preview?.area_count === 0
@@ -108,6 +122,14 @@ export default function BudgetSliderBar({
           </>
         )}
       </div>
+
+      {onOpenExplore && (
+        <div className={styles.actionCol}>
+          <Button variant="secondary" size="sm" onClick={onOpenExplore}>
+            결정공간 탐색 →
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
