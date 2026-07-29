@@ -161,6 +161,7 @@ export default function KakaoMap({
   scope,
   legendAction,
   fitToken,
+  fitAreas,
 }: {
   areas: Area[]
   selectedCode: string | null
@@ -182,10 +183,25 @@ export default function KakaoMap({
    * 초기 fit 은 의도적으로 1회뿐이다 — 예산 슬라이더가 `areas` 를 매번 새로 만들기 때문에,
    * `areas` 변화마다 맞추면 자치구를 확대해 둔 시야가 한 칸 움직일 때마다 파괴된다(이슈 #154).
    * 하지만 **판정 필터를 옮기는 것은 다른 종류의 사건**이다: 진입 가능 6곳에서 조건부 적합
-   * 542곳으로 갈아타면 후보 분포 자체가 달라져, 확대해 둔 자리에 마커가 하나도 없을 수 있다.
+   * 542곳으로 갈아타면 후보가 있는 자리가 달라져, 확대해 둔 화면에 마커가 하나도 없을 수 있다.
    * 그래서 「같은 후보군을 다시 계산했다」와 「후보군을 갈아탔다」를 이 토큰으로 가른다.
+   * 돌아가는 곳은 `fitAreas` 기준의 전체 보기이므로, 갈아탄 뒤의 화면은 언제나 서울 전체다.
    */
   fitToken?: string
+  /**
+   * 「전체 보기」의 기준이 되는 후보 집합. 없으면 `areas`(표시 중인 마커)를 쓴다.
+   *
+   * 둘을 나눈 이유가 이 화면의 첫인상이다 (2026-07-30). 뷰포트를 **표시 중인 마커**에 맞추면
+   * 후보가 적은 예산에서 지도가 통째로 확대된다 — 확정 예산 8,000만의 진입 가능 6곳은
+   * 노원구 상계동 일대 **약 1.2km × 0.9km** 안에 몰려 있어(위도폭 0.011°·경도폭 0.010°),
+   * 진입하자마자 지도가 그 골목만 비췄다. 「서울 어디까지 가능한가」를 보여줄 자리에서
+   * 서울이 사라지고, 「서울 전체 보기」 버튼조차 그 골목으로 돌아갔다.
+   *
+   * 그래서 뷰포트는 **예산·필터와 무관한 고정 기준**인 후보 전체(범위 외 포함 서울 상권
+   * 1,059곳, 위도 37.435~37.690 · 경도 126.809~127.174)에 맞춘다. 상수를 박지 않고 데이터에서
+   * 얻으므로 적재본이 바뀌어도 따라온다.
+   */
+  fitAreas?: Area[]
 }) {
   const status = useKakaoLoader()
   /** 지도 컨테이너가 가리키는 대체 경로 안내의 id (m-4). */
@@ -217,6 +233,8 @@ export default function KakaoMap({
   const fitDoneRef = useRef(false)
   /** 마지막으로 뷰포트를 맞춘 후보군. 초기값은 첫 렌더의 토큰이라 진입 직후에는 돌지 않는다. */
   const fitTokenRef = useRef(fitToken)
+  /** 화면이 스스로 고른 첫 선택인가 — 그 한 번은 지도를 움직이지 않는다 (아래 말풍선 효과). */
+  const initialSelectRef = useRef(true)
 
   /**
    * 선택된 상권의 경계와, 그 임대료가 **실제로 조사된** 부동산원 구획의 경계 (가정 #96).
@@ -267,7 +285,6 @@ export default function KakaoMap({
     markersRef.current.forEach((m) => m.setMap(null))
     markersRef.current.clear()
 
-    const bounds = new kakao.maps.LatLngBounds()
     areas.forEach((a) => {
       const pos = new kakao.maps.LatLng(a.lat, a.lng)
       // 선택 상태를 여기서 반영한다(ref로 읽으므로 의존성은 늘지 않는다) — 아래 강조 효과가
@@ -287,24 +304,26 @@ export default function KakaoMap({
         onSelectRef.current(a.area_code)
       })
       markersRef.current.set(a.area_code, marker)
-      bounds.extend(pos)
     })
     prevSelectedRef.current = selectedRef.current
 
-    boundsRef.current = bounds
     /*
-     * 네 방향 같은 여백 — 후보 분포(서울)가 지도를 꽉 채운다. 말풍선 잘림은 아래 panTo 담당.
+     * 뷰포트는 **표시 중인 마커가 아니라 후보 전체(서울)** 에 맞춘다 (`fitAreas` 주석 참조).
+     * 네 방향 같은 여백 — 서울이 지도를 꽉 채운다. 말풍선 잘림은 아래 panTo 담당.
      *
      * **최초 1회만** 맞춘다. 이 효과는 `areas` 가 바뀔 때마다 도는데, 예산 슬라이더는 그
      * 배열을 매번 새로 만든다 — 조건이 `areas.length > 0` 뿐이던 동안에는 슬라이더를 한 칸
      * 움직일 때마다 뷰포트가 서울 전체로 튕겨 나가, 특정 자치구를 확대해 둔 상태가 파괴됐다.
      * 전체를 다시 보고 싶을 때는 아래 「서울 전체 보기」로 명시적으로 요청한다.
      */
-    if (!fitDoneRef.current && areas.length > 0 && !bounds.isEmpty()) {
+    const bounds = new kakao.maps.LatLngBounds()
+    ;(fitAreas ?? areas).forEach((a) => bounds.extend(new kakao.maps.LatLng(a.lat, a.lng)))
+    boundsRef.current = bounds
+    if (!fitDoneRef.current && !bounds.isEmpty()) {
       map.setBounds(bounds, FIT_PADDING, FIT_PADDING, FIT_PADDING, FIT_PADDING)
       fitDoneRef.current = true
     }
-  }, [status, areas])
+  }, [status, areas, fitAreas])
 
   /*
    * 후보군을 갈아탔을 때만 다시 맞춘다 (`fitToken` 주석 참조). 위 마커 효과가 `boundsRef` 를
@@ -425,6 +444,23 @@ export default function KakaoMap({
       overlayRef.current.setContent(content)
     }
     overlayRef.current.setMap(map)
+
+    /*
+     * **화면이 스스로 고른 첫 선택으로는 지도를 움직이지 않는다** (2026-07-30).
+     *
+     * 진입 시 1위 상권이 자동 선택되는데, 그 말풍선이 상단에 걸리면 아래 판정이 곧바로
+     * `panTo` 를 불러 첫 화면이 서울 전체가 아니게 된다. 확정 예산 8,000만의 진입 가능 6곳은
+     * 전부 노원구 상계동(위도 37.656~37.667)이라 잘림 임계(약 37.60)를 넘어, 진입하자마자
+     * 지도가 서울 북쪽으로 끌려가고 강남·강서가 화면 밖으로 나갔다.
+     *
+     * 아래 이동 규칙 자체는 그대로 둔다 — 그것은 **사용자가 마커를 고른 뒤**의 규칙이다.
+     * 이 효과는 선택이 없으면 위에서 이미 빠져나가므로, 여기서 소비되는 것은 언제나
+     * 자동 선택 한 번뿐이고 사용자의 첫 클릭은 정상적으로 이동한다.
+     */
+    if (initialSelectRef.current) {
+      initialSelectRef.current = false
+      return
+    }
 
     /*
      * 이미 보이는 마커를 눌렀는데 지도가 움직이면 나머지 후보가 시야에서 밀려나 비교가 끊긴다.
