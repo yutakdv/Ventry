@@ -6,7 +6,7 @@
 PYTHON ?= python3
 
 .PHONY: help eval eval-matching eval-extraction eval-grounding eval-sensitivity eval-model \
-        collect preprocess load
+        collect preprocess load geo
 
 help:
 	@echo "Ventry ai/ 타겟:"
@@ -17,6 +17,7 @@ help:
 	@echo "  make eval-sensitivity   민감도 분석 (가중치 ±20% · θ 변동)"
 	@echo "  make eval-model         LightGBM+SHAP 설계 교차 검증 (§12-2, 게이트 §12-3)"
 	@echo "  make collect|preprocess|load   배치 파이프라인 (AI-02~05)"
+	@echo "  make geo                상권·구획 경계 정적 산출 (가정 #95·#96, DB 미경유)"
 
 # report 스위트가 내부에서 전 스위트를 실행한다 — 앞에 개별 타깃을 나열하면 LightGBM 학습·SHAP 이
 # 두 번 돌아 심사위원 재현 시간이 2배가 된다 (리뷰 #9). 개별 타깃은 아래에 그대로 남아 있다.
@@ -48,3 +49,8 @@ preprocess:
 load:
 	$(PYTHON) -m batch.load core
 	$(PYTHON) -m batch.load finance
+
+# `load` 에 넣지 않는다 — 경계는 DB 를 거치지 않고 산출처도 frontend/public 이라,
+# 함께 돌리면 필요 없는 12테이블 SQL 재조립(1.6MB diff)이 매번 따라온다.
+geo:
+	$(PYTHON) -m batch.load area-scope
