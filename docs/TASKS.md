@@ -3,15 +3,12 @@
 기준: `docs/specs/최종_스펙문서.md` v6.3 · `docs/specs/exploration_agent_spec_v2_1.md` v2.1
 역할: **AI**(데이터·배치·평가) / **BE**(Spring 서빙·에이전트) / **FE**(React·지도) / **CM**(공통)
 
-- **팀원별 세부 체크리스트(파일 단위·명령·PR 슬라이스)**: [tasks/FRONTEND.md](tasks/FRONTEND.md) ·
-  [tasks/BACKEND.md](tasks/BACKEND.md) · [tasks/AI.md](tasks/AI.md) — 이 문서는 총괄(의존·마일스톤)용.
 - **FE 공지 (서버 측 변경 — 화면 조치 필요분 포함)**: [HANDOFF_FRONTEND.md](HANDOFF_FRONTEND.md)
 - **BE 인수인계 (담당 교대 시 필독)**: [HANDOFF_BACKEND.md](HANDOFF_BACKEND.md) — 엔드포인트별
   목/실 상태·도구 계층 결선 현황·다음 순서·함정 목록·동작 확인 명령.
 - **D0 확정 사항 (전 파트 필독)**: [DECISIONS.md](DECISIONS.md) — 판정 용어·금액 단위·계약 스키마
   보강·LLM 제공자·청크 저장 방식 7건 확정 기록.
-- **진행 현황 대시보드**: GitHub Projects 로드맵(간트) — 구축·운영은 [BOARD.md](BOARD.md),
-  원커맨드 세팅은 `./scripts/setup_board.sh`.
+- **진행 현황 대시보드**: GitHub Projects 로드맵(간트) — 원커맨드 세팅은 `./scripts/setup_board.sh`.
 - PR 단위 = 태스크 ID 1~2개. PR 제목에 ID 표기 (`[BE-04] ...`).
 - **브랜치는 2단계**: 토픽(`be04-frontier`) →(로컬 병합)→ 영역(`backend`) →(PR)→ `develop`.
   토픽에서 develop으로 직접 PR 금지 — 상세는 [CONTRIBUTING §2](../CONTRIBUTING.md).
