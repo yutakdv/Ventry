@@ -59,7 +59,17 @@ export default function AreaCard({
       className={`${styles.card} ${selected ? styles.selected : ''}`}
       data-area-code={area.area_code}
     >
-      <button type="button" className={styles.body} aria-pressed={selected} onClick={onSelect}>
+      {/*
+        버튼 안에 점수·스탯 6개·근거 4줄이 전부 들어 있어 스크린리더가 이름으로 그 전부를
+        한 번에 낭독했다. 이름은 짧게 주고, 내용은 읽기 모드에서 그대로 접근된다 (FE 리뷰 m-5).
+      */}
+      <button
+        type="button"
+        className={styles.body}
+        aria-pressed={selected}
+        aria-label={`${area.name} 선택`}
+        onClick={onSelect}
+      >
       <span className={styles.header}>
         <span className={`t-title2 ${styles.score} ${styles[grade(area.score)]}`}>{area.score}</span>
         <span className={styles.titleCol}>

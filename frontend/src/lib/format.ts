@@ -49,13 +49,16 @@ const ORG_LABEL: Record<string, string> = { REB: '한국부동산원' }
  * 업종을 모르면 붙이지 않는다 — 화면이 없는 근거를 지어내지 않는다.
  */
 export function formatRentSource(
-  src: { org: string; district: string; fallback: boolean },
+  src: { org: string; district: string | null; fallback: boolean },
   industry?: Industry | null,
 ): string {
   const org = ORG_LABEL[src.org] ?? src.org
-  const base = src.fallback
-    ? `임대료: ${org} 자치구 평균 (추정 · 상권 단위 미매칭)`
-    : `임대료: ${org} ${src.district} 분기 평균 (추정)`
+  // `district` 는 폴백 행에서 null 로 온다 (계약 §4). `fallback` 만 보고 분기하면 두 필드가
+  // 어긋난 응답에서 "null 분기 평균"이 화면에 찍히므로, 이름이 없으면 폴백 문구를 쓴다.
+  const base =
+    src.fallback || !src.district
+      ? `임대료: ${org} 자치구 평균 (추정 · 상권 단위 미매칭)`
+      : `임대료: ${org} ${src.district} 분기 평균 (추정)`
   const basis = rentAreaBasis(industry)
   return basis ? `${base} · ${basis}` : base
 }
@@ -77,11 +80,11 @@ function km2(areaM2: number): string {
  * 권유·추천 술어를 쓰지 않고 사실만 서술한다 (CLAUDE.md §3).
  */
 export function formatRentScope(
-  src: { district: string; fallback: boolean },
+  src: { district: string | null; fallback: boolean },
   areaM2: number,
   districtM2: number | null,
 ): string {
-  if (src.fallback || !districtM2) {
+  if (src.fallback || !districtM2 || !src.district) {
     return '임대료 근거 범위: 이 상권은 한국부동산원 조사 구획에 속하지 않아 자치구 평균을 적용했습니다 — 표시할 구획 경계가 없습니다.'
   }
   /*

@@ -9,6 +9,7 @@ import SseEventLog from './SseEventLog'
 import { getExplore, postBudget } from '../api/client'
 import { useSession, type ExploreCache } from '../store/session'
 import { buildComposition } from '../lib/composition'
+import { SESSION_LOST_STATE } from '../lib/sessionLost'
 import { formatAmount } from '../lib/format'
 import type { ExploreInsightEvent } from '../api/types'
 import styles from './Explore.module.css'
@@ -17,6 +18,9 @@ import styles from './Explore.module.css'
 function orderInsights(list: ExploreInsightEvent[]): ExploreInsightEvent[] {
   return [...list].sort((a, b) => (a.type === 'T2' ? 1 : 0) - (b.type === 'T2' ? 1 : 0))
 }
+
+/** 되돌리기(기준 예산 복귀)에는 인사이트 id 가 없다 — 적용 중 표시를 위한 자리표시자. */
+const REVERT_KEY = '__revert__'
 
 /** 인사이트를 적용했을 때의 예산 — 항상 **기준 예산 기준**이라 갈아타기가 누적되지 않는다. */
 function budgetFor(insight: ExploreInsightEvent, base: number): number {
@@ -37,10 +41,16 @@ export default function Explore() {
     setExplore,
     applyExploreBudget,
     bumpVersion,
+    retryToken,
   } = useSession()
 
   const [loading, setLoading] = useState(false)
-  const [applying, setApplying] = useState(false)
+  /**
+   * 적용 중인 인사이트 id. 되돌리기는 `REVERT_KEY` 를 쓴다 — 불리언 한 개였을 때는
+   * 어느 행을 눌렀는지 화면이 말해 주지 못했다 (FE 리뷰 m-3).
+   */
+  const [applyingId, setApplyingId] = useState<string | null>(null)
+  const busy = applyingId != null
   const abortRef = useRef<AbortController | null>(null)
   /*
    * 스트리밍 도중 캐시가 갱신되면 effect 의존성이 바뀌어 cleanup(abort)이 돌고 SSE가 끊긴다.
@@ -74,7 +84,9 @@ export default function Explore() {
   useEffect(() => {
     if (!sessionId || budgetRef.current == null) return
     // 이미 이 기준 예산으로 돌았거나 도는 중이면 재실행하지 않는다.
-    const key = `${sessionId}:${base}`
+    // retryToken 을 키에 넣어야 「다시 불러오기」가 이 가드를 넘는다 — 토큰이 바뀔 때
+    // `retryFetch` 가 탐색 캐시도 함께 비우므로 아래 캐시 가드도 통과한다 (M-14).
+    const key = `${sessionId}:${base}:${retryToken}`
     if (runKeyRef.current === key || exploreRef.current?.baseBudget === base) {
       // 스트림을 새로 시작하지 않는 경로다 — 로딩 표시를 켠 채로 두면 "↻ 시나리오를 받는 중…"이
       // 영영 남는다. 이미 false 면 React 가 리렌더를 생략하므로 무해하다.
@@ -142,6 +154,20 @@ export default function Explore() {
           })
           flush()
         },
+        /*
+         * 스트림 단절 시 수신분을 버린다 — 재연결은 plan 부터 다시 오므로 비우지 않으면
+         * 인사이트가 중복되고, 목 폴백은 비우지 않으면 실인사이트와 목 인사이트가 한 목록에
+         * 섞여 프론티어 차트와 목록이 서로 다른 계산을 말하게 된다.
+         */
+        onReset: () => {
+          if (ac.signal.aborted) return
+          draft.plan = null
+          draft.insights = []
+          draft.done = null
+          draft.log = [{ name: 'reset', detail: '스트림 단절 — 수신분을 비우고 다시 받는다' }]
+          draft.appliedId = null
+          flush()
+        },
       },
       base,
       ac.signal,
@@ -157,13 +183,20 @@ export default function Explore() {
        */
       if (runKeyRef.current === key) runKeyRef.current = null
     }
-  }, [sessionId, base, setExplore])
+  }, [sessionId, base, setExplore, retryToken])
 
   /** 프론티어 계단에서 특정 예산의 진입 후보 수 — 요약 스트립 기준값. */
   const frontierAt = useCallback(
     (b: number): number | null => {
       const pts = cached?.done?.frontier_points
       if (!pts || pts.length === 0) return null
+      /*
+       * 첫 계단점보다 낮은 예산이면 **답이 없다**. reduce 의 초기값이 `pts[0]` 이라 그대로 두면
+       * 해당 예산보다 높은 계단의 후보 수가 그 예산의 값인 것처럼 표시된다 — T2(하향)를 적용해
+       * 예산이 프론티어 최저점 아래로 내려가는 경우가 그 자리다 (계약 리뷰 P2-3).
+       * 화면이 없는 수치를 만들지 않는다는 원칙(§0-1)에 따라 null(= "—")을 준다.
+       */
+      if (b < pts[0][0]) return null
       return pts.reduce((acc, p) => (p[0] <= b ? p : acc), pts[0])[1]
     },
     [cached],
@@ -209,7 +242,7 @@ export default function Explore() {
   const changeBudget = useCallback(
     async (next: number, appliedId: string | null) => {
       if (!sessionId || !selectedScenario || next === effectiveBudget) return
-      setApplying(true)
+      setApplyingId(appliedId ?? REVERT_KEY)
       try {
         const res = await postBudget(sessionId, {
           confirmed_budget: next,
@@ -224,13 +257,14 @@ export default function Explore() {
         applyExploreBudget(next, appliedId, res.preview, res.data_as_of)
         bumpVersion() // recommend가 공유하는 version
       } finally {
-        setApplying(false)
+        setApplyingId(null)
       }
     },
     [sessionId, selectedScenario, effectiveBudget, applyExploreBudget, bumpVersion],
   )
 
-  if (!sessionId) return <Navigate to="/diagnose" replace />
+  // 세션이 사라진 이유를 첫 화면이 설명할 수 있도록 state 를 실어 보낸다 (M-13)
+  if (!sessionId) return <Navigate to="/diagnose" replace state={SESSION_LOST_STATE} />
   if (budget == null) return <Navigate to="/budget" replace />
 
   const plan = cached?.plan
@@ -316,7 +350,8 @@ export default function Explore() {
                   insight={activeRow}
                   highlight={activeRow.insight_id === highlightId}
                   applied
-                  applying={applying}
+                  applying={applyingId === activeRow.insight_id}
+                  busy={busy}
                   onApply={() => void changeBudget(budgetFor(activeRow, base), activeRow.insight_id)}
                 />
               </div>
@@ -354,7 +389,8 @@ export default function Explore() {
                   key={insight.insight_id}
                   insight={insight}
                   highlight={insight.insight_id === highlightId}
-                  applying={applying}
+                  applying={applyingId === insight.insight_id}
+                  busy={busy}
                   onApply={() => void changeBudget(budgetFor(insight, base), insight.insight_id)}
                 />
               ))

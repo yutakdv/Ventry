@@ -346,6 +346,12 @@ def _derive(
             "pedestrian": pedestrian, "backing": res.get(area, 0) + wrk.get(area, 0),
             "est_sales": es, "monthly_rent": mr,
             # 키 부재 = 인허가에서 확인된 업소 0건 → 밀도 0 (경쟁여유 최상위)
+            #
+            # growth_rank 결측 기본값 1(정체)은 **다른 결측과 규칙이 다르다** — 매출·유동인구는
+            # 결측이면 점수 대상에서 제외하는데(리뷰 #20·#21) 성장만 중간값을 대입한다.
+            # 성장은 5단계 순위형이라 「제외」가 곧 상권 하나를 통째로 후보에서 지우는 것이 되고,
+            # 하향 안전 방향(정체=중립)으로 채우는 편이 손실이 작기 때문이다. 규칙이 다르다는
+            # 사실 자체를 등재해 둔다 (assumptions #100 · #94, AI 리뷰 P2).
             "density": den.get((area, ind), 0.0), "growth_rank": growth.get(area, 1),
             "daily_floating": pedestrian, "quarter": quarter,
         })

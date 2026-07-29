@@ -123,7 +123,12 @@ public class ScenarioBuilder {
         List<CompositionRange> composition = new ArrayList<>();
         composition.add(new CompositionRange(ProductType.EQUITY, equity, equity));  // 심사와 무관한 확정 재원
         List<Product> cardProducts = new ArrayList<>();
-        int budgetMax = equity;
+        // long 으로 누적한다 — int 였을 때 자기자본이 int 최댓값 근처면 상품 한도를 더하는 순간
+        // budget_max 가 음수로 뒤집혔고, 아래 clamp 가 min > max 로 IllegalArgumentException 을
+        // 던져 GET /api/scenarios 가 500 이 됐다 (QA 리뷰 2026-07-29 Q-01).
+        // 입력단 상한(Amounts.MAX)이 1차 방어지만, 넘치는 경계는 **선택된 상품의 한도만큼
+        // 움직이므로** 산술 자체가 안전해야 상품 데이터가 바뀌어도 다시 열리지 않는다.
+        long budgetMax = equity;
 
         if (selected.isPresent()) {
             FundingProduct product = selected.get();
@@ -139,7 +144,8 @@ public class ScenarioBuilder {
         // 상한을 초기값으로 두면 "한도 전액을 쓰는 것"이 기본 선택이 된다 — 가용 상품의 최소
         // 한도가 필요분보다 큰 경우(실데이터에서 흔하다) 과잉 조달이 기본값이 되어버린다.
         // 상한은 여전히 budget_max 로 노출되므로 사용자가 올릴 수 있다 (DECISIONS §13-3).
-        int initial = Math.clamp((long) equity + need, equity, budgetMax);
-        return new ScenarioCard(label, initial, equity, budgetMax, composition, cardProducts);
+        int initial = (int) Math.clamp((long) equity + need, equity, budgetMax);
+        return new ScenarioCard(label, initial, equity, (int) Math.min(budgetMax, Integer.MAX_VALUE),
+                composition, cardProducts);
     }
 }

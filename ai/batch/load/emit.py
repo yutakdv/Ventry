@@ -52,12 +52,18 @@ def to_insert_sql(table: str, df: pd.DataFrame) -> str:
 
 
 def emit_sql(tables: dict[str, pd.DataFrame], path, insert_order: list[str], header: str) -> None:
-    """insert_order(부모→자식)대로 TRUNCATE + INSERT 덤프를 파일에 쓴다."""
+    """insert_order(부모→자식)대로 TRUNCATE + INSERT 덤프를 파일에 쓴다.
+
+    헤더에 **생성 날짜를 넣지 않는다.** 이 저장소는 부록에서 재현성을 명시적으로 대조하는데,
+    같은 입력으로 다른 날 재생성하면 1.6MB 파일에 헤더 한 줄 diff 가 나 「내용이 같은가」를
+    확인하는 비용이 매번 발생했다 (AI 리뷰 P2). 덤프의 기준일은 각 행의 `data_as_of` 가 이미
+    싣고 있으므로, 파일 헤더의 실행 날짜는 정보가 아니라 잡음이다.
+    """
     present = [t for t in insert_order if t in tables and len(tables[t]) > 0]
     truncate = ", ".join(reversed(present))  # 자식부터 TRUNCATE
     parts = [
         f"-- {header}",
-        f"-- 생성: {_dt.date.today().isoformat()} (batch.load) — 재실행 시 전체 교체",
+        "-- 생성: batch.load — 재실행 시 전체 교체 (기준일은 각 행 data_as_of 참조)",
         "BEGIN;",
         f"TRUNCATE {truncate} RESTART IDENTITY CASCADE;",
         "",

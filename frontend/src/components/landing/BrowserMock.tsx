@@ -17,6 +17,7 @@ export default function BrowserMock({
   url = 'ventry.app',
   children,
   className = '',
+  priority = false,
 }: {
   src: string
   alt: string
@@ -25,6 +26,14 @@ export default function BrowserMock({
   url?: string
   children?: ReactNode
   className?: string
+  /**
+   * 첫 화면(히어로)인가.
+   *
+   * 캡처 두 장이 합쳐 812KB 인데 전부 즉시 받고 있었다. 아래 쇼케이스는 스크롤해야 보이는
+   * 자리라 히어로와 대역을 다툴 이유가 없다 — 기본을 지연 로드로 두고, 첫 화면만 명시적으로
+   * 우선한다. 폭·높이는 이미 고정돼 있어 지연 로드로 레이아웃이 흔들리지 않는다.
+   */
+  priority?: boolean
 }) {
   return (
     <div className={`${styles.frame} ${className}`}>
@@ -36,7 +45,16 @@ export default function BrowserMock({
         </span>
         <span className={`t-caption ${styles.url}`}>{url}</span>
       </div>
-      <img className={styles.shot} src={src} alt={alt} width={width} height={height} />
+      <img
+        className={styles.shot}
+        src={src}
+        alt={alt}
+        width={width}
+        height={height}
+        loading={priority ? 'eager' : 'lazy'}
+        decoding={priority ? 'sync' : 'async'}
+        fetchPriority={priority ? 'high' : 'low'}
+      />
       {children}
     </div>
   )

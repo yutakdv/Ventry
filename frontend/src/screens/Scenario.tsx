@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { ShieldCheck, Layers, Landmark, Wallet } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import AppShell from '../components/layout/AppShell'
@@ -10,6 +10,7 @@ import FundingItem from '../components/FundingItem'
 import { getScenarios } from '../api/client'
 import { useSession } from '../store/session'
 import { formatAmount, formatBudgetRange, formatRate, formatRateNote } from '../lib/format'
+import { SESSION_LOST_STATE } from '../lib/sessionLost'
 import type { CompositionType, Scenario as ScenarioData } from '../api/types'
 import styles from './Scenario.module.css'
 
@@ -72,24 +73,53 @@ function productIcon(name: string): LucideIcon {
 
 export default function Scenario() {
   const navigate = useNavigate()
-  const { sessionId, setSelectedScenario } = useSession()
+  const { sessionId, setSelectedScenario, retryToken } = useSession()
   const [scenarios, setScenarios] = useState<ScenarioData[]>([])
   const [selectedLabel, setSelectedLabel] = useState<ScenarioData['label'] | null>(null)
+  /**
+   * 스트림이 끝났는가. 「아직 오는 중」과 「다 왔는데 0건」은 화면이 달라야 한다 —
+   * 이것 없이는 서버가 `scenario` 없이 `done`만 보낸 경우 "불러오는 중…"이 영원히 남는다.
+   */
+  const [streamDone, setStreamDone] = useState(false)
 
   useEffect(() => {
+    /*
+     * 세션이 없으면 **조회하지 않는다.** 아래 렌더 분기가 /diagnose 로 돌려보내지만 effect 는
+     * 그 전에 한 번 돈다 — 이 화면을 새로고침하거나 주소로 바로 열면 `getScenarios('mock')` 이
+     * 404 를 받고 목 폴백 플래그(api/fallback.ts)가 켜졌다. 그 플래그는 **되돌리지 않는 설계**라
+     * 이후 처음부터 다시 진행해 실데이터를 받아도 "예시 데이터" 배너가 진짜 수치 위에 남는다.
+     * /map·/explore 에 있는 가드가 여기만 빠져 있었다.
+     */
+    if (!sessionId) return
+
     const ac = new AbortController()
     setScenarios([])
     setSelectedLabel(null)
+    setStreamDone(false)
     getScenarios(
-      sessionId ?? 'mock',
+      sessionId,
       (s) => {
         setScenarios((prev) => [...prev, s])
         setSelectedLabel((prev) => prev ?? s.label)
       },
       ac.signal,
-    )
+      /*
+       * 스트림이 끊겨 재연결하거나 목으로 폴백할 때 수신분을 버린다. 재연결은 카드를 처음부터
+       * 다시 받으므로 비우지 않으면 중복되고, 폴백은 비우지 않으면 실카드 뒤에 목 카드가
+       * 이어 붙어 **보수/적극 두 장이 실·목 혼성**이 된다(배너는 전체를 예시로 고지하므로
+       * 진짜 수치까지 예시로 라벨링된다).
+       */
+      () => {
+        if (ac.signal.aborted) return
+        setScenarios([])
+        setSelectedLabel(null)
+      },
+    ).finally(() => {
+      if (!ac.signal.aborted) setStreamDone(true)
+    })
     return () => ac.abort()
-  }, [sessionId])
+    // retryToken: 폴백 배너의 「다시 불러오기」가 세션을 유지한 채 이 조회만 다시 돌린다 (M-14)
+  }, [sessionId, retryToken])
 
   const selected = useMemo(
     () => scenarios.find((s) => s.label === selectedLabel) ?? null,
@@ -97,6 +127,9 @@ export default function Scenario() {
   )
 
   const equity = selected?.composition.find((c) => c.type === 'equity')
+
+  // 세션이 사라진 이유를 첫 화면이 설명할 수 있도록 state 를 실어 보낸다 (M-13)
+  if (!sessionId) return <Navigate to="/diagnose" replace state={SESSION_LOST_STATE} />
 
   return (
     <AppShell activeStep={2}>
@@ -130,6 +163,8 @@ export default function Scenario() {
                 title={meta.title}
                 description={meta.description}
                 active={selectedLabel === label}
+                /* 아직 도착하지 않은 카드는 눌러도 아무 일이 없었다 — 그 사실을 화면에 밝힌다. */
+                disabled={!available}
                 onClick={() => available && setSelectedLabel(label)}
               />
             )
@@ -137,7 +172,21 @@ export default function Scenario() {
         </div>
 
         {!selected ? (
-          <p className={`t-body ${styles.loading}`}>시나리오를 불러오는 중…</p>
+          streamDone ? (
+            <div className={styles.loading}>
+              <p className="t-body">
+                입력하신 조건으로 편성 가능한 조달 시나리오를 만들지 못했습니다. 입력 정보를 수정하면
+                다시 계산됩니다.
+              </p>
+              <div className={styles.emptyAction}>
+                <Button variant="secondary" size="md" onClick={() => navigate('/diagnose')}>
+                  입력 정보 수정
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <p className={`t-body ${styles.loading}`}>시나리오를 불러오는 중…</p>
+          )
         ) : (
           <div className={styles.columns} key={selected.label}>
             <div className={styles.budgetCard}>
@@ -221,7 +270,16 @@ export default function Scenario() {
                       details={[
                         { label: '상품명', value: p.name },
                         { label: '한도', value: `최대 ${p.amount_max.toLocaleString('ko-KR')}만원` },
-                        ...(rateText ? [{ label: '금리', value: rateText }] : []),
+                        /*
+                          `rate` 가 없으면 이 자리에 오는 것은 이율이 아니라 **공고 원문의 금리
+                          조건 문장**이다. 실데이터에는 보증료율로 시작하는 원문도 있어(F-010·F-011
+                          「보증료 연 0.8%~1.0%. 대출금리 …」) 「금리」라는 라벨 아래 놓이면
+                          보증료를 이율로 오독할 수 있다 (QA 리뷰 Q-08). 원문은 그대로 두고
+                          — 재작성은 §5-4 위반이다 — **라벨만** 사실에 맞춘다.
+                        */
+                        ...(rateText
+                          ? [{ label: p.rate != null ? '금리' : '금리 조건', value: rateText }]
+                          : []),
                         ...(rateNote ? [{ label: '적용 조건', value: rateNote }] : []),
                         { label: '데이터 기준일', value: p.data_as_of },
                         {

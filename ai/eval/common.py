@@ -45,12 +45,16 @@ def load_source_text(doc: str) -> str:
 
 
 def is_clean_source(doc: str) -> bool:
-    """근거 청크 가능 문서 판정 (load/finance.py _is_clean 미러)."""
-    text = load_source_text(doc)
-    if not text:
-        return False
-    keywords = ("대출", "융자", "한도", "금리", "보증", "지원", "소상공인", "상환", "기업")
-    return sum(text.count(k) for k in keywords) / len(text) * 1000 >= 3.0
+    """근거 청크 가능 문서 판정.
+
+    **적재 코드를 직접 부른다** — 사본이 아니다. 이전에는 같은 규칙(키워드 9종·밀도 3.0)을
+    여기에 다시 적어 두었는데, 한쪽만 바뀌어도 테스트는 계속 통과하면서 평가가 **실서빙과
+    다른 규칙을 재고 있는** 상태가 된다. 제출 근거(부록 1·2)의 무결성이 조용히 깨지는 경로라
+    사본을 없앤다 (AI 리뷰 P1). 같은 파일의 `strip_print_artifacts` 는 이미 import 하고 있었다.
+    """
+    from batch.load.finance import _is_clean
+
+    return _is_clean(load_source_text(doc))
 
 
 def load_source_text_clean(doc: str) -> str:

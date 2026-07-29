@@ -156,6 +156,39 @@ class RefinePromptTest {
         }
     }
 
+    /**
+     * 수치 <b>집합</b>이 같아도 증감 방향이 뒤집히면 문장의 뜻이 반대가 된다 (AI 리뷰 M-04).
+     * 두 수가 같은 라벨(진입 가능 후보)을 공유해 라벨 결속 검사로도 구별되지 않는 자리다.
+     */
+    @Nested
+    @DisplayName("증감 방향 — 대소 관계 교차 검증")
+    class Direction {
+
+        @Test
+        @DisplayName("「A에서 B로 늘어납니다」의 A와 B가 뒤바뀌면 폐기한다")
+        void rejectsSwappedTransition() {
+            assertThat(refine("3,869만 원을 더 마련하면 진입 가능 후보가 1,014곳에서 382곳으로 "
+                    + "늘어납니다. 96개월 상환 조건에서 지속 안정 후보는 244곳입니다.")).isEmpty();
+        }
+
+        @Test
+        @DisplayName("방향이 맞으면 통과한다 — 어순 자유도는 그대로 둔다")
+        void acceptsCorrectTransition() {
+            String refined = "3,869만 원을 더 마련하면 진입 가능 후보가 382곳에서 1,014곳으로 "
+                    + "늘어납니다. 96개월 상환 조건에서 지속 안정 후보는 244곳입니다.";
+            assertThat(refine(refined)).contains(refined);
+        }
+
+        /** 「A에서 B로」 꼴이 없으면 판단 근거가 없다 — 정상 문장을 걸러내지 않는다. */
+        @Test
+        @DisplayName("전이 표현이 없는 문장은 이 검사가 관여하지 않는다")
+        void ignoresSentenceWithoutTransition() {
+            String refined = "3,869만 원을 더 마련하면 진입 가능 후보는 1,014곳이 됩니다"
+                    + "(현재 382곳). 96개월 상환 조건에서 지속 안정 후보는 244곳입니다.";
+            assertThat(refine(refined)).contains(refined);
+        }
+    }
+
     @Test
     @DisplayName("프롬프트에 템플릿 본문과 수치 보존 지시가 실린다")
     void promptCarriesBodyAndConstraint() {

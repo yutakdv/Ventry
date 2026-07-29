@@ -1,6 +1,8 @@
 package com.ventry.api.llm;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.NavigableSet;
 import java.util.Optional;
 
 /**
@@ -61,6 +63,10 @@ public final class ReviewPrompt {
 
                 규칙:
                 - 위 입력에 있는 수치만 쓰세요. 입력에 없는 숫자를 새로 만들면 안 됩니다.
+                - **수치를 다른 지표에 옮겨 붙이지 마세요.** 입력에서 추정매출이던 값을
+                  환산임대료로, 종합점수이던 값을 부담률로 쓰면 안 됩니다. 숫자를 인용할 때는
+                  입력에 적힌 지표 이름을 그대로 함께 쓰세요.
+                - 입력의 수치를 최소 하나는 인용하세요. 숫자 없는 일반론은 반박이 아닙니다.
                 - 한 문단, 두 문장 이내, 200자 이내의 한국어 평서문으로 쓰세요.
                 - "승인", "권장", "보장", "추천"(추천드립니다·추천합니다·추천해 드립니다),
                   "권유합니다", "권해 드립니다" 같은 표현을 쓰지 마세요.
@@ -86,10 +92,35 @@ public final class ReviewPrompt {
         if (text.length() < MIN_LENGTH || text.length() > MAX_LENGTH) {
             return Optional.empty();
         }
+        if (LlmResponses.looksLikeHeader(text)) {
+            return Optional.empty();   // 「…아래에 작성하였습니다:」 — 반박이 아니라 안내문이다
+        }
         if (LlmResponses.violatesTerminology(text, EXTRA_BANNED)) {
             return Optional.empty();
         }
-        return usesOnlyGivenNumbers(text, facts) ? Optional.of(text) : Optional.empty();
+        return isGrounded(text, facts) ? Optional.of(text) : Optional.empty();
+    }
+
+    /**
+     * 반박문이 입력 사실에 <b>묶여 있는가</b> — 두 겹으로 본다.
+     *
+     * <ol>
+     *   <li><b>값</b>: 출력의 숫자가 전부 사실에 있던 값인가 ({@link #usesOnlyGivenNumbers}).</li>
+     *   <li><b>귀속</b>: 그 값이 사실에서와 <b>같은 지표</b>에 붙어 있는가
+     *       ({@link LlmResponses#labelsAgree}). 값 대조만으로는 사실의 추정매출 1800만원을
+     *       「환산임대료 1800만원」이라 옮겨 적은 문장이 통과한다.</li>
+     * </ol>
+     *
+     * <p><b>수치 인용을 의무화하지는 않는다.</b> 프롬프트는 수치 인용을 요구하지만, 검증기가
+     * 그것을 강제하면 「추정매출은 분기 평균이라 계절 변동이 큰 업종에서는 실제와 다를 수
+     * 있습니다」처럼 <b>수치 없이도 유효한 질적 반박</b>이 통째로 폐기된다. 그 형태를 정상으로
+     * 보는 것은 이 저장소의 기존 판단이기도 하다 (ReviewPromptTest·RiskReviewAgentTest 가
+     * 수치 없는 반박을 정상 케이스로 잠가 두었다). 강제는 프롬프트에 두고 검증기는 거짓만
+     * 막는다.
+     */
+    private static boolean isGrounded(String text, String facts) {
+        return usesOnlyGivenNumbers(text, LlmResponses.numberValues(facts))
+                && LlmResponses.labelsAgree(text, LlmResponses.labeledValues(facts));
     }
 
     /**
@@ -104,7 +135,7 @@ public final class ReviewPrompt {
      * 「0.11」로 줄이면 <b>내용이 정확한 반박문이 통째로 폐기</b>돼 화면에 「검증 생략」이 떴다.
      * 값 비교는 그 둘을 같은 수로 본다.
      */
-    private static boolean usesOnlyGivenNumbers(String text, String facts) {
-        return LlmResponses.allNumbersIn(text, LlmResponses.numberValues(facts));
+    private static boolean usesOnlyGivenNumbers(String text, NavigableSet<BigDecimal> factNumbers) {
+        return LlmResponses.allNumbersIn(text, factNumbers);
     }
 }

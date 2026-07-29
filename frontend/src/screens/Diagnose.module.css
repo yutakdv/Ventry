@@ -36,15 +36,31 @@
   color: var(--color-text-primary);
 }
 
+/*
+ * 폼 행은 폭에 따라 접힌다.
+ *
+ * 고정 3열이던 동안 375px 뷰포트에서 한 칸이 약 90px 이 됐다 — "예) 5,000,000" 자리표시자가
+ * 잘리고 "원" 접미와 숫자가 겹쳐 금액을 확인할 수 없었다. 미디어쿼리 없이 `auto-fit` 으로
+ * 접으면 브레이크포인트를 새 필드마다 다시 정할 필요가 없다.
+ *
+ * 220px 은 "예) 5,000,000 원"(t-body 14px)이 접미까지 한 줄에 들어가는 최소 폭이다.
+ */
 .row3 {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: var(--space-16);
 }
 .row2 {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: var(--space-12);
+}
+
+/* 에러 요약 포커스 앵커 — 포커스 링은 내부 Alert 테두리와 겹치지 않게 바깥으로 뺀다. */
+.errorSummary:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 3px;
+  border-radius: var(--radius-lg);
 }
 
 .freeLabel {

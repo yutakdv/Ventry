@@ -42,6 +42,14 @@ jobs:
       - name: 용어 컴플라이언스 스윕
         run: bash scripts/term_sweep.sh frontend/src
 
+      # 계약 규칙을 코드로 옮긴 순수 함수의 단위 테스트. `lib/composition.ts` 는 API 계약이
+      # **참조 구현으로 직접 지목한 파일**인데(계약 §2 D12) 무검증이었다 — 배분 순서나 한도
+      # 클램프가 깨져도 CI 가 잡지 못하고, 그 값은 표시용이 아니라 잔여 한도 계산의 입력이라
+      # T1 인사이트의 근거 상품이 조용히 갈린다 (FE 리뷰 P1).
+      - name: Unit tests (vitest)
+        working-directory: frontend
+        run: npm test
+
       - name: Build
         working-directory: frontend
         run: npm run build

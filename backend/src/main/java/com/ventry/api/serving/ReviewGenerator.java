@@ -2,6 +2,7 @@ package com.ventry.api.serving;
 
 import com.ventry.api.common.FinanceDtos.RiskReview;
 import com.ventry.api.llm.LlmClient;
+import com.ventry.api.llm.LlmSettings;
 import com.ventry.api.llm.ReviewPrompt;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -46,12 +47,23 @@ public class ReviewGenerator {
     // (BE 리뷰 D-12). 이 수정이 있어야 D-24 의 판정 분포 분기도 구간마다 다시 계산된다.
     @Cacheable(cacheNames = "reviews", key = "#facts", unless = "#result.skipped()")
     public RiskReview generate(String facts, RiskReview template) {
-        Optional<String> objection = ReviewPrompt.sanitize(
-                llm.complete(ReviewPrompt.build(facts)), facts);
+        /*
+         * 상한을 SYNC_TIMEOUT(1.2s)로 좁힌다 — 이 호출은 SSE 송출 스레드가 아니라 **톰캣 워커
+         * 스레드**에서 일어나고(RecommendController → LocationService → RiskReviewAgent), 그 경로가
+         * 하필 슬라이더가 움직일 때마다 재호출되는 곳이다. 기본 5초를 그대로 쓰면 캐시 미스 한 번이
+         * 화면을 5초 멈춘다 (BE 리뷰 M-01). 초과 시 동작은 아래 폴백과 동일하다.
+         */
+        Optional<String> raw = llm.complete(ReviewPrompt.build(facts), LlmSettings.SYNC_TIMEOUT);
+        Optional<String> objection = ReviewPrompt.sanitize(raw, facts);
         if (objection.isEmpty()) {
-            // 원인(무LLM인가 응답 거부인가)은 로그로만 구분한다. 응답 규격은 어느 쪽이든 같아야
-            // 화면이 분기를 하나만 갖는다.
-            log.info("리스크 검증 폴백 (llm_enabled={}) — 템플릿을 최종본으로 사용", llm.enabled());
+            /*
+             * 폴백 사유를 두 갈래로 나눈다. 이전에는 무LLM·타임아웃·검증 거부가 같은 문장을
+             * 남겨 「검증기가 응답의 몇 %를 버리는가」를 로그로 셀 수 없었다 — 그 비율이 곧
+             * 프롬프트 품질 지표인데, 화면은 템플릿으로 멀쩡히 동작하므로 아무도 모른 채
+             * LLM 값이 0이 될 수 있다 (AI 리뷰 M-03).
+             */
+            String reason = !llm.enabled() ? "no_llm" : raw.isEmpty() ? "no_response" : "rejected_by_validator";
+            log.info("리스크 검증 폴백 reason={} — 템플릿을 최종본으로 사용", reason);
             return new RiskReview(template.objectionText(), false, true);
         }
         return new RiskReview(objection.get(), true, false);

@@ -1,0 +1,8 @@
+/*
+ * 라우트 청크 로딩 중 문구. 프로젝트 전체가 CSS Modules 로 일관돼 있는데 이 한 곳만
+ * 인라인 스타일이었다 (FE 리뷰 m-8).
+ */
+.routeFallback {
+  padding: var(--space-40) var(--space-24);
+  text-align: center;
+}
