@@ -4,8 +4,9 @@
 CI·심사 클론 환경에서 재생성할 수 없다. 그래서 재생성 가능 여부가 아니라 **커밋된 파일
 자체가 계약을 지키는지**를 본다.
 
-geopandas 는 ai-ci 에 설치되지 않으므로(pytest·pandas·requests 만) 원천 대조가 필요한
-검사만 importorskip 으로 가른다 — 파일 자체 검사는 CI 에서도 그대로 돈다.
+원천 대조가 필요한 검사는 **원천 SHP 존재 여부**로 가른다 — 파일 자체 검사는 CI 에서도 그대로 돈다.
+(종전에는 「ai-ci 에 geopandas 가 없다」를 대리 조건으로 썼는데, 가정 #99 회귀 테스트가
+geopandas 를 요구하면서 그 전제가 깨졌다.)
 """
 import json
 
@@ -151,7 +152,13 @@ def test_simplification_stays_within_declared_error(scope):
     pytest.importorskip("geopandas", reason="원천 대조는 배치 환경에서만")
     import numpy as np
 
-    from batch.preprocess.crs import CRS_METRIC, load_area_polygons
+    from batch.preprocess.crs import AREA_SHP, CRS_METRIC, load_area_polygons
+
+    # 이 검사의 실제 전제는 **원천 SHP 의 존재**다. 종전에는 geopandas 미설치를 대리 조건으로
+    # 삼았는데, ai-ci 에 geopandas 가 들어오자(가정 #99 회귀 테스트가 요구) 가드가 뚫려
+    # gitignore 된 SHP 를 읽다 실패했다. 전제를 있는 그대로 적는다.
+    if not AREA_SHP.exists():
+        pytest.skip("원천 SHP 부재 (gitignore — CI·심사 클론 스킵)")
 
     src = load_area_polygons().to_crs(epsg=CRS_METRIC)
     baked = np.array([scope["areas"][str(c)]["a"] for c in src["area_code"]], dtype=float)
