@@ -222,9 +222,8 @@ Ventry/
 ├── db/init/           # 배치 산출 사전 적재 덤프 (compose 최초 기동 시 실행)
 ├── docs/
 │   ├── specs/         # 최종 스펙 v6.3 · 탐색 에이전트 스펙 v2.1 (단일 진실 원천)
-│   ├── ONBOARDING.md  # 팀원 첫날 30분 가이드
 │   ├── TASKS.md       # 태스크 분해 총괄 (D1~D14, 마일스톤·병렬화 구조)
-│   ├── tasks/         # 팀원별 상세 체크리스트: FRONTEND.md · BACKEND.md · AI.md
+│   ├── tasks/         # CM 절차 문서: 도슨트 프로토콜 · 제출 검수 · 앱키 시연
 │   ├── API_CONTRACT.md# API 계약 (D3 동결)
 │   ├── assumptions.md # 모든 가정·폴백 일원화 대장
 │   └── 심사_QA.md      # 예상 Q&A 20문항
