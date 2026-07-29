@@ -84,6 +84,30 @@ declare namespace kakao.maps {
     setZIndex(z: number): void
   }
 
+  interface PolygonOptions {
+    /** 링 하나면 LatLng[], 구멍을 표현하면 LatLng[][]. */
+    path: LatLng[] | LatLng[][]
+    map?: Map
+    strokeWeight?: number
+    strokeColor?: string
+    strokeOpacity?: number
+    strokeStyle?: 'solid' | 'shortdash' | 'dot' | 'longdash' | 'dash'
+    fillColor?: string
+    fillOpacity?: number
+    zIndex?: number
+  }
+
+  /**
+   * 경계 윤곽선 (스펙 §0-4 — 판정 채널이 아니다. 채움 없이 선만 쓴다).
+   * SDK 코어 번들에 있어 `libraries` 파라미터가 필요 없다.
+   */
+  class Polygon {
+    constructor(options: PolygonOptions)
+    setMap(map: Map | null): void
+    setPath(path: LatLng[] | LatLng[][]): void
+    setOptions(options: Partial<PolygonOptions>): void
+  }
+
   namespace event {
     function addListener(target: object, type: string, handler: () => void): void
     function removeListener(target: object, type: string, handler: () => void): void

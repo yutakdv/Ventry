@@ -27,6 +27,7 @@ export default function AreaCard({
   onSelect,
   onCheck,
   industry,
+  scopeNote,
 }: {
   area: Area
   selected: boolean
@@ -36,6 +37,11 @@ export default function AreaCard({
   onCheck: () => void
   /** 임대료 금액의 면적 조건 표기용 (이슈 #151). 모르면 면적을 적지 않는다. */
   industry?: Industry | null
+  /**
+   * 임대료 근거 범위 문장 (가정 #96). **선택된 카드에만** 내려온다 — 지도에 경계가 떠
+   * 있을 때 그 두 선이 무엇인지 글로 받는 자리라, 목록 전체에 깔면 짝이 맞지 않는다.
+   */
+  scopeNote?: string
 }) {
   const areaUnit = rentAreaShort(industry)
   const perPyeong = rentPerPyeong(area.monthly_rent, industry)
@@ -99,6 +105,7 @@ export default function AreaCard({
         <span className={`t-caption ${styles.evidenceLine}`}>
           권리금: 연간 조사(전년 기준) · 실제 금액은 개별 물건에 따라 다릅니다
         </span>
+        {scopeNote && <span className={`t-caption ${styles.evidenceLine}`}>{scopeNote}</span>}
       </span>
 
       <span className={styles.reason}>
