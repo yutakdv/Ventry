@@ -121,12 +121,28 @@ export default function Recommend() {
   /** 상권 구분 필터 — 서울시 공식 구분값 그대로. 'ALL'이면 좁히지 않는다. */
   const [areaTypeFilter, setAreaTypeFilter] = useState<string>('ALL')
   /**
-   * 자치구 필터 (가정 #112). 기본값은 **좁히지 않음**이다 — 진단의 희망 지역으로 미리 잘라
-   * 두지 않는다. 예산으로 갈 수 있는 범위를 서비스가 먼저 지우면, 사용자가 모르고 지나쳤을
-   * 선택지가 화면에 오르지 못한다(심사_QA.md). 대신 「희망 지역만 보기」를 한 번에 누를 수
-   * 있게 두어, 좁히는 결정을 사용자가 한다.
+   * 자치구 필터 (가정 #112·#113). 초기값은 **진단에서 고른 희망 지역**이다.
+   *
+   * 처음엔 「좁히지 않음」으로 뒀다 — 서비스가 먼저 지우면 사용자가 모르고 지나쳤을 선택지가
+   * 화면에 오르지 못한다는 이유였다(심사_QA.md). 그런데 그러면 희망 지역을 고른 사람이 다시
+   * 한 번 그것을 눌러야 자기 지역을 본다. 좁히는 것을 **되돌리는 비용**(칩 한 번)이 좁히지
+   * 않아 생기는 비용(내 지역을 못 찾음)보다 작아, 기본을 희망 지역으로 옮긴다.
+   *
+   * 「모르고 지나칠 선택지」는 자치구 드롭다운이 25개 구의 후보 수를 전부 보여 주는 것과
+   * 「서울 전체로」 한 번으로 지킨다 — 지워지는 것이 아니라 한 칸 뒤에 있다.
    */
   const [guFilter, setGuFilter] = useState<string>('ALL')
+  /**
+   * 사용자가 자치구를 직접 건드렸는가.
+   *
+   * 이 플래그가 서는 순간 아래 자동 적용이 멈춘다. 「서울 전체로」를 눌러 둔 사람에게 슬라이더를
+   * 움직일 때마다 자기 구로 되돌아오게 하면, 화면이 사용자의 결정을 계속 무르는 셈이 된다.
+   */
+  const guTouchedRef = useRef(false)
+  const chooseGu = useCallback((gu: string) => {
+    guTouchedRef.current = true
+    setGuFilter(gu)
+  }, [])
   const [listLimit, setListLimit] = useState(LIST_PAGE)
   const [check, setCheck] = useState<CheckAreaResponse | null>(null)
   const [checking, setChecking] = useState(false)
@@ -243,6 +259,25 @@ export default function Recommend() {
     [parsedProfile, allGus],
   )
 
+  /** 희망 지역에 지금 예산으로 갈 수 있는 곳이 있는가 — 없으면 좁히지 않는다(아래 참조). */
+  const wishGuCount = wishGu ? (guCounts.get(wishGu) ?? 0) : 0
+
+  /**
+   * 희망 지역을 **먼저 보여준다** — 첫 진입에서도, 예산을 조정한 뒤에도 (가정 #113).
+   *
+   * 예산에 매번 다시 판단하는 이유가 실데이터에 있다. 확정 예산 8,000만에서 진입 가능은
+   * 노원구 6곳뿐이라 마포구가 **0곳**이고, 1억이 되어야 20곳이 열린다. 한 번만 적용하는
+   * 방식이면 8,000만으로 들어온 사람은 예산을 올려도 자기 지역으로 돌아오지 못한다.
+   *
+   * **후보가 0곳이면 좁히지 않는다.** 진입하자마자 빈 목록을 보여 주는 대신 서울 전체를 두고,
+   * 아래 안내가 「희망 지역에는 지금 갈 수 있는 곳이 없다」는 사실을 문장으로 말한다 — 빈
+   * 화면보다 그 편이 정확하고, 예산을 올리면 이 효과가 알아서 희망 지역으로 되돌린다.
+   */
+  useEffect(() => {
+    if (guTouchedRef.current || !wishGu) return
+    setGuFilter(wishGuCount > 0 ? wishGu : 'ALL')
+  }, [wishGu, wishGuCount])
+
   const areas = useMemo(() => {
     if (!data) return []
     /*
@@ -357,8 +392,29 @@ export default function Recommend() {
     () => (data?.areas ?? []).filter((a) => a.verdict === 'CONDITIONAL').slice(0, 3),
     [data],
   )
+
   const mapAreas = useMemo(() => areas.slice(0, MAP_MARKER_LIMIT), [areas])
   const listAreas = useMemo(() => areas.slice(0, listLimit), [areas, listLimit])
+
+  /**
+   * 지도가 지금 무엇을 그리고 있는지 한 문장으로.
+   *
+   * 상한(100곳)만 알리던 종전 문구는 「상위 100곳」이 무엇 중의 상위인지를 말하지 않아,
+   * 갈 수 없는 후보가 섞여 있다는 사실이 화면 어디에도 없었다. 자치구까지 붙이는 것은 같은
+   * 이유다 — 좁혀 놓은 상태에서 수만 보면 예산이 줄어든 것처럼 읽힌다.
+   */
+  const mapNote = useMemo(() => {
+    if (areas.length === 0) return '지금 지도에 표시할 후보가 없습니다.'
+    const where = guFilter === 'ALL' ? '' : `${guFilter}에서 `
+    const what =
+      verdictFilter === 'ENTRY'
+        ? '확정 예산으로 지금 갈 수 있는'
+        : (VERDICT_FILTERS.find((f) => f.value === verdictFilter)?.label ?? '')
+    const capped =
+      areas.length > mapAreas.length ? ` 중 추천 점수 상위 ${MAP_MARKER_LIMIT}곳` : ''
+    const rest = areas.length > mapAreas.length ? ' 나머지는 목록에서 확인할 수 있습니다.' : ''
+    return `${where}${what} ${areas.length.toLocaleString('ko-KR')}곳${capped}입니다.${rest}`
+  }, [areas, mapAreas, guFilter, verdictFilter])
   const verdictArea = useMemo(
     () => areas.find((a) => a.area_code === verdictOf) ?? null,
     [areas, verdictOf],
@@ -612,20 +668,12 @@ export default function Recommend() {
                 사실이 화면 어디에도 없었다.
               */}
               <p className={`t-caption ${styles.mapNote}`}>
-                {areas.length === 0
-                  ? '지금 지도에 표시할 후보가 없습니다.'
-                  : verdictFilter === 'ENTRY'
-                    ? `확정 예산으로 지금 갈 수 있는 ${areas.length.toLocaleString('ko-KR')}곳${
-                        areas.length > mapAreas.length
-                          ? ` 중 추천 점수 상위 ${MAP_MARKER_LIMIT}곳`
-                          : ''
-                      }입니다.`
-                    : `${VERDICT_FILTERS.find((f) => f.value === verdictFilter)?.label} ${areas.length.toLocaleString('ko-KR')}곳${
-                        areas.length > mapAreas.length
-                          ? ` 중 추천 점수 상위 ${MAP_MARKER_LIMIT}곳`
-                          : ''
-                      }입니다.`}
-                {areas.length > mapAreas.length && ' 나머지는 목록에서 확인할 수 있습니다.'}
+                {mapNote}
+                {/* 좁혀 놓은 동안에는 서울 전체 수를 함께 적는다 — 상단 카드의 큰 숫자와
+                    지도의 수가 달라 보이는 이유가 「자치구를 좁혀 뒀다」임을 그 자리에서 말한다. */}
+                {guFilter !== 'ALL' && verdictFilter === 'ENTRY' && (
+                  <> 서울 전체로는 {counts.entry.toLocaleString('ko-KR')}곳입니다.</>
+                )}
               </p>
 
               {/*
@@ -662,7 +710,7 @@ export default function Recommend() {
                              */
                             onClick={() => {
                               setVerdictFilter('CONDITIONAL')
-                              setGuFilter('ALL')
+                              chooseGu('ALL')
                               setAreaTypeFilter('ALL')
                               setSelected(a.area_code)
                             }}
@@ -680,7 +728,7 @@ export default function Recommend() {
                       size="sm"
                       onClick={() => {
                         setVerdictFilter(verdictFilter === 'CONDITIONAL' ? 'ENTRY' : 'CONDITIONAL')
-                        setGuFilter('ALL')
+                        chooseGu('ALL')
                         setAreaTypeFilter('ALL')
                       }}
                     >
@@ -793,7 +841,7 @@ export default function Recommend() {
                     <select
                       className={`t-caption ${styles.sortSelect}`}
                       value={guFilter}
-                      onChange={(e) => setGuFilter(e.target.value)}
+                      onChange={(e) => chooseGu(e.target.value)}
                     >
                       {/* 「전체」의 수는 자치구를 풀었을 때의 수여야 한다 — 지금 보이는 수를
                           쓰면 구를 고른 순간 「전체」가 그 구의 수로 줄어 읽힌다. */}
@@ -811,7 +859,7 @@ export default function Recommend() {
                     <button
                       type="button"
                       className={`t-label ${styles.chip}`}
-                      onClick={() => setGuFilter(wishGu)}
+                      onClick={() => chooseGu(wishGu)}
                     >
                       희망 지역 {wishGu}만 보기 ({(guCounts.get(wishGu) ?? 0).toLocaleString('ko-KR')}곳)
                     </button>
@@ -820,17 +868,33 @@ export default function Recommend() {
                     <button
                       type="button"
                       className={`t-caption ${styles.conditionalLink}`}
-                      onClick={() => setGuFilter('ALL')}
+                      onClick={() => chooseGu('ALL')}
                     >
                       서울 전체로
                     </button>
                   )}
                 </div>
               )}
+              {/*
+                희망 지역에 후보가 0곳이면 좁히지 않고(위 자동 적용 효과) **그 사실을 말한다.**
+                빈 목록을 보여 주는 것보다 정확하고, 이 서비스가 답하기로 한 질문
+                (「내 한도로 어디까지 가능한가」)에 대한 답이 바로 이 문장이다.
+              */}
               {scope && allGus.length > 0 && (
                 <p className={`t-caption ${styles.filterHint}`}>
-                  진단에서 입력한 희망 지역은 <strong>지역 한정 상품의 자격 판정</strong>에 쓰입니다.
-                  상권 후보는 서울 전역이며, 좁혀 보는 것은 여기서 선택합니다.
+                  {wishGu && wishGuCount === 0 ? (
+                    <>
+                      확정 예산으로 <strong>{wishGu}</strong>에서{' '}
+                      {VERDICT_FILTERS.find((f) => f.value === verdictFilter)?.label} 판정을 받은 곳은
+                      아직 없어 서울 전체를 보여드립니다. 예산을 올리면 이 목록이 다시 {wishGu}로
+                      좁혀집니다.
+                    </>
+                  ) : (
+                    <>
+                      진단에서 입력한 희망 지역은 <strong>지역 한정 상품의 자격 판정</strong>에
+                      쓰입니다. 상권 후보는 서울 전역이며, 좁혀 보는 것은 여기서 선택합니다.
+                    </>
+                  )}
                 </p>
               )}
 
