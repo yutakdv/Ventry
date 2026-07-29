@@ -198,10 +198,11 @@
   background: var(--green-50);
   color: var(--green-600);
 }
-/* 마커 팔레트 재설계에 맞춘다 (2026-07-30) — 배지와 마커가 다른 색이면 대조가 끊긴다. */
+/* 마커 팔레트에 맞춘다 (2026-07-30) — 배지와 마커가 다른 색이면 대조가 끊긴다.
+   조건부 적합의 노랑은 KB 브랜드색이라 유지하고, 유의만 주황 → 빨강으로 옮겼다. */
 .CONDITIONAL {
-  background: var(--blue-50);
-  color: var(--blue-600);
+  background: var(--yellow-50);
+  color: var(--yellow-600);
 }
 .CAUTION {
   background: var(--red-50);

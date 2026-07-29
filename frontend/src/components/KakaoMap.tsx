@@ -5,6 +5,7 @@ import {
   VERDICT_LABEL,
   VERDICT_MARKER_COLOR,
   VERDICT_MARKER_SHAPE,
+  markerTextColor,
   type VerdictShape,
 } from '../lib/verdict'
 import { formatBurdenRatio, formatTransit } from '../lib/format'
@@ -172,7 +173,7 @@ function buildMarkerImage(
   const body = markerShape(shape, c, r, `fill="${color}" stroke="#ffffff" stroke-width="${selected ? 3 : 2}"`)
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${canvas}" height="${canvas}" viewBox="0 0 ${canvas} ${canvas}">
 ${halo}${body}
-<text x="${c}" y="${c + font * 0.35}" text-anchor="middle" font-family="'Noto Sans KR',sans-serif" font-size="${font}" font-weight="700" fill="#ffffff">${score}</text>
+<text x="${c}" y="${c + font * 0.35}" text-anchor="middle" font-family="'Noto Sans KR',sans-serif" font-size="${font}" font-weight="700" fill="${markerTextColor(color)}">${score}</text>
 </svg>`
   return new kakao.maps.MarkerImage(
     `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,

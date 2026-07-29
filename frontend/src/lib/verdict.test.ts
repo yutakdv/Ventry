@@ -4,6 +4,7 @@ import {
   VERDICT_LABEL,
   VERDICT_MARKER_COLOR,
   VERDICT_MARKER_SHAPE,
+  markerTextColor,
 } from './verdict'
 
 /** #rrggbb → 색상(0~360°) · 명도(0~100%) */
@@ -22,13 +23,16 @@ function hueLightness(hex: string): { hue: number; lightness: number } {
   return { hue, lightness: ((max + min) / 2) * 100 }
 }
 
-/** 흰 글자 대비 (WCAG 2.x 상대 휘도) */
-function contrastWithWhite(hex: string): number {
-  const lum = [1, 3, 5]
+/** 두 색의 대비비 (WCAG 2.x 상대 휘도) */
+function relLum(hex: string): number {
+  const c = [1, 3, 5]
     .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
-    .map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4))
-  const l = 0.2126 * lum[0] + 0.7152 * lum[1] + 0.0722 * lum[2]
-  return 1.05 / (l + 0.05)
+    .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4))
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+}
+function contrast(a: string, b: string): number {
+  const [hi, lo] = [relLum(a), relLum(b)].sort((x, y) => y - x)
+  return (hi + 0.05) / (lo + 0.05)
 }
 
 /**
@@ -87,11 +91,23 @@ describe('지도 표기', () => {
     }
   })
 
-  it('마커 안 흰 숫자가 읽힌다 — 대비 4.5:1 이상 (WCAG AA)', () => {
+  /*
+   * KB 브랜드색인 노랑은 흰 글자 대비가 2.00:1 이라 그 위에 흰 숫자를 쓰면 보이지 않는다.
+   * 색을 바꾸는 대신 **글자를 뒤집는다** — `markerTextColor` 가 배경을 보고 고르므로,
+   * 팔레트가 바뀌어도 마커 안 숫자는 항상 읽힌다. 그 계약을 여기서 잠근다.
+   */
+  it('마커 안 숫자가 읽힌다 — 글자색은 배경 대비로 고른다 (WCAG AA)', () => {
     for (const v of MAP_LEGEND) {
-      const ratio = contrastWithWhite(VERDICT_MARKER_COLOR[v])
-      expect(ratio, `${v} 흰 글자 대비 ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5)
+      const bg = VERDICT_MARKER_COLOR[v]
+      const fg = markerTextColor(bg)
+      expect(contrast(bg, fg), `${v} ${bg} 위 ${fg} 대비`).toBeGreaterThanOrEqual(4.5)
     }
+  })
+
+  it('KB 브랜드색(노랑)이 조건부 적합에 유지된다', () => {
+    expect(VERDICT_MARKER_COLOR.CONDITIONAL).toBe('#f5a800')
+    // 그 위 숫자는 흰색이 아니라 검정이어야 한다 — 흰색이면 2.00:1 로 사라진다.
+    expect(markerTextColor('#f5a800')).toBe('#1a1a1a')
   })
 
   it('색을 못 봐도 구분되도록 모양이 서로 다르다 (WCAG 1.4.1)', () => {

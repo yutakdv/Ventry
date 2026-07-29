@@ -21,10 +21,11 @@
   color: var(--green-600);
 }
 /* 지도 마커 팔레트와 같은 축을 쓴다 (2026-07-30) — 카드 배지와 마커 색이 갈리면
-   「이 카드가 지도의 어느 마커인가」를 색으로 못 찾는다. */
+   「이 카드가 지도의 어느 마커인가」를 색으로 못 찾는다.
+   조건부 적합의 노랑은 KB 브랜드색이라 유지하고, 유의만 주황 → 빨강으로 옮겼다. */
 .CONDITIONAL {
-  background: var(--blue-50);
-  color: var(--blue-600);
+  background: var(--yellow-50);
+  color: var(--yellow-600);
 }
 .CAUTION {
   background: var(--red-50);
