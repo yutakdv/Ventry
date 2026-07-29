@@ -40,8 +40,8 @@ DOCENT = {
     "cards": {"보수": 7901, "적극": 10440},
     "n_entry": 382,
     "n_conditional": 636,
-    "top3": [("방이동먹자골목", "FIT", 94), ("잠실역", "FIT", 86),
-             ("을지로입구역", "CONDITIONAL", 85)],
+    "top3": [("신림역 8번", "CONDITIONAL", 84), ("방이동먹자골목", "FIT", 83),
+             ("잠실 관광특구", "FIT", 83)],
     "t1": {"gap": 3869, "n_entry_before": 382, "n_entry_after": 1014, "n_sustain_after": 244},
     "area_code": "3120229",   # 방이동먹자골목 — 대본 6번의 역방향 판정 대상
     "n_products": 11,
