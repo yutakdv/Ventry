@@ -85,7 +85,9 @@ export default function FrontierChart({ points, currentBudget }: FrontierChartPr
       yTicks: ticks(0, yMax, 4),
       dots: points.filter((_, i) => i % 6 === 0),
       cur,
-      curX: sx(Math.max(currentBudget, xMin)),
+      // 상·하한 모두 클램프한다 — 종전에는 하한만 잡아 예산이 xMax 를 넘으면 마커가
+      // viewBox 밖에 그려졌다 (실사용 점검 2026-07-29).
+      curX: sx(Math.min(Math.max(currentBudget, xMin), xMax)),
       curY: sy(cur[1]),
     }
   }, [points, currentBudget])
@@ -95,9 +97,26 @@ export default function FrontierChart({ points, currentBudget }: FrontierChartPr
   }
 
   const label = `현재 예산 ${currentBudget.toLocaleString('ko-KR')}만원 · ${model.cur[1].toLocaleString('ko-KR')}곳`
-  const calloutW = label.length * 6.4 + 16
+  /*
+   * 글자 폭 추정을 **한글 기준**으로 고친다 (실사용 점검 2026-07-29).
+   *
+   * 종전 `label.length * 6.4` 는 라틴 문자 폭이다. 이 라벨은 한글이 섞여 있고 한글은 11px
+   * 폰트에서 사실상 1em(≈11px)을 차지하므로, 박스가 실제 텍스트보다 좁게 잡혀 **글자가
+   * 자기 말풍선 밖으로 삐져나왔다.** 폭이 과소평가되면 `flip` 임계도 늦게 걸려 오른쪽
+   * 경계에서 더 늦게 접힌다.
+   */
+  const calloutW =
+    [...label].reduce((w, ch) => w + (/[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(ch) ? 11 : 6.4), 0) + 16
   const flip = model.curX + calloutW + 14 > W
-  const calloutX = flip ? model.curX - calloutW - 12 : model.curX + 12
+  /*
+   * 좌우 모두 플롯 안으로 가둔다. `flip` 만으로는 예산이 x축 최대를 넘는 경우
+   * (탐색 인사이트가 `budget_max` 를 넘기는 실데이터가 있다) 마커·말풍선이 viewBox 밖으로
+   * 나가 PNG 내보내기에서 잘렸다.
+   */
+  const calloutX = Math.min(
+    Math.max(flip ? model.curX - calloutW - 12 : model.curX + 12, PAD.left),
+    W - calloutW,
+  )
   /*
    * 마커가 바닥 근처면(후보 수가 적을 때) 말풍선이 x축 눈금 위에 겹친다.
    * 플롯 영역 안으로 끌어올려 축 라벨을 가리지 않게 한다.

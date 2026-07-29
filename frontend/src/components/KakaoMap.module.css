@@ -44,18 +44,24 @@
   color: var(--color-text-secondary);
 }
 
-/* 지도 위에 떠 있는 범례 (판정 3종) */
+/* 지도 위에 떠 있는 범례 — 지금 찍힌 판정만 싣는다 (KakaoMap `drawnLegend` 주석 참조) */
 .legend {
   position: absolute;
   top: var(--space-12);
   right: var(--space-12);
   display: flex;
+  /* 지도 열이 좁아지면 접힌다 — 항목 3종이 모두 nowrap 이라 겹치던 자리. */
+  flex-wrap: wrap;
+  max-width: calc(100% - var(--space-24));
   gap: var(--space-12);
   padding: var(--space-8) var(--space-12);
   border-radius: var(--radius-md);
   background: var(--color-bg-surface);
   box-shadow: var(--shadow-float);
   z-index: 2;
+}
+.legend[hidden] {
+  display: none;
 }
 .legendItem {
   display: inline-flex;
@@ -68,6 +74,24 @@
   width: 8px;
   height: 8px;
   border-radius: var(--radius-full);
+}
+/* 범례에 붙는 전환 버튼 — 항목과 섞이지 않도록 세로선으로 끊는다. */
+.legendBtn {
+  padding: 0 0 0 var(--space-12);
+  border: 0;
+  border-left: 1px solid var(--color-border-default);
+  background: none;
+  color: var(--color-text-accent);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.legendBtn:hover {
+  text-decoration: underline;
+}
+/* 마커가 하나도 없을 때는 항목이 비어 세로선만 남는다 — 그때는 선을 지운다. */
+.legendBtn:first-child {
+  padding-left: 0;
+  border-left: 0;
 }
 
 .note {

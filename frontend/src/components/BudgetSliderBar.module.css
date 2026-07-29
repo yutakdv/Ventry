@@ -7,7 +7,11 @@
   bottom: 0;
   z-index: 5;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  /*
+   * 3열 — 슬라이더 | 프리뷰 | 탐색 진입 (실사용 점검 2026-07-29).
+   * 진입 버튼은 `auto` 라 자기 폭만 쓰고, 앞의 두 열이 남는 폭을 나눈다.
+   */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
   gap: var(--space-24);
   align-items: center;
   padding: var(--space-16) var(--space-20);
@@ -22,6 +26,21 @@
   flex-direction: column;
   gap: var(--space-4);
   min-width: 0;
+}
+
+/* 탐색 진입 — 좁아지면 앞 두 열 아래로 내려간다. */
+.actionCol {
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 1100px) {
+  .bar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .actionCol {
+    grid-column: 1 / -1;
+  }
 }
 
 .head {
@@ -64,7 +83,14 @@
 
 .statValue {
   color: var(--color-text-primary);
-  white-space: nowrap;
+  /*
+   * 좁은 폭에서 줄바꿈시킨다 (실사용 점검 2026-07-29). 값은 「312만원 ~ 878만원」·
+   * 「12,345 ~ 23,456명」 처럼 약 121px 를 요구하는데, 이 바는 3열 균등이라 트랙이
+   * 1100px 부근에서 106px 까지 좁아져 옆 칸 글자와 겹쳤다. 하단 고정(sticky) 바라
+   * 겹침이 계속 보인다. ellipsis 는 금액을 잘라 먹으므로 쓰지 않는다.
+   */
+  white-space: normal;
+  word-break: keep-all;
 }
 
 /* 숫자의 기준을 값 바로 아래에 붙인다 — 목록 개수와 다른 이유가 여기 있기 때문이다. */

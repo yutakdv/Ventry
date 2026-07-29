@@ -159,6 +159,9 @@ export default function KakaoMap({
   dataAsOf,
   industry,
   scope,
+  legendAction,
+  fitToken,
+  fitAreas,
 }: {
   areas: Area[]
   selectedCode: string | null
@@ -168,6 +171,37 @@ export default function KakaoMap({
   industry?: Industry | null
   /** 상권·구획 경계 (가정 #96). 없으면 경계 없이 오늘과 같은 화면이 된다. */
   scope?: AreaScope | null
+  /**
+   * 범례 옆에 붙는 전환 버튼 (조건부 적합 보기 등). 없으면 범례만 나온다.
+   * ReactNode 가 아니라 라벨+동작으로 받는다 — 버튼이 범례 상자 안에 사는 이상 그 스타일은
+   * 이 컴포넌트가 가져야 하고, 호출부가 자기 CSS 모듈의 클래스를 넘기게 두면 갈라진다.
+   */
+  legendAction?: { label: string; onClick: () => void }
+  /**
+   * 값이 바뀌면 후보 전체가 보이도록 뷰포트를 다시 맞춘다.
+   *
+   * 초기 fit 은 의도적으로 1회뿐이다 — 예산 슬라이더가 `areas` 를 매번 새로 만들기 때문에,
+   * `areas` 변화마다 맞추면 자치구를 확대해 둔 시야가 한 칸 움직일 때마다 파괴된다(이슈 #154).
+   * 하지만 **판정 필터를 옮기는 것은 다른 종류의 사건**이다: 진입 가능 6곳에서 조건부 적합
+   * 542곳으로 갈아타면 후보가 있는 자리가 달라져, 확대해 둔 화면에 마커가 하나도 없을 수 있다.
+   * 그래서 「같은 후보군을 다시 계산했다」와 「후보군을 갈아탔다」를 이 토큰으로 가른다.
+   * 돌아가는 곳은 `fitAreas` 기준의 전체 보기이므로, 갈아탄 뒤의 화면은 언제나 서울 전체다.
+   */
+  fitToken?: string
+  /**
+   * 「전체 보기」의 기준이 되는 후보 집합. 없으면 `areas`(표시 중인 마커)를 쓴다.
+   *
+   * 둘을 나눈 이유가 이 화면의 첫인상이다 (2026-07-30). 뷰포트를 **표시 중인 마커**에 맞추면
+   * 후보가 적은 예산에서 지도가 통째로 확대된다 — 확정 예산 8,000만의 진입 가능 6곳은
+   * 노원구 상계동 일대 **약 1.2km × 0.9km** 안에 몰려 있어(위도폭 0.011°·경도폭 0.010°),
+   * 진입하자마자 지도가 그 골목만 비췄다. 「서울 어디까지 가능한가」를 보여줄 자리에서
+   * 서울이 사라지고, 「서울 전체 보기」 버튼조차 그 골목으로 돌아갔다.
+   *
+   * 그래서 뷰포트는 **예산·필터와 무관한 고정 기준**인 후보 전체(범위 외 포함 서울 상권
+   * 1,059곳, 위도 37.435~37.690 · 경도 126.809~127.174)에 맞춘다. 상수를 박지 않고 데이터에서
+   * 얻으므로 적재본이 바뀌어도 따라온다.
+   */
+  fitAreas?: Area[]
 }) {
   const status = useKakaoLoader()
   /** 지도 컨테이너가 가리키는 대체 경로 안내의 id (m-4). */
@@ -197,6 +231,10 @@ export default function KakaoMap({
   const districtPolyRef = useRef<kakao.maps.Polygon | null>(null)
   /** 초기 1회만 후보 전체에 맞춘다 — 아래 fit 효과 주석 참조. */
   const fitDoneRef = useRef(false)
+  /** 마지막으로 뷰포트를 맞춘 후보군. 초기값은 첫 렌더의 토큰이라 진입 직후에는 돌지 않는다. */
+  const fitTokenRef = useRef(fitToken)
+  /** 화면이 스스로 고른 첫 선택인가 — 그 한 번은 지도를 움직이지 않는다 (아래 말풍선 효과). */
+  const initialSelectRef = useRef(true)
 
   /**
    * 선택된 상권의 경계와, 그 임대료가 **실제로 조사된** 부동산원 구획의 경계 (가정 #96).
@@ -208,6 +246,19 @@ export default function KakaoMap({
    * 상권 경계를 못 찾으면 구획도 그리지 않는다. 둘 중 하나만 뜨면 「이 선이 무엇의
    * 경계인지」가 화면에서 사라진다.
    */
+  /**
+   * 범례는 **지금 지도에 실제로 찍힌 판정만** 싣는다 (2026-07-30).
+   *
+   * 종전에는 `MAP_LEGEND` 3종을 항상 그렸는데, 판정 필터가 붙은 뒤로는 그것이 거짓말이 된다 —
+   * 「진입 가능」으로 좁혀 적합·유의만 찍힌 지도에 조건부 적합 범례가 남으면, 노란 마커를
+   * 찾다가 없는 것을 화면 탓으로 돌리게 된다. 어휘 3종(스펙 §0-4)은 필터 칩과 아래
+   * 조건부 패널이 항상 노출하므로 화면에서 사라지지 않는다.
+   */
+  const drawnLegend = useMemo(() => {
+    const present = new Set(areas.map((a) => a.verdict))
+    return MAP_LEGEND.filter((v) => present.has(v))
+  }, [areas])
+
   const boundary = useMemo(() => {
     if (!SCOPE_BOUNDARY || !scope || !selectedCode) return null
     const area = areas.find((a) => a.area_code === selectedCode)
@@ -234,7 +285,6 @@ export default function KakaoMap({
     markersRef.current.forEach((m) => m.setMap(null))
     markersRef.current.clear()
 
-    const bounds = new kakao.maps.LatLngBounds()
     areas.forEach((a) => {
       const pos = new kakao.maps.LatLng(a.lat, a.lng)
       // 선택 상태를 여기서 반영한다(ref로 읽으므로 의존성은 늘지 않는다) — 아래 강조 효과가
@@ -254,24 +304,40 @@ export default function KakaoMap({
         onSelectRef.current(a.area_code)
       })
       markersRef.current.set(a.area_code, marker)
-      bounds.extend(pos)
     })
     prevSelectedRef.current = selectedRef.current
 
-    boundsRef.current = bounds
     /*
-     * 네 방향 같은 여백 — 후보 분포(서울)가 지도를 꽉 채운다. 말풍선 잘림은 아래 panTo 담당.
+     * 뷰포트는 **표시 중인 마커가 아니라 후보 전체(서울)** 에 맞춘다 (`fitAreas` 주석 참조).
+     * 네 방향 같은 여백 — 서울이 지도를 꽉 채운다. 말풍선 잘림은 아래 panTo 담당.
      *
      * **최초 1회만** 맞춘다. 이 효과는 `areas` 가 바뀔 때마다 도는데, 예산 슬라이더는 그
      * 배열을 매번 새로 만든다 — 조건이 `areas.length > 0` 뿐이던 동안에는 슬라이더를 한 칸
      * 움직일 때마다 뷰포트가 서울 전체로 튕겨 나가, 특정 자치구를 확대해 둔 상태가 파괴됐다.
      * 전체를 다시 보고 싶을 때는 아래 「서울 전체 보기」로 명시적으로 요청한다.
      */
-    if (!fitDoneRef.current && areas.length > 0 && !bounds.isEmpty()) {
+    const bounds = new kakao.maps.LatLngBounds()
+    ;(fitAreas ?? areas).forEach((a) => bounds.extend(new kakao.maps.LatLng(a.lat, a.lng)))
+    boundsRef.current = bounds
+    if (!fitDoneRef.current && !bounds.isEmpty()) {
       map.setBounds(bounds, FIT_PADDING, FIT_PADDING, FIT_PADDING, FIT_PADDING)
       fitDoneRef.current = true
     }
-  }, [status, areas])
+  }, [status, areas, fitAreas])
+
+  /*
+   * 후보군을 갈아탔을 때만 다시 맞춘다 (`fitToken` 주석 참조). 위 마커 효과가 `boundsRef` 를
+   * 먼저 갱신하므로 — 선언 순서가 곧 실행 순서다 — 여기서는 그 결과를 그대로 쓴다.
+   */
+  useEffect(() => {
+    const map = mapRef.current
+    const b = boundsRef.current
+    if (status !== 'ready' || !map || fitTokenRef.current === fitToken) return
+    fitTokenRef.current = fitToken
+    if (b && !b.isEmpty()) {
+      map.setBounds(b, FIT_PADDING, FIT_PADDING, FIT_PADDING, FIT_PADDING)
+    }
+  }, [status, fitToken, areas])
 
   /**
    * 경계 윤곽선 2개 (가정 #96). 인스턴스는 만들어 두고 `setPath` 로만 갈아 끼운다 —
@@ -380,6 +446,23 @@ export default function KakaoMap({
     overlayRef.current.setMap(map)
 
     /*
+     * **화면이 스스로 고른 첫 선택으로는 지도를 움직이지 않는다** (2026-07-30).
+     *
+     * 진입 시 1위 상권이 자동 선택되는데, 그 말풍선이 상단에 걸리면 아래 판정이 곧바로
+     * `panTo` 를 불러 첫 화면이 서울 전체가 아니게 된다. 확정 예산 8,000만의 진입 가능 6곳은
+     * 전부 노원구 상계동(위도 37.656~37.667)이라 잘림 임계(약 37.60)를 넘어, 진입하자마자
+     * 지도가 서울 북쪽으로 끌려가고 강남·강서가 화면 밖으로 나갔다.
+     *
+     * 아래 이동 규칙 자체는 그대로 둔다 — 그것은 **사용자가 마커를 고른 뒤**의 규칙이다.
+     * 이 효과는 선택이 없으면 위에서 이미 빠져나가므로, 여기서 소비되는 것은 언제나
+     * 자동 선택 한 번뿐이고 사용자의 첫 클릭은 정상적으로 이동한다.
+     */
+    if (initialSelectRef.current) {
+      initialSelectRef.current = false
+      return
+    }
+
+    /*
      * 이미 보이는 마커를 눌렀는데 지도가 움직이면 나머지 후보가 시야에서 밀려나 비교가 끊긴다.
      * 그래서 이동은 두 경우로 한정한다 — 화면 밖이거나, 상단에 너무 붙어 말풍선이 잘릴 때.
      *
@@ -473,13 +556,23 @@ export default function KakaoMap({
         </div>
       )}
 
-      <div className={styles.legend}>
-        {MAP_LEGEND.map((v) => (
+      {/* 찍힌 마커도 없고 붙일 버튼도 없으면 빈 상자만 뜬다 — 그때는 범례를 내지 않는다. */}
+      <div className={styles.legend} hidden={drawnLegend.length === 0 && !legendAction}>
+        {drawnLegend.map((v) => (
           <span key={v} className={`t-caption ${styles.legendItem}`}>
             <span className={styles.legendDot} style={{ background: VERDICT_MARKER_COLOR[v] }} />
             {VERDICT_LABEL[v]}
           </span>
         ))}
+        {legendAction && (
+          <button
+            type="button"
+            className={`t-caption ${styles.legendBtn}`}
+            onClick={legendAction.onClick}
+          >
+            {legendAction.label}
+          </button>
+        )}
       </div>
 
       {/* 판정 범례(3종)는 그대로 두고, 경계가 실제로 떠 있을 때만 선 뜻풀이를 덧붙인다. */}

@@ -7,10 +7,17 @@
   border-radius: var(--radius-lg);
 }
 
+/*
+ * 요약 스트립도 접힌다 (실사용 점검 2026-07-29 · `ScenarioRow.top` 과 같은 병).
+ * 자식 7개가 `flex-wrap` 없이 한 줄을 요구했고, min-content 합이 약 877px 라
+ * 1201px 이하에서 「지도에서 보기 →」가 카드 밖으로 밀려났다.
+ */
 .row {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--space-24);
+  row-gap: var(--space-16);
   padding: var(--space-20) var(--space-24);
 }
 
@@ -72,6 +79,8 @@
   display: flex;
   flex-direction: column;
   gap: 1px;
+  /* flex 자식의 기본 min-width 는 auto 라 내용이 부모를 밀어낸다 — 축소를 허용한다. */
+  min-width: 0;
 }
 
 .statLabel {
@@ -85,7 +94,9 @@
 
 .statSub {
   color: var(--color-text-tertiary);
-  white-space: nowrap;
+  /* 「기준 1,014곳 대비 +45곳」이 155px 자연폭을 요구해 옆 스탯 위로 겹치던 자리. */
+  white-space: normal;
+  word-break: keep-all;
 }
 
 .spacer {

@@ -2,6 +2,13 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-8);
+  /*
+   * SVG 는 `viewBox` 비율 유지 + `width: 100%` 라 컨테이너를 그대로 따라 커진다.
+   * `/explore` 가 1열로 접히면 카드 폭이 800~1000px 가 되어 스케일이 2배를 넘고,
+   * 11px 로 설계한 축 라벨이 22px 이상으로 부풀어 조악해 보인다. 원래 2열에서의
+   * 실폭(약 400px)에 여유를 둔 값으로 상한을 건다 (실사용 점검 2026-07-29).
+   */
+  max-width: 520px;
 }
 
 .svg {

@@ -273,11 +273,16 @@ export async function mockRecommend(): Promise<RecommendResponse> {
   return {
     data_as_of: '2026-Q1',
     total_count: areas.length,
-    // 요약은 예산과 무관한 후보 풀 전체의 평균이다 (BE `LocationService.summary`와 동일).
-    summary: {
-      avg_rent: avg(MOCK_AREAS.map((a) => a.monthly_rent)),
-      avg_sales: avg(MOCK_AREAS.map((a) => a.est_sales)),
-    },
+    // 요약은 **화면에 남는 후보**(범위 외 제외)의 평균이다 — BE `LocationService.summary` 와
+    // 같은 모집단을 쓴다. 남는 후보가 없으면 필드를 생략한다 (실사용 점검 2026-07-29).
+    summary: (() => {
+      const visible = areas.filter((a) => a.verdict !== 'OUT_OF_SCOPE')
+      if (visible.length === 0) return undefined
+      return {
+        avg_rent: avg(visible.map((a) => a.monthly_rent)),
+        avg_sales: avg(visible.map((a) => a.est_sales)),
+      }
+    })(),
     areas,
     risk_review: mockRiskReview(
       '수요 상위 상권일수록 경쟁밀도가 높아, 추정매출 하위 시나리오에서는 부담률이 임계를 넘을 수 있습니다. 유의 판정 유지가 타당합니다.',

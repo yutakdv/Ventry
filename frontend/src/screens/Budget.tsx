@@ -7,7 +7,7 @@ import Button from '../components/Button'
 import InfoBanner from '../components/InfoBanner'
 import Slider from '../components/Slider'
 import StatCard from '../components/StatCard'
-import { postBudget } from '../api/client'
+import { isSessionGone, postBudget } from '../api/client'
 import { useSession } from '../store/session'
 import { formatAmount, formatBudgetRange, formatPeople } from '../lib/format'
 import { SESSION_LOST_STATE } from '../lib/sessionLost'
@@ -49,6 +49,8 @@ export default function Budget() {
   const [preview, setPreview] = useState<BudgetPreview | null>(null)
   const [dataAsOf, setDataAsOf] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
+  /** 서버에 세션이 없다(404) — 첫 화면으로 돌려보낸다. */
+  const [sessionGone, setSessionGone] = useState(false)
   /**
    * 요청 일련번호.
    *
@@ -96,8 +98,10 @@ export default function Budget() {
         setDataAsOf(res.data_as_of)
         setBudget(res.confirmed_budget, res.preview, res.data_as_of) // 세션 B₀ — 화면 4의 진실 원천
         bumpVersion() // /recommend·/explore가 공유하는 version 갱신
-      } catch {
-        // 취소(새 요청이 앞선 것을 끊었다)뿐이다 — 그 외 실패는 client.ts 가 목으로 흡수한다.
+      } catch (e) {
+        // 취소(새 요청이 앞선 것을 끊었다)와 **4xx** 가 온다. 장애는 client.ts 가 목으로 흡수한다.
+        // 세션이 서버에 없으면 첫 화면으로 — 없는 세션의 예산을 확정한 척하지 않는다.
+        if (isSessionGone(e)) setSessionGone(true)
       } finally {
         // 뒤늦게 끝난 구 요청이 "계산 중"을 먼저 꺼 버리지 않게 한다.
         if (seq === seqRef.current) setPending(false)
@@ -115,7 +119,7 @@ export default function Budget() {
 
   // 세션·시나리오 없이 직접 들어온 경우 — 앞 단계로 되돌린다.
   // 세션이 사라진 이유를 첫 화면이 설명할 수 있도록 state 를 실어 보낸다 (M-13)
-  if (!sessionId) return <Navigate to="/diagnose" replace state={SESSION_LOST_STATE} />
+  if (!sessionId || sessionGone) return <Navigate to="/diagnose" replace state={SESSION_LOST_STATE} />
   if (!scenario) return <Navigate to="/scenarios" replace />
 
   const meta = SCENARIO_LABEL[scenario.label]
@@ -196,8 +200,17 @@ export default function Budget() {
             <div className={styles.presets}>
               <span className={`t-label ${styles.presetLabel}`}>빠른 선택</span>
               {PRESETS.map((p) => {
-                const target =
+                /*
+                 * 슬라이더 눈금(100만원) 위로 올린다 (실사용 점검 2026-07-29).
+                 * 격자를 벗어난 값이면 칩을 누른 뒤 슬라이더를 잡는 순간 값이 스냅해
+                 * 선택 표시(`value === target`)가 풀린다 — 방금 고른 칩이 꺼져 보인다.
+                 */
+                const raw =
                   scenario.budget_min + Math.round((scenario.budget_max - scenario.budget_min) * p.ratio)
+                const target = Math.min(
+                  scenario.budget_max,
+                  scenario.budget_min + Math.round((raw - scenario.budget_min) / 100) * 100,
+                )
                 return (
                   <button
                     key={p.label}
@@ -307,8 +320,15 @@ export default function Budget() {
         </p>
 
         <div className={styles.ctaBar}>
+          {/*
+            버튼이 꺼져 있는데 안내문은 「확인할 수 있습니다」라고 말하던 자리
+            (실사용 점검 2026-07-29). 빠른 선택 「최소」·「보수」가 실제로 0곳이라
+            심사자가 칩을 고른 직후 이 모순을 본다. 상태에 맞는 문장으로 가른다.
+          */}
           <p className="t-body">
-            이제 선택하신 예산 범위 내에서 도달 가능한 입지를 지도에서 확인할 수 있습니다.
+            {noCandidate
+              ? '진입 가능한 상권이 0곳이라 다음 단계로 넘어갈 수 없습니다. 슬라이더나 빠른 선택으로 예산을 올리면 진입 가능 상권 수가 달라집니다.'
+              : '이제 선택하신 예산 범위 내에서 도달 가능한 입지를 지도에서 확인할 수 있습니다.'}
           </p>
           <Button
             variant="primary"

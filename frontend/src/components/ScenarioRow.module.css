@@ -12,10 +12,23 @@
   border-color: var(--color-brand-primary);
 }
 
+/*
+ * 좁은 폭에서 **행이 접힌다** (실사용 점검 2026-07-29).
+ *
+ * 종전에는 `flex-wrap` 이 없고 지표 3개가 `flex: none` + `nowrap` 이라 행 전체가 약 630px
+ * 하한을 가졌다. `/explore` 우열은 1440에서 630px 라 겨우 걸쳤고, **1280(13인치)에서는 470px 로
+ * 줄어 약 160px 이 카드 밖으로 나갔다** — 전역에 `overflow-x: hidden` 이 없어 페이지에 가로
+ * 스크롤바가 생겼다. 1440에서만 확인하면 보이지 않는 자리다.
+ *
+ * 접히는 순서를 셋으로 둔다: ① `.statSub` 줄바꿈 → ② `.stat` 축소 → ③ 행 전체 접힘.
+ * 버튼이 아래로 떨어지는 ③은 최후 수단이며, 대개 ①에서 멈춘다.
+ */
 .top {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--space-12);
+  row-gap: var(--space-8);
   padding: var(--space-16) 18px;
 }
 
@@ -43,7 +56,7 @@
   flex-direction: column;
   gap: 2px;
   flex: 1 1 220px;
-  min-width: 170px;
+  min-width: 140px;
 }
 
 .titleRow {
@@ -77,7 +90,8 @@
 }
 
 .stat {
-  flex: none;
+  /* 줄어들 수는 있게 하되 78px 아래로는 안 간다 — 숫자가 뭉개지는 것보다 접히는 편이 낫다. */
+  flex: 0 1 auto;
   display: flex;
   flex-direction: column;
   gap: 1px;
@@ -95,7 +109,9 @@
 
 .statSub {
   color: var(--color-text-tertiary);
-  white-space: nowrap;
+  /* 「상환 60개월 가정」·「(상환 부담 반영)」이 자연폭을 요구해 행을 밀어내던 자리. */
+  white-space: normal;
+  word-break: keep-all;
 }
 
 .action {

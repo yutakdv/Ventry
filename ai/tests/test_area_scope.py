@@ -115,6 +115,21 @@ def test_areas_carry_name_and_type(scope):
 
 
 @needs_artifact
+def test_areas_carry_sigungu(scope):
+    """자치구(g)가 진단의 「희망 지역」을 화면 4 필터로 잇는 유일한 축이다 (가정 #112).
+
+    한 건이라도 비면 그 상권이 자치구 필터에서 조용히 빠지고, 필드가 통째로 없으면 필터
+    자체가 나타나지 않는다 — **화면이 오류를 내지 않고 기능만 사라지는** 종류라 여기서 잡는다.
+    구 이름 표기는 진단 폼의 `SEOUL_GU` 와 글자 단위로 같아야 한다(그래야 `region_hint` 의
+    마지막 토큰이 그대로 매칭된다).
+    """
+    gus = {e.get("g") for e in scope["areas"].values()}
+    assert None not in gus and "" not in gus, "자치구 없는 상권이 있다"
+    assert len(gus) == 25, f"자치구 {len(gus)}종 — 서울은 25개 자치구다"
+    assert all(g.endswith("구") for g in gus), sorted(gus)
+
+
+@needs_artifact
 def test_overlaps_are_meaningful_and_resolvable(scope):
     """임계 미만(경계선이 스치는 수준)은 실리지 않고, 참조 코드는 전부 조회 가능해야 한다.
 

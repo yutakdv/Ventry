@@ -66,10 +66,11 @@ export default function Hero() {
 
           {/* 캡처에 실제로 찍힌 값만 얹는다 — 오버레이가 캡처와 다른 숫자를 말하면 안 된다. */}
           <div className={styles.overlay} aria-hidden>
-            {HERO_OVERLAY.map(({ label, value }) => (
+            {HERO_OVERLAY.map(({ label, value, note }) => (
               <div key={label} className={styles.stat}>
                 <span className={`t-caption ${styles.statLabel}`}>{label}</span>
                 <span className={styles.statValue}>{value}</span>
+                {note && <span className={`t-caption ${styles.statNote}`}>{note}</span>}
               </div>
             ))}
           </div>

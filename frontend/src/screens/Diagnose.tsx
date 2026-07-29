@@ -12,7 +12,7 @@ import Divider from '../components/Divider'
 import Alert from '../components/Alert'
 import MyDataPanel from './MyDataPanel'
 import ParsedResult from './ParsedResult'
-import { postDiagnose } from '../api/client'
+import { ApiError, postDiagnose } from '../api/client'
 import { useSession } from '../store/session'
 import { isSessionLost } from '../lib/sessionLost'
 import type { DiagnoseRequest, DiagnoseResponse, Industry } from '../api/types'
@@ -20,9 +20,6 @@ import {
   SIDO,
   SEOUL_GU,
   INDUSTRY,
-  START_TIMING,
-  OP_TYPE,
-  AREA_TYPE,
   DEMO_PROFILE,
   EMPTY_FORM,
   validateDiagnose,
@@ -47,14 +44,8 @@ function buildRequest(f: FormState): DiagnoseRequest {
   const sidoLabel = SIDO.find((s) => s.value === f.sido)?.label
   const region_hint = f.gu && sidoLabel ? `${sidoLabel} ${f.gu}` : null
 
-  // 선택 3필드는 계약 form에 없어 free_text 맥락으로(범주형 → §0-1 무관, 탐색 우선순위용).
-  const ctx: string[] = []
-  if (f.startTiming) ctx.push(`창업 희망 시기: ${f.startTiming}`)
-  if (f.opType) ctx.push(`희망 운영 형태: ${f.opType}`)
-  if (f.areaType && f.areaType !== '상관없음') ctx.push(`상권 유형: ${f.areaType}`)
-  const free_text = [f.freeText.trim(), ctx.length ? `[추가 정보] ${ctx.join(' / ')}` : '']
-    .filter(Boolean)
-    .join('\n')
+  // 자유 입력만 보낸다 — 선택 3필드는 서버 키워드에 한 번도 걸리지 않아 제거했다(위 주석 참조).
+  const free_text = f.freeText.trim()
 
   return {
     form: {
@@ -85,6 +76,8 @@ export default function Diagnose() {
   const [submitted, setSubmitted] = useState(false) // "조달 시나리오 보기" 누른 뒤 에러 노출
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<DiagnoseResponse | null>(null)
+  /** 서버가 입력을 거절한 사유 (4xx). 장애는 여기 오지 않는다 — 목 폴백 배너가 맡는다. */
+  const [submitError, setSubmitError] = useState<string | null>(null)
   /**
    * 에러 요약으로 **포커스를 옮기기 위한** 앵커.
    *
@@ -122,12 +115,27 @@ export default function Diagnose() {
       return
     }
     setLoading(true)
+    setSubmitError(null)
     try {
       const res = await postDiagnose(buildRequest(f))
       setDiagnoseForm(f) // 다시 돌아왔을 때 복원할 원본 입력값
       setSession(res.session_id, res.parsed_profile)
       setResult(res)
       window.scrollTo({ top: 0, behavior: 'smooth' })
+    } catch (e) {
+      /*
+       * 서버가 입력을 거절한 경우(4xx)만 여기로 온다 — 장애는 `client.ts` 가 목으로 흡수한다
+       * (실사용 점검 2026-07-29). **서버가 준 문장을 그대로 보여 준다.** 화면이 사유를 다시
+       * 쓰면 서버 규칙이 바뀔 때 두 곳이 갈라지고, 무엇보다 종전에는 이 문장을 통째로 버리고
+       * 「서버에 연결하지 못했다」로 바꿔 말해서 사용자가 원인을 알 수 없었다.
+       */
+      if (e instanceof ApiError) {
+        setSubmitError(e.message)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+        requestAnimationFrame(() => errorSummaryRef.current?.focus())
+        return
+      }
+      throw e
     } finally {
       setLoading(false)
     }
@@ -219,6 +227,12 @@ export default function Diagnose() {
             </div>
           )}
 
+          {submitError && (
+            <div ref={errorSummaryRef} tabIndex={-1} className={styles.errorSummary}>
+              <Alert title="입력값을 확인해 주세요.">{submitError}</Alert>
+            </div>
+          )}
+
           <p className={`t-caption ${styles.demoHint}`}>
             예비창업자 · 만 32세 · 자기자본 5,000만원 · 마포 카페 — 마이데이터 불러오기를 통해 데모프로필을 한 번에 채웁니다
           </p>
@@ -264,6 +278,8 @@ export default function Diagnose() {
                 suffix="세"
                 invalid={!!fieldError('age')}
                 value={f.age}
+                /* 세 자리면 충분하다 — `99999` 가 그대로 들어가던 자리 (실사용 점검 2026-07-29). */
+                maxLength={3}
                 onChange={(e) => set('age', e.target.value.replace(/[^\d]/g, ''))}
               />
             </Field>
@@ -350,54 +366,25 @@ export default function Diagnose() {
 
           <Divider />
 
-          {/* 3. 추가 정보 (선택 — 검증 제외) */}
-          <h2 className={`t-title2 ${styles.section}`}>3. 추가 정보 (선택)</h2>
-          <div className={styles.row3}>
-            <Field label="창업 희망 시기">
-              <Select
-                placeholder="선택하세요"
-                value={f.startTiming}
-                onChange={(e) => set('startTiming', e.target.value)}
-              >
-                {START_TIMING.map((o) => (
-                  <option key={o} value={o}>
-                    {o}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="희망 운영 형태">
-              <Select
-                placeholder="선택하세요"
-                value={f.opType}
-                onChange={(e) => set('opType', e.target.value)}
-              >
-                {OP_TYPE.map((o) => (
-                  <option key={o} value={o}>
-                    {o}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <Field label="상권 유형 (선택)">
-              <Select
-                placeholder="상권 유형 선택"
-                value={f.areaType}
-                onChange={(e) => set('areaType', e.target.value)}
-              >
-                {AREA_TYPE.map((o) => (
-                  <option key={o} value={o}>
-                    {o}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-          </div>
+          {/*
+            「추가 정보(선택)」 3종(창업 희망 시기·희망 운영 형태·상권 유형)을 제거했다
+            (실사용 점검 2026-07-29).
 
-          <Divider />
+            셋 다 계약 `form` 에 필드가 없어 `free_text` 꼬리표로만 붙었는데, 서버가 읽는
+            키워드는 `권리금`·`임대/월세`·`유동/손님` 셋뿐이라 **어느 선택지도 한 번도 걸리지
+            않았다.** 골라도 조달 시나리오·예산·추천 목록·지도가 글자 하나 달라지지 않는
+            입력이었고, 실제로 오피스 상권 → 대학가 → 번화가로 바꿔 가며 주행한 결과가
+            해시 단위로 동일했다.
 
-          {/* 4. 자유 입력 (선택 — 검증 제외) */}
-          <h2 className={`t-title2 ${styles.section}`}>4. 더 알려주실 내용 (선택)</h2>
+            특히 「상권 유형」의 선택지(오피스/주거/대학가/번화가)는 **실제 데이터에 대응 개념이
+            없다.** 서울시 상권 구분은 골목·발달·전통시장·관광특구이고, 배후 성격(직장/상주
+            인구)으로 다시 만들려면 우리가 임계값을 정해야 하는데 그건 출처 없는 분류가 된다.
+            대신 **화면 4에 서울시 공식 구분을 그대로 쓰는 필터**를 두었다 — 미리 선언하는
+            축이 아니라 결과를 좁히는 축이 이 값의 제자리다.
+          */}
+
+          {/* 3. 자유 입력 (선택 — 검증 제외) */}
+          <h2 className={`t-title2 ${styles.section}`}>3. 더 알려주실 내용 (선택)</h2>
           <label className={`t-label ${styles.freeLabel}`} htmlFor="freeText">
             고민이나 상황을 자유롭게 적어주세요
           </label>
