@@ -125,6 +125,18 @@
 .name {
   color: var(--color-text-primary);
 }
+/*
+ * 상권 구분(골목·발달·전통시장·관광특구) 라벨.
+ * 판정 배지와 확실히 구분되게 **테두리만 있는 무채색**으로 둔다 — 판정 4단계 색을 쓰면
+ * 다섯 번째 판정처럼 읽힌다 (스펙 §0-4).
+ */
+.areaType {
+  padding: 1px 6px;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-full);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
 
 .stats {
   display: grid;

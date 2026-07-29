@@ -12,7 +12,7 @@ import BudgetSliderBar from '../components/BudgetSliderBar'
 import Modal from '../components/Modal'
 import { getRecommend, postBudget, postCheckArea } from '../api/client'
 import { useSession } from '../store/session'
-import { formatAmount, formatRentScope } from '../lib/format'
+import { formatAmount, formatRentScope, formatScopeOverlap } from '../lib/format'
 import { rentAreaShort } from '../lib/rentArea'
 import { useAreaScope } from '../hooks/useAreaScope'
 import { buildComposition } from '../lib/composition'
@@ -226,6 +226,16 @@ export default function Recommend() {
     return formatRentScope(area.rent_source, entry.areaM2, districtM2)
   }, [scope, selected, areas])
 
+  /** 범위 중첩 줄 — 실질 중첩이 있는 52곳에서만 나온다 (가정 #98). */
+  const overlapNote = useMemo(() => {
+    if (!scope || !selected) return undefined
+    return formatScopeOverlap(
+      scope.areas.get(selected)?.type,
+      scope.containedBy.get(selected) ?? [],
+      scope.contains.get(selected) ?? [],
+    )
+  }, [scope, selected])
+
   // 지도에서 마커를 고르면 해당 카드가 목록 밖에 있을 수 있다 — 보이는 위치로 끌어온다.
   useEffect(() => {
     if (!selected || !listRef.current) return
@@ -418,6 +428,8 @@ export default function Recommend() {
                         onCheck={() => openVerdict(a.area_code)}
                         industry={industry}
                         scopeNote={a.area_code === selected ? scopeNote : undefined}
+                        overlapNote={a.area_code === selected ? overlapNote : undefined}
+                        areaType={scope?.areas.get(a.area_code)?.type}
                       />
                     ))}
                     {areas.length > listAreas.length && (
