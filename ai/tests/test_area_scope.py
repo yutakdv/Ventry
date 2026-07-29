@@ -11,7 +11,13 @@ import json
 
 import pytest
 
-from batch.load.area_geojson import COORD_PRECISION, OUT_PATH, SCHEMA, SIMPLIFY_M
+from batch.load.area_geojson import (
+    COORD_PRECISION,
+    OUT_PATH,
+    OVERLAP_MIN_PCT,
+    SCHEMA,
+    SIMPLIFY_M,
+)
 
 # 서울 경계 여유 포함 bbox — preprocess/crs.py SEOUL_BBOX 와 같은 값
 SEOUL_BBOX = (126.73, 37.41, 127.28, 37.72)
@@ -97,6 +103,46 @@ def test_area_join_keys_cover_the_serving_dump(scope):
     codes = set(re.findall(r"^\s*\('(\d+)'", block.group(1), re.M))
     assert codes, "덤프에서 area_code 를 못 읽었다"
     assert codes <= set(scope["areas"]), f"경계 없는 상권 {sorted(codes - set(scope['areas']))[:5]}"
+
+
+@needs_artifact
+def test_areas_carry_name_and_type(scope):
+    """유형(골목·발달·전통시장·관광특구)이 있어야 화면이 중첩을 설명할 수 있다 (가정 #98)."""
+    types = {e["t"] for e in scope["areas"].values()}
+    assert types == {"골목상권", "발달상권", "전통시장", "관광특구"}
+    assert all(e.get("n") for e in scope["areas"].values()), "이름 없는 상권이 있다"
+
+
+@needs_artifact
+def test_overlaps_are_meaningful_and_resolvable(scope):
+    """임계 미만(경계선이 스치는 수준)은 실리지 않고, 참조 코드는 전부 조회 가능해야 한다.
+
+    임계가 없으면 교차 5,128쌍 중 98%가 0.01% 미만인 쌍까지 화면에 뜬다 (가정 #98).
+    """
+    assert scope["overlap_min_pct"] == OVERLAP_MIN_PCT
+    codes = set(scope["areas"])
+    for code, entries in scope["overlaps"].items():
+        assert code in codes, f"중첩 주체 {code} 가 areas 에 없다"
+        for other, pct in entries:
+            assert other in codes, f"중첩 상대 {other} 가 areas 에 없다"
+            assert OVERLAP_MIN_PCT <= pct <= 100.0, f"{code}→{other} 비율 {pct}"
+        # 내림차순 정렬 — 화면은 첫 항목을 대표로 쓴다
+        assert [p for _, p in entries] == sorted((p for _, p in entries), reverse=True)
+
+
+@needs_artifact
+def test_tourist_zones_contain_other_candidates(scope):
+    """관광특구가 하위 상권을 품는다는 사실 자체가 이 표시의 존재 이유다 — 회귀로 고정한다."""
+    by_name = {e["n"]: c for c, e in scope["areas"].items()}
+    jamsil = by_name.get("잠실 관광특구")
+    assert jamsil, "잠실 관광특구가 없다"
+    contained = {
+        scope["areas"][c]["n"]
+        for c, entries in scope["overlaps"].items()
+        for other, _ in entries
+        if other == jamsil
+    }
+    assert {"방이동먹자골목", "잠실역"} <= contained, f"실제: {contained}"
 
 
 @needs_artifact

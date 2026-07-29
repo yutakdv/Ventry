@@ -75,6 +75,75 @@
   color: var(--color-text-tertiary);
 }
 
+/* 말풍선 닫기 — 경계를 가릴 때 직접 치운다 (선택은 유지된다) */
+.overlayClose {
+  margin-left: auto;
+  padding: 0 var(--space-4);
+  border: 0;
+  background: none;
+  color: var(--color-text-tertiary);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.overlayClose:hover {
+  color: var(--color-text-primary);
+}
+
+/* 지도 컨테이너 — 「서울 전체 보기」의 위치 기준 (범례는 .panel 기준 그대로다) */
+.mapBox {
+  position: relative;
+}
+.mapBtns {
+  position: absolute;
+  right: var(--space-12);
+  bottom: var(--space-12);
+  display: flex;
+  gap: var(--space-4);
+  z-index: 2;
+}
+.fitBtn {
+  padding: var(--space-4) var(--space-8);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-surface);
+  color: var(--color-text-secondary);
+  box-shadow: var(--shadow-float);
+  cursor: pointer;
+  z-index: 2;
+}
+.fitBtn:hover {
+  color: var(--color-text-primary);
+}
+
+/*
+ * 경계선 뜻풀이 — 상권을 선택했을 때만 나온다.
+ * 고정 범례(판정 3종)와 섞지 않는다. 이 선들은 판정 채널이 아니기 때문이다 (스펙 §0-4).
+ */
+.scopeLegend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin: 0;
+  color: var(--color-text-tertiary);
+}
+.scopeSolid,
+.scopeDashed {
+  display: inline-block;
+  width: 18px;
+  flex: none;
+  margin-left: var(--space-8);
+}
+.scopeSolid {
+  border-top: 2.5px solid #111418;
+}
+.scopeDashed {
+  border-top: 1.5px dashed #3d4552;
+}
+.scopeSolid:first-child {
+  margin-left: 0;
+}
+
 /* ── 선택 상권 말풍선 ── */
 .overlay {
   min-width: 230px;

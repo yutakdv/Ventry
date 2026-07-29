@@ -12,8 +12,9 @@ import BudgetSliderBar from '../components/BudgetSliderBar'
 import Modal from '../components/Modal'
 import { getRecommend, postBudget, postCheckArea } from '../api/client'
 import { useSession } from '../store/session'
-import { formatAmount } from '../lib/format'
+import { formatAmount, formatRentScope, formatScopeOverlap } from '../lib/format'
 import { rentAreaShort } from '../lib/rentArea'
+import { useAreaScope } from '../hooks/useAreaScope'
 import { buildComposition } from '../lib/composition'
 import { prefersReducedMotion } from '../lib/motion'
 import { VERDICT_LABEL } from '../lib/verdict'
@@ -209,6 +210,32 @@ export default function Recommend() {
     [areas, verdictOf],
   )
 
+  /**
+   * 상권·구획 경계 (가정 #96). 첫 페인트 이후에 도착하며, 못 받으면 `null` 로 남아
+   * 경계·근거 범위 문장만 빠진 채 나머지 화면은 그대로 동작한다.
+   */
+  const scope = useAreaScope()
+  const scopeNote = useMemo(() => {
+    if (!scope || !selected) return undefined
+    const area = areas.find((a) => a.area_code === selected)
+    const entry = scope.areas.get(selected)
+    if (!area || !entry) return undefined
+    // 폴백 판정은 문자열이 아니라 불리언으로 한다 — 폴백 행 district 는 null 로 온다(등재 #96).
+    const district = area.rent_source?.fallback ? null : area.rent_source?.district
+    const districtM2 = (district && scope.districts.get(district)?.areaM2) || null
+    return formatRentScope(area.rent_source, entry.areaM2, districtM2)
+  }, [scope, selected, areas])
+
+  /** 범위 중첩 줄 — 실질 중첩이 있는 52곳에서만 나온다 (가정 #98). */
+  const overlapNote = useMemo(() => {
+    if (!scope || !selected) return undefined
+    return formatScopeOverlap(
+      scope.areas.get(selected)?.type,
+      scope.containedBy.get(selected) ?? [],
+      scope.contains.get(selected) ?? [],
+    )
+  }, [scope, selected])
+
   // 지도에서 마커를 고르면 해당 카드가 목록 밖에 있을 수 있다 — 보이는 위치로 끌어온다.
   useEffect(() => {
     if (!selected || !listRef.current) return
@@ -341,6 +368,7 @@ export default function Recommend() {
                 onSelect={setSelected}
                 dataAsOf={data.data_as_of}
                 industry={industry}
+                scope={scope}
               />
               {areas.length > mapAreas.length && (
                 <p className={`t-caption ${styles.mapNote}`}>
@@ -399,6 +427,9 @@ export default function Recommend() {
                         onSelect={() => setSelected(a.area_code)}
                         onCheck={() => openVerdict(a.area_code)}
                         industry={industry}
+                        scopeNote={a.area_code === selected ? scopeNote : undefined}
+                        overlapNote={a.area_code === selected ? overlapNote : undefined}
+                        areaType={scope?.areas.get(a.area_code)?.type}
                       />
                     ))}
                     {areas.length > listAreas.length && (

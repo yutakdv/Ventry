@@ -1,10 +1,47 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useKakaoLoader } from '../lib/useKakaoLoader'
 import { MAP_LEGEND, VERDICT_LABEL, VERDICT_MARKER_COLOR } from '../lib/verdict'
 import { formatBurdenRatio, formatTransit } from '../lib/format'
 import { rentAreaShort, rentPerPyeong } from '../lib/rentArea'
+import { ringsToLatLng, type AreaScope } from '../lib/areaScope'
 import type { Area, Industry } from '../api/types'
 import styles from './KakaoMap.module.css'
+
+/**
+ * 경계 표시 킬 스위치. `false` 면 화면이 정확히 도입 전 상태로 돌아간다
+ * (D10 동결 예외의 되돌리기 단위 — docs/심사_QA.md).
+ */
+const SCOPE_BOUNDARY = true
+
+/**
+ * 경계 윤곽선 스타일 (가정 #96).
+ *
+ * **둘 다 채움이 없다(fillOpacity 0).** 두 가지를 동시에 얻으려는 선택이다 —
+ * ① 면을 칠하지 않으므로 「이 영역 전체가 ○○ 판정」으로 읽힐 여지가 없다(스펙 §0-4:
+ * 마커 3종 고정, 경계선은 판정 채널이 아니다) ② 채움이 없으면 넓은 구획 면이 그 아래
+ * 마커의 클릭을 가로채지 않는다.
+ *
+ * 색도 판정 팔레트(VERDICT_MARKER_COLOR)를 쓰지 않는다. 이 선이 뜻하는 것은 판정이
+ * 아니라 「선택됨」과 「임대료가 조사된 범위」이기 때문이다.
+ */
+const SCOPE_STYLE = {
+  area: {
+    strokeColor: '#111418',
+    strokeWeight: 2.5,
+    strokeOpacity: 0.95,
+    strokeStyle: 'solid',
+    fillOpacity: 0,
+    zIndex: -1,
+  },
+  district: {
+    strokeColor: '#3d4552',
+    strokeWeight: 1.5,
+    strokeOpacity: 0.75,
+    strokeStyle: 'longdash',
+    fillOpacity: 0,
+    zIndex: -2,
+  },
+} as const
 
 /**
  * 후보 전체를 담을 때 네 방향에 남길 여백(px).
@@ -32,7 +69,7 @@ const OVERLAY_HEIGHT_PX = 180
  * 선택된 상권의 말풍선.
  * 문자열 HTML 대신 DOM으로 만들어 textContent만 쓴다 — 상권명이 그대로 마크업이 되지 않도록.
  */
-function buildOverlay(area: Area, industry?: Industry | null): HTMLElement {
+function buildOverlay(area: Area, industry: Industry | null | undefined, onClose: () => void): HTMLElement {
   const box = document.createElement('div')
   box.className = styles.overlay
 
@@ -44,7 +81,17 @@ function buildOverlay(area: Area, industry?: Industry | null): HTMLElement {
   const badge = document.createElement('span')
   badge.className = `${styles.overlayBadge} ${styles[area.verdict]}`
   badge.textContent = VERDICT_LABEL[area.verdict]
-  head.append(title, badge)
+  // 말풍선이 경계를 가릴 때 사용자가 직접 치울 수 있어야 한다 — 선택은 유지된다.
+  const close = document.createElement('button')
+  close.type = 'button'
+  close.className = styles.overlayClose
+  close.setAttribute('aria-label', '말풍선 닫기')
+  close.textContent = '×'
+  close.addEventListener('click', (e) => {
+    e.stopPropagation()
+    onClose()
+  })
+  head.append(title, badge, close)
 
   const rows = document.createElement('dl')
   rows.className = styles.overlayRows
@@ -111,6 +158,7 @@ export default function KakaoMap({
   onSelect,
   dataAsOf,
   industry,
+  scope,
 }: {
   areas: Area[]
   selectedCode: string | null
@@ -118,8 +166,16 @@ export default function KakaoMap({
   dataAsOf: string
   /** 말풍선 임대료의 면적 조건 표기용 (이슈 #151). */
   industry?: Industry | null
+  /** 상권·구획 경계 (가정 #96). 없으면 경계 없이 오늘과 같은 화면이 된다. */
+  scope?: AreaScope | null
 }) {
   const status = useKakaoLoader()
+  /**
+   * 말풍선을 접었는가. 경계를 보려고 확대하면 폭 230px·높이 약 180px 짜리 말풍선이 정확히
+   * 그 위를 덮는다. 확대 버튼을 누르면 자동으로 접고, 다른 상권을 고르면 다시 편다 —
+   * 선택 자체는 유지되므로 카드·목록 연동은 그대로다.
+   */
+  const [overlayHidden, setOverlayHidden] = useState(false)
   const boxRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<kakao.maps.Map | null>(null)
   const markersRef = useRef<Map<string, kakao.maps.Marker>>(new Map())
@@ -135,6 +191,29 @@ export default function KakaoMap({
   const selectedRef = useRef(selectedCode)
   selectedRef.current = selectedCode
   const prevSelectedRef = useRef<string | null>(null)
+  const areaPolyRef = useRef<kakao.maps.Polygon | null>(null)
+  const districtPolyRef = useRef<kakao.maps.Polygon | null>(null)
+  /** 초기 1회만 후보 전체에 맞춘다 — 아래 fit 효과 주석 참조. */
+  const fitDoneRef = useRef(false)
+
+  /**
+   * 선택된 상권의 경계와, 그 임대료가 **실제로 조사된** 부동산원 구획의 경계 (가정 #96).
+   *
+   * 폴백 여부는 `district` 문자열이 아니라 `fallback` 불리언으로 가른다 — 폴백 행의
+   * district 는 API 에서 `null` 로 오고 계약 타입(`RentSource.district: string`)이 그
+   * nullable 을 반영하지 못한다(등재 #96). 불리언만 항상 믿을 수 있다.
+   *
+   * 상권 경계를 못 찾으면 구획도 그리지 않는다. 둘 중 하나만 뜨면 「이 선이 무엇의
+   * 경계인지」가 화면에서 사라진다.
+   */
+  const boundary = useMemo(() => {
+    if (!SCOPE_BOUNDARY || !scope || !selectedCode) return null
+    const area = areas.find((a) => a.area_code === selectedCode)
+    const areaEntry = scope.areas.get(selectedCode)
+    if (!area || !areaEntry) return null
+    const district = area.rent_source?.fallback ? null : area.rent_source?.district
+    return { areaEntry, districtEntry: (district && scope.districts.get(district)) || null }
+  }, [scope, selectedCode, areas])
 
   // 지도 1회 생성
   useEffect(() => {
@@ -166,18 +245,73 @@ export default function KakaoMap({
         image: buildMarkerImage(VERDICT_MARKER_COLOR[a.verdict], a.score, selected),
         zIndex: selected ? 10 : 1,
       })
-      kakao.maps.event.addListener(marker, 'click', () => onSelectRef.current(a.area_code))
+      kakao.maps.event.addListener(marker, 'click', () => {
+        // 같은 마커를 다시 눌러도 말풍선이 돌아와야 한다 — selectedCode 가 안 바뀌므로
+        // 아래 리셋 효과에 기대지 못한다.
+        setOverlayHidden(false)
+        onSelectRef.current(a.area_code)
+      })
       markersRef.current.set(a.area_code, marker)
       bounds.extend(pos)
     })
     prevSelectedRef.current = selectedRef.current
 
     boundsRef.current = bounds
-    // 네 방향 같은 여백 — 후보 분포(서울)가 지도를 꽉 채운다. 말풍선 잘림은 아래 panTo 담당.
-    if (areas.length > 0 && !bounds.isEmpty()) {
+    /*
+     * 네 방향 같은 여백 — 후보 분포(서울)가 지도를 꽉 채운다. 말풍선 잘림은 아래 panTo 담당.
+     *
+     * **최초 1회만** 맞춘다. 이 효과는 `areas` 가 바뀔 때마다 도는데, 예산 슬라이더는 그
+     * 배열을 매번 새로 만든다 — 조건이 `areas.length > 0` 뿐이던 동안에는 슬라이더를 한 칸
+     * 움직일 때마다 뷰포트가 서울 전체로 튕겨 나가, 특정 자치구를 확대해 둔 상태가 파괴됐다.
+     * 전체를 다시 보고 싶을 때는 아래 「서울 전체 보기」로 명시적으로 요청한다.
+     */
+    if (!fitDoneRef.current && areas.length > 0 && !bounds.isEmpty()) {
       map.setBounds(bounds, FIT_PADDING, FIT_PADDING, FIT_PADDING, FIT_PADDING)
+      fitDoneRef.current = true
     }
   }, [status, areas])
+
+  /**
+   * 경계 윤곽선 2개 (가정 #96). 인스턴스는 만들어 두고 `setPath` 로만 갈아 끼운다 —
+   * 선택을 오갈 때 SVG path 를 파괴·재생성하지 않기 위해서다.
+   *
+   * 예산 슬라이더는 이 효과를 건드리지 않는다. 경계가 판정색에 묶여 있지 않아, verdict 가
+   * 바뀌어도 선택이 그대로면 그릴 것도 그대로다.
+   */
+  useEffect(() => {
+    const map = mapRef.current
+    if (status !== 'ready' || !map) return
+
+    const draw = (
+      ref: React.MutableRefObject<kakao.maps.Polygon | null>,
+      style: (typeof SCOPE_STYLE)[keyof typeof SCOPE_STYLE],
+      rings: number[][][] | null,
+    ) => {
+      if (!rings) {
+        ref.current?.setMap(null)
+        return
+      }
+      const path = ringsToLatLng(rings)
+      if (!ref.current) {
+        ref.current = new kakao.maps.Polygon({ path, ...style })
+      } else {
+        ref.current.setPath(path)
+      }
+      ref.current.setMap(map)
+    }
+
+    draw(areaPolyRef, SCOPE_STYLE.area, boundary?.areaEntry.rings ?? null)
+    draw(districtPolyRef, SCOPE_STYLE.district, boundary?.districtEntry?.rings ?? null)
+  }, [status, boundary])
+
+  // 언마운트 시 폴리곤을 지도에서 떼어 낸다 (지도는 남고 컴포넌트만 사라지는 경우 대비).
+  useEffect(
+    () => () => {
+      areaPolyRef.current?.setMap(null)
+      districtPolyRef.current?.setMap(null)
+    },
+    [],
+  )
 
   /**
    * 컨테이너 크기가 확정되기 전에 지도가 생성되면 뷰포트를 좁게 잡아 타일이 일부만 그려진다.
@@ -223,22 +357,23 @@ export default function KakaoMap({
     }
 
     const area = areas.find((a) => a.area_code === selectedCode)
-    if (!map || !area) {
+    if (!map || !area || overlayHidden) {
       overlayRef.current?.setMap(null)
       return
     }
 
     const pos = new kakao.maps.LatLng(area.lat, area.lng)
+    const content = buildOverlay(area, industry, () => setOverlayHidden(true))
     if (!overlayRef.current) {
       overlayRef.current = new kakao.maps.CustomOverlay({
         position: pos,
-        content: buildOverlay(area, industry),
+        content,
         yAnchor: 1.35, // 마커 위로 띄운다
         zIndex: 20,
       })
     } else {
       overlayRef.current.setPosition(pos)
-      overlayRef.current.setContent(buildOverlay(area, industry))
+      overlayRef.current.setContent(content)
     }
     overlayRef.current.setMap(map)
 
@@ -257,7 +392,10 @@ export default function KakaoMap({
     const clipSpan = boxHeight > 0 ? latSpan * (OVERLAY_HEIGHT_PX / boxHeight) : latSpan * 0.33
     const overlayClipped = area.lat > b.getNorthEast().getLat() - clipSpan
     if (!b.contain(pos) || overlayClipped) map.panTo(pos)
-  }, [status, areas, selectedCode, industry])
+  }, [status, areas, selectedCode, industry, overlayHidden])
+
+  // 다른 상권을 고르면 접힘을 푼다 — 접기는 「지금 이 경계를 보는 중」이라는 일시 상태다.
+  useEffect(() => setOverlayHidden(false), [selectedCode])
 
   return (
     <div className={styles.panel}>
@@ -269,7 +407,54 @@ export default function KakaoMap({
           </p>
         </div>
       ) : (
-        <div ref={boxRef} className={styles.map} role="application" aria-label="추천 상권 지도" />
+        <div className={styles.mapBox}>
+          <div ref={boxRef} className={styles.map} role="application" aria-label="추천 상권 지도" />
+          {/* 초기 fit 을 1회로 줄인 대신, 전체 조망은 명시적으로 요청할 수 있게 남긴다. */}
+          <div className={styles.mapBtns}>
+            {/*
+             * 상권 중앙 면적이 0.07㎢(한 변 약 268m)라, 후보 전체가 들어오는 기본 뷰에서는
+             * 경계가 8px 남짓이라 사실상 보이지 않는다. 그렇다고 선택할 때마다 지도를 자동으로
+             * 확대하지는 않는다 — 비교 중이던 시야가 매번 무너지기 때문이다(아래 panTo 주석과
+             * 같은 이유). 대신 **명시적으로 요청**할 수 있게 둔다.
+             */}
+            {boundary && (
+              <button
+                type="button"
+                className={`t-caption ${styles.fitBtn}`}
+                onClick={() => {
+                  const map = mapRef.current
+                  if (!map) return
+                  // 경계를 보려고 확대하는 것이므로 그 위를 덮는 말풍선은 접는다.
+                  setOverlayHidden(true)
+                  const b = new kakao.maps.LatLngBounds()
+                  const rings = [
+                    ...boundary.areaEntry.rings,
+                    ...(boundary.districtEntry?.rings ?? []),
+                  ]
+                  rings.forEach((ring) =>
+                    ring.forEach(([lng, lat]) => b.extend(new kakao.maps.LatLng(lat, lng))),
+                  )
+                  if (!b.isEmpty()) map.setBounds(b, 40, 40, 40, 40)
+                }}
+              >
+                근거 범위로 확대
+              </button>
+            )}
+            <button
+              type="button"
+              className={`t-caption ${styles.fitBtn}`}
+              onClick={() => {
+                const map = mapRef.current
+                const b = boundsRef.current
+                if (map && b && !b.isEmpty()) {
+                  map.setBounds(b, FIT_PADDING, FIT_PADDING, FIT_PADDING, FIT_PADDING)
+                }
+              }}
+            >
+              서울 전체 보기
+            </button>
+          </div>
+        </div>
       )}
 
       <div className={styles.legend}>
@@ -281,8 +466,24 @@ export default function KakaoMap({
         ))}
       </div>
 
+      {/* 판정 범례(3종)는 그대로 두고, 경계가 실제로 떠 있을 때만 선 뜻풀이를 덧붙인다. */}
+      {boundary && (
+        <p className={`t-caption ${styles.scopeLegend}`}>
+          <span className={styles.scopeSolid} aria-hidden="true" /> 선택한 상권 경계
+          <span className={styles.scopeDashed} aria-hidden="true" /> 임대료 조사 구획 경계
+          {!boundary.districtEntry && ' (이 상권은 해당 구획이 없습니다)'}
+        </p>
+      )}
+
       <p className={`t-caption ${styles.note}`}>
         마커나 오른쪽 목록을 선택하면 서로 연동됩니다. · 데이터 기준일 {dataAsOf}
+        {scope && (
+          <>
+            {' '}
+            · 상권 경계 {scope.asOf.areas}판 · 임대료 조사 구획 {scope.asOf.districts}판 (통계와
+            판본이 다릅니다) · 표시용 단순화 적용 (경계 오차 최대 약 8m)
+          </>
+        )}
       </p>
     </div>
   )

@@ -60,6 +60,76 @@ export function formatRentSource(
   return basis ? `${base} · ${basis}` : base
 }
 
+/** ㎢ 표기 — 상권은 0.07 수준, 구획은 2 수준이라 소수 둘째 자리면 둘 다 읽힌다. */
+function km2(areaM2: number): string {
+  return `${(areaM2 / 1_000_000).toFixed(2)}㎢`
+}
+
+/**
+ * 임대료 **근거 범위** 줄 (가정 #96) — 출처 줄 다음에 오는 4번째 근거 줄.
+ *
+ * 출처 줄은 「어느 기관의 어느 상권 분기 평균인지」까지 밝히지만, 그 값이 **얼마나 넓은
+ * 범위의 평균인지**는 말하지 않는다. 실제로는 판정이 계산되는 단위(상권, 중앙 0.07㎢)와
+ * 임대료가 조사된 단위(부동산원 구획, 중앙 0.58㎢)가 약 8배 차이 난다. 그 사실을 숨기는
+ * 대신 지도의 두 경계선과 같은 내용을 문장으로 적는다.
+ *
+ * 배수는 배치가 구운 면적의 나눗셈 1회다 — 화면이 수치를 새로 만들지 않는다 (§0-1).
+ * 권유·추천 술어를 쓰지 않고 사실만 서술한다 (CLAUDE.md §3).
+ */
+export function formatRentScope(
+  src: { district: string; fallback: boolean },
+  areaM2: number,
+  districtM2: number | null,
+): string {
+  if (src.fallback || !districtM2) {
+    return '임대료 근거 범위: 이 상권은 한국부동산원 조사 구획에 속하지 않아 자치구 평균을 적용했습니다 — 표시할 구획 경계가 없습니다.'
+  }
+  /*
+   * 세 갈래로 나눈다. 대부분(78%)은 구획이 3배 이상 넓지만, 두 구획이 서로 다른 분할이라
+   * **구획이 더 좁은 경우도 2.2% 있다** — 명동 관광특구가 그 구획의 3배다(실측, 가정 #96).
+   * 그걸 "비슷한 넓이"로 뭉개면 화면이 사실보다 안전하게 들린다.
+   */
+  const ratio = districtM2 / areaM2
+  const comp =
+    ratio < 0.8
+      ? `이 상권 ${km2(areaM2)}보다 좁은`
+      : ratio < 1.3
+        ? `이 상권 ${km2(areaM2)}와 비슷한`
+        : `이 상권 ${km2(areaM2)}보다 약 ${ratio < 10 ? ratio.toFixed(1) : Math.round(ratio)}배 넓은`
+  return `임대료 근거 범위: 한국부동산원 '${src.district}' 구획 ${km2(districtM2)} — ${comp} 범위의 분기 평균 (추정)입니다.`
+}
+
+/**
+ * 상권 **범위 중첩** 줄 (가정 #98) — 겹치는 상권이 있을 때만 나온다.
+ *
+ * 서울 상권영역은 골목·발달·전통시장·**관광특구** 4개 층이 한 파일에 들어 있고, 관광특구
+ * 6곳은 하위 상권을 통째로 품는다. 그래서 잠실 관광특구·방이동먹자골목·잠실역이 후보
+ * 목록에 **각각** 올라오고, 같은 땅이 여러 번 세어진 것처럼 보인다. 그 사실을 숨기지 않는다.
+ *
+ * 실질 중첩은 1,650곳 중 52곳뿐이다 — 교차 5,128쌍의 98%는 경계선이 스치는 수준이라
+ * 배치에서 10% 임계로 걸러 두었다.
+ */
+export function formatScopeOverlap(
+  selfType: string | undefined,
+  containedBy: { name: string; type: string; pct: number }[],
+  contains: { name: string; type: string; pct: number }[],
+): string | undefined {
+  const parts: string[] = []
+  const top = containedBy[0]
+  if (top) {
+    parts.push(
+      `이 상권${selfType ? `(${selfType})` : ''} 면적의 ${Math.round(top.pct)}%가 '${top.name}'(${top.type}) 범위와 겹칩니다`,
+    )
+  }
+  if (contains.length) {
+    const names = contains.slice(0, 2).map((o) => o.name).join('·')
+    const rest = contains.length > 2 ? ` 외 ${contains.length - 2}곳` : ''
+    parts.push(`이 범위 안에 다른 후보 ${contains.length}곳이 함께 있습니다 (${names}${rest})`)
+  }
+  if (!parts.length) return undefined
+  return `범위 중첩: ${parts.join(' · ')}. 상권 구분이 4개 층(골목·발달·전통시장·관광특구)이라 같은 지역이 둘 이상의 후보에 속할 수 있습니다.`
+}
+
 /**
  * 도보 소요 시간(분). 계약에는 `distance_m`만 있어 결정적 계수로 환산한다 —
  * 보행 속도 4km/h ≈ 분속 67m (docs/assumptions.md #85). 최소 1분.
