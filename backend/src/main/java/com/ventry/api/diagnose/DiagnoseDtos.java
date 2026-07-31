@@ -23,7 +23,11 @@ public final class DiagnoseDtos {
 
     public record DiagnoseResponse(String sessionId, ParsedProfile parsedProfile) {}
 
-    /** parse_source: "llm" | "form_only"(LLM 장애 폴백) — DECISIONS.md #5. */
+    /**
+     * parse_source: 현재 서버는 항상 {@code form_only} 를 보낸다 — 자유 텍스트 처리가 키워드
+     * 매칭이고 LLM 실파싱이 없기 때문이다. {@code llm} 은 실파싱을 붙인 뒤에야 나간다
+     * (DECISIONS.md #5).
+     */
     public record ParsedProfile(Integer age, Integer capital, Boolean isExistingBusiness,
                                 Boolean collateralAvailable, Integer monthlyInvestable,
                                 String industry, String regionHint,

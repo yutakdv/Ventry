@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 /**
- * BE-05 — 리스크 검증 에이전트 (스펙 §5-3, 이슈 #96). 「추천 에이전트(승인 논리) ↔ 리스크 검증
+ * BE-05 — 리스크 검증 에이전트 (스펙 §5-3, 이슈 #96). 「추천 에이전트(<b>긍정 논리</b>) ↔ 리스크 검증
  * 에이전트(반대 논리)」 구도의 반대편이며 <b>1왕복 고정</b>이다. 이 클래스는 <b>무엇을 사실로
  * 넘길지</b>를 정하고, 호출·캐시는 {@link ReviewGenerator} 가 맡는다.
  *

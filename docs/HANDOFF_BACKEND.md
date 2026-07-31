@@ -1,5 +1,11 @@
 # BE 인수인계 — 현재 상태와 다음 순서
 
+> ⚠️ **이 문서는 2026-07-21(D2) 시점의 BE 인수인계 기록이다.** 아래 §0·§1의 「목 / 실계산」 표는
+> 그 시점의 상태이며, 현재는 엔드포인트 6개 전부가 실계산이다 — `ScenarioController` 는
+> `ScenarioBuilder` 를 주입받아 카드를 만들고, `com.ventry.api.explore` 패키지에는
+> `MockData` 참조가 0건이다. 현행 상태는 README 심사 도슨트 가이드와
+> [API_CONTRACT.md](API_CONTRACT.md) 를 정본으로 본다.
+
 > 작성: 2026-07-21 (D2 종료 시점, CP1 직전) · 대상: BE를 이어받는 팀원
 > 총괄 일정·의존은 [TASKS.md](TASKS.md),
 > 스키마는 [API_CONTRACT.md](API_CONTRACT.md). **이 문서는 "지금 무엇이 진짜로 도는가"만 다룬다.**
