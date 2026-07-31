@@ -1,6 +1,7 @@
 """정책자금 구조화 적재 (AI-06-2, 스펙 §5-4).
 
-검수본(또는 자동추출 클린) → finance_product + finance_doc_chunk.
+사람 전건 검수본(reviewed.json) → finance_product + finance_doc_chunk.
+검수본이 없으면 적재를 중단한다 — 미검수 산출물은 적재 대상이 아니다(부록 A6).
 청크 text 는 공고문 원문 그대로(LLM 재작성 금지 — 인용은 검색이지 생성이 아니다).
 실행: python -m batch.load finance
 """
@@ -14,7 +15,7 @@ from pathlib import Path
 import pandas as pd
 
 from batch import collected
-from batch.extract.funding_llm import OUT_DIR, validate_product
+from batch.extract.funding_llm import OUT_DIR
 from batch.paths import INTERIM_DIR, REPO_ROOT, logger
 
 FUNDING_DIR = INTERIM_DIR / "funding_docs"
@@ -243,17 +244,18 @@ def build_finance(reviewed: list[dict], docs_dir: Path) -> dict[str, pd.DataFram
 def run() -> None:
     from batch.load import emit
 
-    # 검수본(reviewed.json) 있으면 그것으로 재생성(전건 검수 결과), 없으면 자동추출 클린(잠정).
+    # 검수본(reviewed.json)만 적재 대상이다 — 자동추출 클린 폴백은 두지 않는다.
+    # 폴백이 있으면 「사람 전건 검수 게이트 통과분만 적재」(부록 A6)가 우선순위로 격하되고,
+    # 검수본이 사라진 재적재에서 미검수 산출물이 조용히 덤프에 실린다.
     reviewed_path = OUT_DIR / "reviewed.json"
-    if reviewed_path.exists():
-        source = json.loads(reviewed_path.read_text(encoding="utf-8"))
-        header = "Ventry 정책자금 구조화 (AI-06, 전건 검수본 reviewed.json 재생성)"
-        logger.info("finance: 검수본 %d건 재생성", len(source))
-    else:
-        extracted = json.loads((OUT_DIR / "extracted.json").read_text(encoding="utf-8"))
-        source = [p for p in extracted if not validate_product(p)]
-        header = "Ventry 정책자금 구조화 (AI-06, 검수 전 자동추출 클린 — 전건 검수 후 재생성)"
-        logger.info("finance: 추출 %d → 클린 %d 적재 (검수 전 잠정)", len(extracted), len(source))
+    if not reviewed_path.exists():
+        raise SystemExit(
+            "검수본(reviewed.json) 부재 — 적재를 중단한다. "
+            "정책자금 적재는 사람 전건 검수 게이트를 통과한 산출물만 대상으로 한다(부록 A6)."
+        )
+    source = json.loads(reviewed_path.read_text(encoding="utf-8"))
+    header = "Ventry 정책자금 구조화 (AI-06, 전건 검수본 reviewed.json 재생성)"
+    logger.info("finance: 검수본 %d건 재생성", len(source))
     tables = build_finance(source, FUNDING_DIR)
     emit.emit_sql(tables, DB_INIT / "20_finance.sql",
                   ["finance_product", "finance_doc_chunk"], header=header)
