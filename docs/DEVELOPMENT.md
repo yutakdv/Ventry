@@ -75,6 +75,56 @@ Roadmap 뷰가 D1~D14 간트, Board 뷰가 Todo/In Progress/Done, Milestone 그�
 게이트 현황이다. 태스크 이슈 27건 중 26건이 종료됐고, 남은 1건은 `[CM-04] 외부 1인 README
 도슨트 3분 테스트`다.
 
+아래는 그 보드의 Roadmap 뷰가 그리는 것과 같은 간트다. 손으로 그린 것이 아니라 **보드
+아이템 27건의 `Start`·`End` 날짜 필드 값을 그대로 옮긴 것**이며, 막대의 색이 갈리는 한 건
+(`CM-04`)이 아직 진행 중인 그 1건이다.[^gantt]
+
+```mermaid
+gantt
+    title Ventry D1–D14 · 태스크 이슈 27건
+    dateFormat YYYY-MM-DD
+    axisFormat %m-%d
+
+    section CP1 계약 동결·목 E2E
+    [CM-01] 리포·브랜치·CI·compose 세팅 + 브랜치 보호        :done, 2026-07-19, 1d
+    [AI-01] 데이터 실사 — 스키마·구획도 정합성·좌표계·θ 문헌  :done, 2026-07-20, 1d
+    [FE-01] 카카오맵 앱키·도메인 등록 + 지도·SSE 스파이크      :done, 2026-07-20, 1d
+    [BE-01] API 계약 동결 + 목 6종 + SSE 골격                 :done, 2026-07-20, 3d
+    [AI-02] 원천 수집 완료 (상권 7종·교통·임대료·인허가·정책자금) :done, 2026-07-21, 1d
+    [AI-03] 스키마 DDL + 목 데이터 덤프 (db/init)             :done, 2026-07-22, 1d
+    [CM-02] CP1 — 목 데이터 E2E 합동 점검                     :done, 2026-07-22, 1d
+
+    section CP2 실데이터 전환
+    [FE-02] 화면 1 진단 (폼+자연어 하이브리드)                :done, 2026-07-22, 2d
+    [AI-04] 공간 조인 3단계 (검증 3종·폴백 플래그)            :done, 2026-07-23, 2d
+    [BE-02] DB 연동 + Caffeine 캐시 (탐색당 쿼리 1회)         :done, 2026-07-23, 2d
+    [FE-03] 화면 2·3 골격 (시나리오 SSE·마커·근거 패널·슬라이더) :done, 2026-07-23, 3d
+    [AI-05] 산출 테이블 — 비용 4블록·이중 필터·점수화 w1~w5    :done, 2026-07-24, 2d
+    [BE-03] 결정적 도구 계층 5종 + 단위 테스트                :done, 2026-07-24, 2d
+    [AI-06] 정책자금 구조화 + 전건 검수 + 청크                :done, 2026-07-25, 1d
+
+    section CP3 에이전트 동작
+    [BE-04] 해석적 프론티어(진입) + 조합 제약 조달 검증        :done, 2026-07-26, 1d
+    [FE-04] 탐색 인사이트 카드·역방향 판정 UI                 :done, 2026-07-26, 2d
+    [BE-05] 탐색·검증 에이전트 (지속 프론티어·plan·SSE)       :done, 2026-07-27, 1d
+
+    section CP4 기능 동결
+    [BE-06] P1 — 원문 근거 인용·근거문 캐시·개인화            :done, 2026-07-28, 2d
+    [FE-05] 검증 패널·반응성·프론티어 미니 차트               :done, 2026-07-28, 2d
+    [AI-07] 평가 하네스 — 골드셋·make eval 5개 스위트          :done, 2026-07-28, 2d
+    [AI-08] LightGBM+SHAP 교차 검증 (게이트 사전 고정)        :done, 2026-07-28, 2d
+    [CM-03] CP4 — 기능 동결 + 원문 인용 구현/이월 판정         :done, 2026-07-29, 1d
+
+    section CP5 QA·평가 확정
+    [BE-07] 통합 QA·하드닝 (LLM 전면 차단 QA 포함)            :done, 2026-07-30, 2d
+    [FE-06] 마감 스윕 — 용어 컴플라이언스·데모 이미지 캡처      :done, 2026-07-30, 2d
+    [AI-09] make eval 최종 → 게이트 판정·부록 1·2 확정         :done, 2026-07-30, 2d
+    [CM-04] 외부 1인 README 도슨트 3분 테스트                 :active, 2026-07-30, 1d
+
+    section CP6 제출
+    [CM-05] 기술설명서 PPT→PDF·최종 검수·제출 리허설 2회       :done, 2026-08-01, 2d
+```
+
 ## 5. 본선 개발 계획
 
 기능 목록에 없는 항목이 "생각하지 못한 것"인지 "의도적으로 미룬 것"인지는 문서가 밝혀야 한다.
@@ -104,3 +154,4 @@ Roadmap 뷰가 D1~D14 간트, Board 뷰가 Todo/In Progress/Done, Milestone 그�
 [^dates]: `git log --format='%ad' --date=short | sort | uniq -c` — 2026-07-19 ~ 2026-08-02 의 15개 일자가 모두 나타난다.
 [^board]: 체크포인트 정의·마감일은 D0에 실행한 보드 구축 스크립트(`scripts/setup_board.sh`, `git show 8792ce0:scripts/setup_board.sh`)가 산출한 값이며, D1을 2026-07-20으로 두고 계산했다.
 [^tags]: `git rev-list --count --no-merges HEAD` = 232 · `git log --no-merges --format='%s' | grep -oE '^\[(CM|AI|BE|FE)\]' | sort | uniq -c`. 전체 커밋은 `git rev-list --count HEAD` = 402, 병합 PR은 `git log --oneline --grep='Merge pull request' | wc -l` = 60(병합 커밋 기준).
+[^gantt]: 막대의 시작·길이는 `gh project item-list 1 --owner yutakdv --format json` 이 반환하는 각 아이템의 `start`·`end` 값이다. 보드에는 이후 추가한 하위 태스크 이슈 25건이 더 있으나 날짜 필드가 없어 간트에 막대가 생기지 않으므로, 위 그림은 D0에 등록한 태스크 27건만 담는다.
