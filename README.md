@@ -236,6 +236,7 @@ python3 scripts/qa_integration.py --only F2
 | [assumptions.md](docs/assumptions.md) | 모든 가정·폴백 일원화 대장 (115건) |
 | [부록1_2_평가성적표.md](docs/부록1_2_평가성적표.md) | 평가 하네스 산출 지표 · 설계 교차 검증 |
 | [심사_QA.md](docs/심사_QA.md) | 예상 Q&A 20문항 |
+| [DEVELOPMENT.md](docs/DEVELOPMENT.md) | D1~D14 개발 계획·실행 이력 · GitHub Projects 보드 |
 
 <details>
 <summary><b>저장소 구조 · 영역별 개발 실행</b></summary>
