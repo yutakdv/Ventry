@@ -18,7 +18,7 @@ const VISIBLE = 3
  *    `rate`가 생략된 변동금리 상품의 순위를 프론트가 정하면 사실상 순위 조작이 된다.
  *  - `gap_amount: 0`(예산 내)일 때도 상품이 온다. "부족분 상품"이 아니라 "자격 요건 부합 상품"이므로
  *    부족분 0일 때의 문구를 따로 낸다.
- *  - "조달 가능"이라고 쓰지 않는다 — 한도·승인은 기관 심사 사항 (CLAUDE.md 용어 컴플라이언스).
+ *  - "조달 가능"이라고 쓰지 않는다 — 한도·승인은 기관 심사 사항 (PROJECT_RULES §2).
  */
 export default function CheckAreaPanel({
   areaName,

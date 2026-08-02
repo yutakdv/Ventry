@@ -12,7 +12,7 @@
 --    데모 프로필(만 32세 / 자기자본 5,000만 / 카페)의 예산 8,000만·θ 0.15에서
 --    exploration spec §8 판정(🟢망원·🟢합정·🟠홍대입구, A-9999 연남 조건부·갭 1,320)이
 --    재현되도록 맞춰져 있다. BE DemoCandidates 픽스처와 동일 입력값이다
---    (docs/HANDOFF_BACKEND.md §4-①, docs/assumptions.md #7).
+--    (docs/assumptions.md #7).
 --
 -- ⚠️ 상권 10곳 중 데모 3곳을 뺀 나머지는 **초기비용 중앙값이 8,000만을 넘도록** 두었다.
 --    업종 필터를 빠뜨린 조회('SELECT * FROM v_candidate_area')로도 예산 8,000만에서

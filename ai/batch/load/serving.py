@@ -324,7 +324,7 @@ def _derive(
     growth = change.set_index("area_code")["change_code"].map(GROWTH_RANK).to_dict()
     # w3(경쟁여유)의 입력은 **면적 정규화 밀도**다 (스펙 §4-3 · competition.py 독스트링 ·
     # assumptions #41 ⑥ · §12 검증 피처가 모두 이 정의). 원시 개수를 쓰면 넓은 상권이 구조적으로
-    # 불리해져 축이 면적 대리변수로 오염된다 (리뷰 #1 안 A, 2026-07-27 3인 합의).
+    # 불리해져 축이 면적 대리변수로 오염된다 (assumptions #68, 2026-07-27).
     # .dropna() 는 미조인 NaN 을 키 부재로 강등한다 — `or 0` 은 NaN 을 통과시켜(bool(nan) is True)
     # 미조인 상권의 백분위를 0.0(경쟁여유 최하위)으로 반전시켰다 (리뷰 #2).
     den = (density.set_index(["area_code", "industry"])["store_per_10k_m2"]

@@ -13,7 +13,7 @@ public final class MockData {
     public static final String DATA_AS_OF = "2026-Q1";
 
     /**
-     * 고지 문구의 <b>정본</b> (CLAUDE.md 절대 불변 원칙 3).
+     * 고지 문구의 <b>정본</b> (PROJECT_RULES §2).
      *
      * <p>현재 응답은 {@code disclaimer: true} 플래그만 싣고 문구는 FE 가 표기한다. 그래서 이
      * 상수는 서빙 경로에서 참조되지 않지만, <b>문구가 바뀔 때 어디를 고쳐야 하는지</b>를 남기기

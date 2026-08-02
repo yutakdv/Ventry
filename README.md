@@ -90,7 +90,7 @@
 ```
 
 > 위 수치는 **2026-07-29 재적재본 실측**입니다 (중첩 상권 인허가 귀속 수정 반영 — 가정 #99 · `docker compose` 구동본).
-> 데모 프로필은 카페이며, 업종 대표면적 교정(이슈 #152) 이후 값입니다 — 그 전 캡처·문서의
+> 데모 프로필은 카페이며, 업종 대표면적 교정 이후 값입니다 — 그 전 캡처·문서의
 > 「예산 8,000만 / 342곳」은 옛 상수 기준이라 더 이상 재현되지 않습니다.
 
 > **최초 실행은 이미지 빌드 시간이 따로 듭니다.** 캐시가 없는 새 머신에서는 JDK·Node·nginx·
@@ -133,33 +133,25 @@ python3 scripts/qa_integration.py --only F2       # LLM 전면 차단 폴백
 결과 리포트: [docs/QA_REPORT_BE07.md](docs/QA_REPORT_BE07.md) — 발견해 고친 결함과
 **남긴 미해결 항목**을 함께 적었습니다.
 
-브라우저까지 붙여 3파트 통신을 주행 검증한 CM 리포트는
+브라우저까지 붙여 3파트 통신을 주행 검증한 통합 검토 리포트는
 [docs/QA_REPORT_INTEGRATION_CM.md](docs/QA_REPORT_INTEGRATION_CM.md) 입니다 — 화면에 실제로
 그려지는 값의 사실성까지 확인하고, 미해결 항목마다 해결 절차를 제안했습니다.
 
 실데이터(`db` 프로파일) 경로에서 계약·불변 원칙이 지켜지는지 경계 조건까지 타격해 본 코드리뷰는
 **픽스처 테스트가 통과시키는 결함 27건**(P0 9 · P1 8 · P2 10)과 배치 산출물 정의 결함 9건을
-찾았습니다. 조치는 전건 이슈로 분해해 처리했고([#112](https://github.com/yutakdv/Ventry/issues/112)
-· [#113](https://github.com/yutakdv/Ventry/issues/113) · [#110](https://github.com/yutakdv/Ventry/issues/110)
-· [#111](https://github.com/yutakdv/Ventry/issues/111)), 재발은 **실데이터 계약 게이트 11종**
-(G1~G10 + 도슨트 대본 수치 D1)이 막습니다 — 매 push 마다 `develop-ci` 의 compose 스모크
-단계에서 실행됩니다.
+찾았습니다. 전건을 분해해 조치했고, 재발은 **실데이터 계약 게이트 11종**
+(G1~G10 + 도슨트 대본 수치 D1)이 막습니다 — 통합 compose 스모크 단계에서 실행됩니다.
 
 ```bash
 python3 scripts/qa_integration.py --contract-gate   # D1 + G1~G10 (실데이터 계약 게이트)
 ```
 
-> 리뷰 원본 2건은 내용을 이슈와 [docs/assumptions.md](docs/assumptions.md)(#68~#82)로 옮긴 뒤
+> 리뷰 원본 2건은 내용을 [docs/assumptions.md](docs/assumptions.md)(#68~#82)로 옮긴 뒤
 > 폐기했습니다 — 같은 사실을 두 곳에 두면 한쪽이 낡습니다.
-
-> 이 가이드는 **비개발자 외부 1인이 3분 안에 위 ★ 지점에 도달하는지**로 검증합니다.
-> 실행 대본·기록지·실패 시 조정 순서: [docs/tasks/CM-04_도슨트_테스트_프로토콜.md](docs/tasks/CM-04_도슨트_테스트_프로토콜.md)
 
 ---
 
 ## 데모 화면
-
-<!-- 캡처 규칙: 3024×1898(레티나 원본), 라이트 테마, 데모 프로필 상태. FE-06 (D11~12) 태스크에서 교체 -->
 
 | 랜딩 | 화면 1 · 자금 진단 |
 |---|---|
@@ -169,8 +161,7 @@ python3 scripts/qa_integration.py --contract-gate   # D1 + G1~G10 (실데이터 
 |---|---|
 | ![화면 2 — 조달 시나리오 카드](docs/images/demo-2.png) | ![화면 3 — 지도 마커·근거 패널·리스크 검증](docs/images/demo-3.png) |
 
-> 캡처는 3024×1898 · 데모 프로필 기준입니다. 화면이 바뀌면 `docs/QA_REPORT_FE06.md`의 캡처
-> 가이드에 따라 `docs/images/demo-{0,1,2,3}.png` 를 다시 찍어 교체하세요.
+> 캡처는 3024×1898 · 데모 프로필 기준입니다.
 
 ---
 
@@ -202,12 +193,12 @@ python3 scripts/qa_integration.py --contract-gate   # D1 + G1~G10 (실데이터 
 
 ## 기술 스택
 
-| 영역 | 스택 | 브랜치 |
-|---|---|---|
-| Frontend | React 18 · Vite · TypeScript · 카카오맵 JS SDK · SSE | `frontend` |
-| Backend | Spring Boot 4.1 (Java 25) · PostgreSQL 16 · Caffeine · SseEmitter | `backend` |
-| AI/Data | Python 3.11 · pandas · geopandas · LightGBM+SHAP(평가 전용) | `ai` |
-| 인프라 | Docker · docker compose · GitHub Actions | — |
+| 영역 | 스택 |
+|---|---|
+| Frontend | React 18 · Vite · TypeScript · 카카오맵 JS SDK · SSE |
+| Backend | Spring Boot 4.1 (Java 25) · PostgreSQL 16 · Caffeine · SseEmitter |
+| AI/Data | Python 3.11 · pandas · geopandas · LightGBM+SHAP(평가 전용) |
+| 인프라 | Docker · docker compose · GitHub Actions |
 
 ## 실행 방법
 
@@ -242,34 +233,24 @@ make help
 
 ```
 Ventry/
-├── frontend/          # 화면 1(진단) · 2(시나리오) · 3(지도 판정) — FE 담당
-├── backend/           # API 6종 + 결정적 도구 계층 + 탐색·검증 에이전트 — BE 담당
-├── ai/                # 배치 파이프라인(batch/) + 평가 하네스(eval/, make eval) — AI 담당
+├── frontend/          # 화면 1(진단) · 2(시나리오) · 3(지도 판정)
+├── backend/           # API 6종 + 결정적 도구 계층 + 탐색·검증 에이전트
+├── ai/                # 배치 파이프라인(batch/) + 평가 하네스(eval/, make eval)
 ├── db/init/           # 배치 산출 사전 적재 덤프 (compose 최초 기동 시 실행)
+├── scripts/           # 통합 QA · 실데이터 계약 게이트 (qa_integration.py)
 ├── docs/
-│   ├── specs/         # 최종 스펙 v6.3 · 탐색 에이전트 스펙 v2.1 (단일 진실 원천)
-│   ├── TASKS.md       # 태스크 분해 총괄 (D1~D14, 마일스톤·병렬화 구조)
-│   ├── tasks/         # CM 절차 문서: 도슨트 프로토콜 · 제출 검수 · 앱키 시연
-│   ├── API_CONTRACT.md# API 계약 (D3 동결)
-│   ├── assumptions.md # 모든 가정·폴백 일원화 대장
-│   └── 심사_QA.md      # 예상 Q&A 20문항
-├── docker-compose.yaml
-├── CONTRIBUTING.md    # 브랜치 전략 · PR/CI 규칙
-└── CLAUDE.md          # 팀 공용 AI 어시스턴트 규칙 (co-author 금지 포함)
+│   ├── specs/            # 최종 스펙 v6.3 · 탐색 에이전트 스펙 v2.1 (단일 진실 원천)
+│   ├── PROJECT_RULES.md  # 불변 원칙 · 용어 규정 (코드 주석이 인용하는 정본)
+│   ├── API_CONTRACT.md   # API 계약
+│   ├── DECISIONS.md      # 설계 갈림길에서 무엇을·왜 택했고 언제 되돌리는가
+│   ├── assumptions.md    # 모든 가정·폴백 일원화 대장 (115건)
+│   ├── 기술설명서_원고.md      # 제출 기술설명서 본문의 서술 원본
+│   ├── 부록1_2_평가성적표.md   # 평가 하네스 산출 지표 · 설계 교차 검증
+│   ├── 심사_QA.md            # 예상 Q&A 20문항
+│   ├── QA_REPORT_BE07.md            # 계약 검증 하네스 리포트
+│   └── QA_REPORT_INTEGRATION_CM.md  # 브라우저까지 붙인 3파트 통신 검증
+└── docker-compose.yaml
 ```
-
-## 브랜치 전략 · CI 요약
-
-```
-토픽 브랜치  →(로컬 병합)→  frontend / backend / ai  →(PR: lint·test·docker build + 리뷰 1인)→
-                                                       develop  →(compose 스모크)→  main 자동 병합
-```
-
-- 토픽 브랜치 이름은 `<태스크ID>-<슬러그>` (예: `be04-frontier`). `backend/…` 형태는 동명
-  브랜치가 있어 git이 거부하므로 사용할 수 없다.
-- **develop 대상 PR의 head는 항상 영역 브랜치**다 — 토픽에서 직접 올리지 않는다.
-
-상세 규칙·브랜치 보호 설정·커밋 컨벤션은 [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## 데이터 출처 · 라이선스
 

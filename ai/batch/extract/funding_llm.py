@@ -31,7 +31,7 @@ PRODUCT_KEYS = (
 )
 # rate 는 필수에서 제외 — 변동금리(rate_note 있음)는 정당한 null (코드리뷰 S6)
 REQUIRED_FIELDS = ("name", "org", "amount_max", "status")
-BANNED_WORDS = ("승인", "추천", "권장")  # 용어 컴플라이언스 (CLAUDE.md)
+BANNED_WORDS = ("승인", "추천", "권장")  # 용어 컴플라이언스 (docs/PROJECT_RULES.md §2)
 
 # 문서 출처 → (org, source_url) — 기관·URL 은 문서 메타로 결정적 주입(LLM 아님)
 DOC_SOURCES: dict[str, tuple[str, str]] = {

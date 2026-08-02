@@ -54,7 +54,7 @@ class ExploreRefineTest {
 
     /**
      * 필수 고지는 LLM 이 지울 수 없어야 한다 — 프롬프트에 아예 넣지 않고 서버가 다시 붙인다
-     * (CLAUDE.md 절대 불변 원칙 3 · {@code axis_labels} 서버 단일 통제와 같은 이유).
+     * (PROJECT_RULES §2 · {@code axis_labels} 서버 단일 통제와 같은 이유).
      */
     @Test
     @DisplayName("자격 한정 꼬리는 LLM 응답에 없어도 서버가 다시 붙인다")

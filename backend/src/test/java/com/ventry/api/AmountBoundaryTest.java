@@ -31,8 +31,8 @@ import org.springframework.test.web.servlet.MvcResult;
  *       화면에 도달한다.</li>
  * </ul>
  *
- * <p>픽스처 프로파일로 돈다 — 실데이터에서의 같은 경계는 기동 중인 스택에 직접 던져 확인했다
- * (검증 로그는 {@code docs/review/qa-review.md}).
+ * <p>픽스처 프로파일로 돈다 — 실데이터에서의 같은 경계는 기동 중인 스택에 직접 던져
+ * 확인했다 ({@code scripts/qa_integration.py} 의 경계 시나리오 B1~B3).
  */
 @SpringBootTest
 @AutoConfigureMockMvc

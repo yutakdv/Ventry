@@ -76,7 +76,7 @@
   color: var(--color-text-secondary);
 }
 
-/* 금리 적용 조건 — rate 숫자와 함께 내는 보조 줄 (HANDOFF #3) */
+/* 금리 적용 조건 — rate 숫자와 함께 내는 보조 줄 */
 .rateNote {
   color: var(--color-text-tertiary);
 }

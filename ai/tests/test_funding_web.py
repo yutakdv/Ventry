@@ -46,7 +46,7 @@ def test_semas_rate_table_present_in_corpus():
     text = (DOCS / "소진공_소상공인정책자금_지원사업안내.txt").read_text(encoding="utf-8")
     assert "기준금리" in text
     assert "3.85%" in text, "분기 기준금리 실값이 코퍼스에 없다"
-    assert "3/4분기" in text, "적용 분기 표기가 없다 — 기준일 표기 필수(CLAUDE.md §4)"
+    assert "3/4분기" in text, "적용 분기 표기가 없다 — 기준일 표기 필수(PROJECT_RULES §1-3)"
 
 
 def test_gold_rates_are_traceable_to_source_text():

@@ -23,7 +23,7 @@ final class LlmResponses {
     private static final Pattern NUMBER = Pattern.compile("\\d+(?:[.,]\\d+)*");
 
     /**
-     * 용어 컴플라이언스 금지어 (CLAUDE.md 절대 불변 원칙 3) — <b>두 검증기의 공용 목록</b>.
+     * 용어 컴플라이언스 금지어 (PROJECT_RULES §2) — <b>두 검증기의 공용 목록</b>.
      *
      * <p>{@link ReviewPrompt}·{@link RefinePrompt} 가 각자 목록을 들고 있었는데, 그 결과
      * 「추천드립」·「추천합니」만 막고 <b>「추천해 드립니다」·「권유합니다」는 통과</b>했다.

@@ -3,7 +3,7 @@ package com.ventry.api.common;
 /**
  * 금액 입력의 상식 상한 (QA 리뷰 2026-07-29 Q-01).
  *
- * <p>계약상 모든 금액은 <b>만원 단위 정수</b>다(CLAUDE.md 불변 원칙 4). 하한(음수)은 이미 각
+ * <p>계약상 모든 금액은 <b>만원 단위 정수</b>다(PROJECT_RULES §1-3). 하한(음수)은 이미 각
  * 컨트롤러가 막고 있었으나 <b>상한이 없었고</b>, 그 결과 {@code capital} 에 {@code int} 최댓값
  * 근처를 넣으면 시나리오 조립에서 {@code budget_max = 자기자본 + 상품 한도} 가 오버플로해
  * {@code GET /api/scenarios/{sid}} 가 500 으로 떨어졌다 (실측 경계 2,147,473,648 —

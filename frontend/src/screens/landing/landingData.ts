@@ -147,8 +147,8 @@ export const DATA_SOURCES = [
  *
  * ⚠️ **재적재 파급 대상이다.** 이 값들은 DB 에서 오지 않고 캡처 시점의 실측을 손으로 옮긴
  * 상수라, 덤프를 다시 구우면 캡처·이 상수·도슨트 대본이 **함께** 움직여야 한다. 어느 하나만
- * 남으면 랜딩이 현재 데이터와 다른 숫자를 말한다. 갱신 절차와 함께 움직이는 항목 목록은
- * `docs/tasks/CM-05_제출_검수_체크리스트.md` 「재적재 파급」 절에 있다 (계약 리뷰 P2-6).
+ * 남으면 랜딩이 현재 데이터와 다른 숫자를 말한다. 함께 갱신할 대상은 `docs/images/demo-*.png`
+ * 캡처, README 도슨트 가이드, `scripts/qa_integration.py` 의 `DOCENT` 상수다.
  */
 export const HERO_OVERLAY: { label: string; value: string; note?: string }[] = [
   { label: '확정 예산', value: '6,600만원' },

@@ -76,7 +76,7 @@ public record FundingProduct(String productId, String name, Eligibility eligibil
      * <p>{@link #hasKnownRate()} 와 다르다. 변동금리 상품도 현 분기 금리는 알려져 있어 계산은
      * 되지만, 그 값을 {@code marginal_payment} 로 실으면 <b>분기마다 바뀌는 값을 고정 금액처럼</b>
      * 보여주게 된다. 그래서 계약은 변동금리에서 금액 대신 {@code marginal_payment_note} 를
-     * 싣기로 3인 합의했다(D8 · assumptions #30). 계산 가능성과 표기 가능성은 다른 문제다.
+     * 싣기로 계약에 확정했다(계약 D8 · assumptions #30). 계산 가능성과 표기 가능성은 다른 문제다.
      */
     public boolean hasFixedRate() {
         return rate != null && RATE_FIXED.equals(rateType);

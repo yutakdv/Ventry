@@ -41,7 +41,7 @@ const ORG_LABEL: Record<string, string> = { REB: '한국부동산원' }
 
 /**
  * 임대료 출처 줄 — "임대료: 한국부동산원 ○○상권 분기 평균 (추정) · 카페 대표면적 44.0㎡(13.3평) 기준".
- * 라벨을 "분기 평균"으로 고정하는 건 하드 룰이다 (CLAUDE.md §4 — 권리금의 "연간 조사"와 혼동 금지).
+ * 라벨을 "분기 평균"으로 고정하는 건 하드 룰이다 (PROJECT_RULES §3 — 권리금의 "연간 조사"와 혼동 금지).
  * `fallback`이면 상권 단위 매칭에 실패해 자치구 평균으로 대체된 값이므로 그 사실을 함께 밝힌다.
  *
  * 면적 근거는 하드 룰 문구를 건드리지 않고 **뒤에만 덧붙인다** (이슈 #151). 출처 줄은 이미
@@ -77,7 +77,7 @@ function km2(areaM2: number): string {
  * 대신 지도의 두 경계선과 같은 내용을 문장으로 적는다.
  *
  * 배수는 배치가 구운 면적의 나눗셈 1회다 — 화면이 수치를 새로 만들지 않는다 (§0-1).
- * 권유·추천 술어를 쓰지 않고 사실만 서술한다 (CLAUDE.md §3).
+ * 권유·추천 술어를 쓰지 않고 사실만 서술한다 (PROJECT_RULES §2).
  */
 export function formatRentScope(
   src: { district: string | null; fallback: boolean },
@@ -199,7 +199,7 @@ export function formatRate(p: { rate?: number; rate_type?: string; rate_note?: s
  *
  * `rate`가 실려 와도 그 숫자는 특정 분기 실값이다("’26년 3/4분기 적용 · 분기별 변동금리").
  * 숫자만 남기면 사용자는 지금도 유효한 확정 이율로 읽고, 데이터 기준일 상시 표기 원칙과도
- * 어긋난다 (docs/HANDOFF_FRONTEND.md #3). 그래서 적용 조건이 담긴 `rate_note`를 병기한다.
+ * 어긋난다 (PROJECT_RULES §1-3). 그래서 적용 조건이 담긴 `rate_note`를 병기한다.
  * 고정금리 상품의 `rate_note`도 "○○자금 이용 시에만 해당" 같은 단서를 담고 있어 함께 낸다.
  *
  * `rate`가 없을 때는 `formatRate`가 이미 `rate_note`를 본문으로 쓰므로 중복을 피해 null을 준다.

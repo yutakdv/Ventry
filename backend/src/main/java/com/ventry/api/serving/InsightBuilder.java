@@ -34,7 +34,7 @@ import org.springframework.stereotype.Service;
  * 판정은 {@link ReverseCheck}, 비용은 {@link com.ventry.api.engine.CostCalculator}가 만든다.
  * 이 클래스가 하는 일은 그 결과를 계약 DTO로 엮고 문장을 조립하는 것뿐이다.
  *
- * <p><b>상향 단독 노출 금지를 코드로 강제한다</b> (스펙 §7 · CLAUDE.md §0-4):
+ * <p><b>상향 단독 노출 금지를 코드로 강제한다</b> (스펙 §7 · PROJECT_RULES §2):
  * 하향 안전 마진(T2)이 성립하지 않는 상황에서는 T1을 <b>생성하지 않는다</b>. 지속 후보 수와
  * 고지 플래그는 T1 생성 시 항상 함께 실린다 — 셋 중 하나라도 빠진 T1은 만들어질 수 없다.
  */

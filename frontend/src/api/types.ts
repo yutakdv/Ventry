@@ -142,7 +142,7 @@ export interface BudgetResponse {
 
 /* ─────────────────────────── 화면 4: 입지 추천 ─────────────────────────── */
 
-/** 판정 4단계 (CLAUDE.md §0-4). "승인" 계열 표현은 쓰지 않는다. */
+/** 판정 4단계 (PROJECT_RULES §2). "승인" 계열 표현은 쓰지 않는다. */
 export type Verdict = 'FIT' | 'CONDITIONAL' | 'CAUTION' | 'OUT_OF_SCOPE'
 
 /** 임대료 출처 — 화면에 **상시** 표기한다 (스펙 §7). fallback이면 자치구 평균으로 대체된 값. */

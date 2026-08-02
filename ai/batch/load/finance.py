@@ -21,7 +21,7 @@ from batch.paths import INTERIM_DIR, REPO_ROOT, logger
 FUNDING_DIR = INTERIM_DIR / "funding_docs"
 DB_INIT = REPO_ROOT / "db" / "init"
 _SPLIT = re.compile(r"\n\s*\n|\n- \d+ -\n")
-# finance_product.rate 는 nullable(스키마 A안, 3인 합의) —
+# finance_product.rate 는 nullable(스키마 A안, assumptions #28) —
 # 절대금리 미상이면 rate=NULL + rate_note 원문.
 # 기준금리 실값을 지어내지 않는다(조작 금지, 스펙 §0-1). 소진공 변동금리는 공시 「금리안내」
 # 표(‘26년 3/4분기 기준금리 3.85%)로 검수에서 채웠다 — docs/assumptions.md #34, 이슈 #72.

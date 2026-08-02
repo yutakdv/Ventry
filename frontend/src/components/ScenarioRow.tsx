@@ -13,7 +13,7 @@ const DISCLAIMER =
 /**
  * 인사이트 타입 → 화면 라벨.
  * expl §3의 타입명을 그대로 쓴다. 자금 관련 "추천/권장" 술어는 쓰지 않는다
- * (CLAUDE.md 용어 컴플라이언스 — 정보 서술형만).
+ * (PROJECT_RULES §2 — 정보 서술형만).
  */
 const TYPE_LABEL: Record<string, string> = {
   T1: '기회 경계 (T1)',

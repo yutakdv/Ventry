@@ -11,7 +11,7 @@ import {
 
 /**
  * 여기서 잠그는 것은 "보기 좋은 문자열"이 아니라 **계약·컴플라이언스 규칙**이다.
- * 금리 표기(API_CONTRACT §금리 표기)·임대료 라벨(CLAUDE.md §5)·결측 대체 표기(§0-1)는
+ * 금리 표기(API_CONTRACT §금리 표기)·임대료 라벨(PROJECT_RULES §3)·결측 대체 표기(§0-1)는
  * 문구 하나가 규칙 위반이 되는 자리라, 회귀가 조용히 일어나면 안 된다.
  */
 
@@ -60,7 +60,7 @@ describe('formatBurdenRatio — 결측·비유한값 대체 표기', () => {
   })
 })
 
-describe('formatRentSource — 임대료 라벨 (CLAUDE.md §5 하드 룰)', () => {
+describe('formatRentSource — 임대료 라벨 (PROJECT_RULES §3 하드 룰)', () => {
   it('상권 매칭 시 "분기 평균 (추정)" 라벨을 쓴다 — 권리금의 "연간 조사"와 혼동 금지', () => {
     const line = formatRentSource({ org: 'REB', district: '홍대합정', fallback: false })
     expect(line).toContain('한국부동산원')

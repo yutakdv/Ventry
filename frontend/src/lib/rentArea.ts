@@ -57,7 +57,7 @@ export function rentAreaShort(industry: Industry | null | undefined): string | n
  * "난 20평 생각했으니 월 238만원"으로 바로 환산된다 — 오해의 뿌리를 없애는 쪽이다 (이슈 #151).
  *
  * ⚠️ **`monthly_rent` 에서 역산한 값이다.** 정확한 `unit_price` 는 `rent` 테이블에만 있고
- * 계약·BE·FE 어디에도 없는데, 필드 추가는 D3 계약 동결 대상이라 3인 합의 + 계약 PR 이
+ * 계약·서버·화면 어디에도 없는데, 필드 추가는 동결된 계약의 개정 절차가
  * 선행돼야 한다. 그래서 이미 가진 두 값으로 나눈다 (`walkMinutes` 와 같은 표현 계층 환산).
  *
  * 역산 오차는 `monthly_rent` 가 만원 단위 정수로 반올림된 데서 온다 — 적재본 실측으로

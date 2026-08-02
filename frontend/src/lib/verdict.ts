@@ -1,7 +1,7 @@
 import type { Verdict } from '../api/types'
 
 /**
- * 판정 4단계 표기 (CLAUDE.md §0-4 · Figma Verdict Badge).
+ * 판정 4단계 표기 (PROJECT_RULES §2 · Figma Verdict Badge).
  * 문구는 이 표에서만 나온다 — 화면에서 "승인" 계열 단어를 만들지 않기 위한 단일 통로다.
  */
 export const VERDICT_LABEL: Record<Verdict, string> = {

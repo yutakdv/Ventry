@@ -685,7 +685,7 @@ export default function Recommend() {
 
                 문구는 **무권리 매물이라는 조건**만 서술한다. 「예산을 올리면 열립니다」로 쓰는
                 순간 상향 인사이트가 되어 지속 후보 수·하향 안전 마진·고지 문구를 함께 달아야
-                하며(CLAUDE.md 원칙 3), 그 서사는 세 요소를 이미 갖춘 탐색 화면의 몫이다.
+                하며(PROJECT_RULES §2), 그 서사는 세 요소를 이미 갖춘 탐색 화면의 몫이다.
               */}
               {counts.CONDITIONAL > 0 && (
                 <div className={styles.conditionalPanel}>
