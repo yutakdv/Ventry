@@ -11,11 +11,16 @@ psycopg2-binary>=2.9
 python-dotenv>=1.0
 
 # --- 평가 하네스 (eval/, 스펙 §12 — 서빙 경로 아님, 오프라인 전용) ---
-scikit-learn>=1.5
-scipy>=1.13          # spearmanr — sklearn 전이 의존에 기대지 않고 명시한다
-lightgbm>=4.4
-shap>=0.46
-matplotlib>=3.9
+# 버전 정확 고정 — 설계 교차 검증 지표(R²·ρ)가 lightgbm 버전에 따라 변동함을 확인,
+# 부록 2 수치의 재현 조건을 버전으로 못 박는다 (random_state=42만으로는 부족).
+# 하한(>=)으로 두면 재해결 시점에 따라 다른 버전이 들어와 같은 리비전이 다른 R²를 낸다.
+scikit-learn==1.9.0
+scipy==1.17.1        # spearmanr — sklearn 전이 의존에 기대지 않고 명시한다
+lightgbm==4.7.0
+shap==0.51.0
+matplotlib==3.11.1
+numpy==2.4.6         # model.py 가 직접 import 하는데 전이 의존으로만 들어와 있었다 —
+                     # 지표가 흔들리는 자리라 상위 의존이 끌어오는 버전에 맡기지 않는다
 
 # --- LLM 배치 추출 (AI-06, 오프라인 전용 — 서빙 수치 생성 아님, DECISIONS §6) ---
 openai>=1.40
