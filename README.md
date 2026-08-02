@@ -74,7 +74,7 @@ docker compose up --build   # → http://localhost:3000
 |---|---|
 | ![화면 2 — 조달 시나리오 카드](docs/images/demo-2.png) | ![화면 3 — 지도 마커·근거 패널·리스크 검증](docs/images/demo-3.png) |
 
-> 캡처는 3024×1898 · 데모 프로필 기준입니다.
+> 캡처는 레티나 원본(약 3,020×1,690) · 데모 프로필 기준입니다.
 
 ---
 
