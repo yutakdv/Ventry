@@ -1,4 +1,4 @@
-# Ventry — "여금 우선" 입지 컨설팅 에이전트
+# Ventry — "자금 우선" 입지 컨설팅 에이전트
 
 > KB 제8회 Future Finance AI Challenge · 주제 2 「AI 데이터 기반 최적 입지 컨설팅 서비스」
 
